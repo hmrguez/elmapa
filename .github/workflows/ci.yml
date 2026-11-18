@@ -11,6 +11,12 @@ permissions:
 jobs:
   checks:
     name: Source checks
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      preview_run: ${{ steps.preview.outputs.preview_run }}
+      preview_tag: ${{ steps.preview.outputs.preview_tag }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -21,7 +27,16 @@ jobs:
       - run: python3 scripts/export-icons.py --check
       - run: python3 -B scripts/test_performance_trace.py
 
+      - name: Find verified packages for stable promotion
+        id: preview
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: bash scripts/release/verified-preview.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+
   build:
+    needs: checks
+    if: needs.checks.outputs.preview_run == ''
     name: ${{ matrix.task }} (${{ matrix.os }})
     strategy:
       fail-fast: false
@@ -87,22 +102,29 @@ jobs:
 
   publish:
     name: Publish channel release
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
+    if: >-
+      ${{ !cancelled() && needs.checks.result == 'success' &&
+          (needs.build.result == 'success' || (needs.build.result == 'skipped' && needs.checks.outputs.preview_run != '')) &&
+          github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') }}
     needs: [checks, build]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      actions: read
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.checks.outputs.preview_run || github.run_id }}
           pattern: package-*
           merge-multiple: true
           path: packages
       - run: bash scripts/release/publish.sh
         env:
+          PREVIEW_TAG: ${{ needs.checks.outputs.preview_tag }}
           GH_TOKEN: ${{ github.token }}
 
   latest:

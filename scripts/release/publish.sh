@@ -6,6 +6,12 @@ case "$channel" in main|dev) ;; *) echo "Unknown channel: $channel" >&2; exit 1 
 tag="$channel-${GITHUB_RUN_NUMBER:?}-${GITHUB_SHA:0:12}"
 cd packages
 shopt -s nullglob
+if [[ -n "${PREVIEW_TAG:-}" ]]; then
+    # Only filenames carry the channel label. Preserve every verified archive byte.
+    for file in Elmapa-*-"$PREVIEW_TAG"-*; do
+        mv -- "$file" "${file/-$PREVIEW_TAG-/-$tag-}"
+    done
+fi
 linux=(Elmapa-*-"$tag"-x86_64-unknown-linux-gnu.tar.gz)
 mac=(Elmapa-*-"$tag"-aarch64-apple-darwin.zip)
 windows=(Elmapa-*-"$tag"-x86_64-pc-windows-msvc.zip)

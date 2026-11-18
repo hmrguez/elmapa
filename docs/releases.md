@@ -2,6 +2,8 @@
 
 Each successful push to `main` publishes a stable release. Each successful push to `dev` publishes a prerelease. A tag such as `dev-42-a1b2c3d4e5f6` identifies the channel, CI run number and source commit. The newest successful main run owns GitHub’s **Latest** label, even if two builds finish out of order. Find earlier builds by tag on the [releases page](https://github.com/hmrguez/elmapa-public/releases).
 
+To promote a preview, fast-forward `main` to the exact commit published on `dev`. CI reuses the three archives from its successful dev push when they are still available, relabels the filenames, and publishes their checksums. The archive contents are byte-for-byte identical. A different commit, a failed preview, or expired artifacts trigger the full platform matrix. Actions retains these artifacts for seven days.
+
 | Download | Build target | Contents |
 | --- | --- | --- |
 | Linux `.tar.gz` | Ubuntu 24.04, x86-64 | `Elmapa/elmapa` |
