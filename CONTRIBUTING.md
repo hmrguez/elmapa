@@ -1,6 +1,6 @@
 # Contributing to Elmapa
 
-Start by building the editor with the [README quickstart](README.md#get-started). Open **The Stillwater Isles**, paint a stroke, undo it, and export an SVG. This exercises the same document and scene code used by the native editor and headless export.
+For desktop changes, build the editor with the [README quickstart](README.md#get-started). Open **The Stillwater Isles**, paint a stroke, undo it, and export an SVG. This exercises the same document and scene code used by the native editor and headless export.
 
 ## Build prerequisites
 
@@ -13,6 +13,16 @@ Install Rust 1.95 or newer. The development checks also use Python 3 and the Rus
 ```sh
 sudo apt-get install build-essential pkg-config libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 libx11-dev libxi-dev libxrandr-dev libxcursor-dev fonts-dejavu-core
 ```
+
+## Run the core tests
+
+Changes to the document model, editor history, map geometry, SVG export, or storage can start with the library tests. This command builds the map library and its tests without compiling Bevy’s windowing and GPU stack.
+
+```sh
+cargo test --locked --no-default-features --lib
+```
+
+For a quick edit-and-test loop, append a module filter such as `editor::tests`. Cargo reuses the compiled dependencies between runs. The default `app` feature builds the native editor and its stdio MCP server. Run the [full validation suite](README.md#validation) before submitting changes.
 
 ## Choose where to work
 

@@ -39,6 +39,8 @@ For bugs and feature proposals, [open an issue](https://github.com/hmrguez/elmap
 
 ## Validation
 
+With Rust 1.95 or newer, run `cargo test --locked --no-default-features --lib` for a quick check of document editing, map geometry, SVG export, and storage. Append `editor::tests` to run just the undo and editing tests. Desktop and MCP changes use the full suite below.
+
 Run these checks from the project root with Python 3, Rust, Clippy and rustfmt installed. On Windows, use a writable path such as `elmapa-demo.svg` for the final command.
 
 ```sh
