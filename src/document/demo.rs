@@ -1,7 +1,16 @@
 use super::{Brush, DOCUMENT_VERSION, Document, Layer, Point, Stroke};
 
 impl Document {
-    /// Original, deterministic example built entirely from authored brush paths.
+    /// The editable example shown on new atlas shelves.
+    pub fn spain_example() -> Result<Self, String> {
+        let document: Self =
+            serde_json::from_slice(include_bytes!("../../assets/atlases/espana.elmapa"))
+                .map_err(|error| format!("Could not open the Spain example: {error}"))?;
+        document.validate()?;
+        Ok(document)
+    }
+
+    /// Small deterministic fixture used by the demo export and verification.
     pub fn demo() -> Self {
         fn stroke(brush: Brush, size: f32, seed: u64, points: &[(f32, f32)]) -> Stroke {
             Stroke {

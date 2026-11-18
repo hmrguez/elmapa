@@ -10,4 +10,6 @@ The three land textures below are color-graded adaptations of Poly Haven diffuse
 
 Elmapa loads installed system fonts and embeds Bevy’s Fira Mono subset as a fallback. The Mozilla Foundation and Telefonica S.A. hold the font copyright. The SIL Open Font License 1.1 accompanies the font. [Bundled Fira Mono license](licenses/FiraMono-LICENSE) · [Mozilla Fira upstream](https://github.com/mozilla/Fira)
 
+The España example uses public-domain [Natural Earth](https://www.naturalearthdata.com/about/terms-of-use/) coastline and country data.
+
 The native binaries incorporate Rust dependencies with their own licenses. Cargo.lock identifies the versions used in the build.

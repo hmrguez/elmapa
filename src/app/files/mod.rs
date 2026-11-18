@@ -90,7 +90,7 @@ pub fn poll(
             let result = (|| {
                 let mut library = Library::load(Library::default_path())?;
                 if library.shelf.atlases.is_empty() {
-                    let doc = Document::demo();
+                    let doc = Document::spain_example()?;
                     library.checkpoint(
                         AtlasRecord {
                             id: 1,
@@ -266,7 +266,7 @@ pub fn poll(
                         Request::Create(demo) => {
                             let id = library.next_id();
                             let mut document = if demo {
-                                Document::demo()
+                                Document::spain_example()?
                             } else {
                                 Document::blank()
                             };

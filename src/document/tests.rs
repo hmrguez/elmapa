@@ -125,3 +125,38 @@ fn legacy_documents_and_label_roundtrips_preserve_safe_editable_typography() {
     };
     assert!(document.validate().is_err());
 }
+
+#[test]
+fn bundled_spain_keeps_the_guided_washes_and_title_order() {
+    let document = Document::spain_example().unwrap();
+    for name in ["España peninsular", "Océano abierto"] {
+        let layer = document
+            .layers
+            .iter()
+            .find(|layer| layer.name == name)
+            .unwrap();
+        let Some(TerrainReplay::BrushPaths { paths, .. }) = &layer.terrain_replay else {
+            panic!("{name} needs its replay gestures");
+        };
+        assert_eq!(paths.len(), 3);
+    }
+    let label = document
+        .layers
+        .iter()
+        .flat_map(|layer| &layer.labels)
+        .find(|label| label.text == "España")
+        .unwrap();
+    let last_mark = document
+        .layers
+        .iter()
+        .flat_map(|layer| {
+            layer
+                .strokes
+                .iter()
+                .filter_map(|stroke| stroke.creation_id)
+                .chain(layer.landmarks.iter().map(|landmark| landmark.id))
+                .chain(layer.labels.iter().map(|label| label.id))
+        })
+        .max();
+    assert_eq!(Some(label.id), last_mark);
+}
