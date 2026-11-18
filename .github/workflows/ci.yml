@@ -40,7 +40,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential pkg-config libwayland-dev libxkbcommon-dev libx11-dev libxi-dev libxrandr-dev libxcursor-dev fonts-dejavu-core mesa-vulkan-drivers xvfb xauth
+          sudo apt-get install -y build-essential pkg-config libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 libx11-dev libxi-dev libxrandr-dev libxcursor-dev fonts-dejavu-core mesa-vulkan-drivers xvfb xauth
       - run: rustup toolchain install 1.95.0 --profile minimal --component clippy
       - run: rustup default 1.95.0
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2

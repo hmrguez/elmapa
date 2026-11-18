@@ -1,10 +1,7 @@
 //! Keyboard commands, text composition and live field previews.
 use super::Field;
 use crate::app::state::Studio;
-use bevy::{
-    input::keyboard::KeyboardInput,
-    prelude::{Entity, KeyCode},
-};
+use bevy::{input::keyboard::KeyboardInput, prelude::KeyCode};
 
 impl Studio {
     /// Selection owns the keyboard even before the first character is typed.
@@ -142,6 +139,7 @@ impl Studio {
         self.text.preview = Some(label);
         self.invalidate_preview();
     }
+    #[cfg(target_os = "macos")]
     pub fn text_shortcut(&mut self, key_code: KeyCode) -> bool {
         use bevy::input::{
             ButtonState,
@@ -154,7 +152,7 @@ impl Studio {
                 state: ButtonState::Pressed,
                 text: None,
                 repeat: false,
-                window: Entity::PLACEHOLDER,
+                window: bevy::prelude::Entity::PLACEHOLDER,
             },
             true,
             false,
