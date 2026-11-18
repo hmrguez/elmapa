@@ -1,4 +1,7 @@
 //! Translate coarse map plans into ordinary editable Elmapa layers.
+mod area;
+
+use area::Drawing;
 use elmapa::{
     brush_materials,
     document::{
@@ -43,6 +46,8 @@ enum Artwork {
         outline: Vec<Position>,
         /// Optional material ID. Discover IDs with inspect_map.
         material: Option<String>,
+        /// Order in which the area is painted. Omit for the top-to-bottom scanline fill.
+        drawing: Option<Drawing>,
     },
     /// A smoothed mountain ridge, river, trail, or other native brush stroke.
     Stroke {
@@ -286,6 +291,7 @@ fn put(
             brush,
             outline,
             material,
+            drawing,
         } => {
             let brush = match brush {
                 AreaBrush::Land => Brush::Land,
@@ -297,7 +303,8 @@ fn put(
                 .into_iter()
                 .map(point)
                 .collect::<Result<Vec<_>, _>>()?;
-            let mut strokes = fill_area(outline, brush, material, seed)?;
+            let mut strokes =
+                area::fill(outline, drawing.unwrap_or_default(), brush, material, seed)?;
             for stroke in &mut strokes {
                 stroke.creation_id = Some(document.allocate_id()?);
             }
@@ -483,86 +490,4 @@ fn smooth(mut points: Vec<Point>, closed: bool) -> Vec<Point> {
         points = rounded;
     }
     points
-}
-
-/// Convert a filled outline to overlapping native brush strokes using even-odd
-/// scanline pairs. Inset the centers by approximately the brush radius.
-fn fill_area(
-    mut outline: Vec<Point>,
-    brush: Brush,
-    material: Option<std::sync::Arc<str>>,
-    seed: u64,
-) -> Result<Vec<Stroke>, String> {
-    outline.dedup();
-    if outline.len() > 1 && outline.first() == outline.last() {
-        outline.pop();
-    }
-    if !(3..=MAX_POINTS).contains(&outline.len()) {
-        return Err(format!("Area outlines need 3 to {MAX_POINTS} vertices."));
-    }
-    let mut outline = smooth(outline, true);
-    outline.push(outline[0]);
-    let top = outline
-        .iter()
-        .map(|point| point.y)
-        .fold(f32::INFINITY, f32::min);
-    let bottom = outline
-        .iter()
-        .map(|point| point.y)
-        .fold(f32::NEG_INFINITY, f32::max);
-    let height = bottom - top;
-    if height < 8. {
-        return Err("An area needs at least 8 world units of height.".into());
-    }
-
-    let radius = (height / 56.).clamp(6., 38.);
-    let inset = radius.min(height / 4.);
-    let rows = ((height - inset * 2.) / (radius * 0.7)).ceil() as usize;
-    if rows > 512 {
-        return Err("Area outline is too tall for editable brush fill.".into());
-    }
-    let mut strokes = Vec::new();
-    let mut crossings = Vec::new();
-    for row in 0..=rows {
-        let y = top + inset + (height - inset * 2.) * row as f32 / rows.max(1) as f32;
-        crossings.clear();
-        for edge in outline.windows(2) {
-            let [a, b] = [edge[0], edge[1]];
-            if (a.y > y) != (b.y > y) {
-                crossings.push(mix(a, b, (y - a.y) / (b.y - a.y)).x);
-            }
-        }
-        crossings.sort_by(f32::total_cmp);
-        for span in crossings.chunks_exact(2) {
-            let half_width = (span[1] - span[0]) * 0.5;
-            if half_width < 0.5 {
-                continue;
-            }
-            let r = inset.min(half_width);
-            let left = Point::new(span[0] + r, y);
-            let right = Point::new(span[1] - r, y);
-            let points = if left.x < right.x {
-                vec![left, right]
-            } else {
-                vec![left]
-            };
-            strokes.push(Stroke {
-                creation_id: None,
-                brush,
-                points: points.into(),
-                size: r * 2.,
-                strength: 1.,
-                // A common seed keeps boundary roughness coherent between rows.
-                seed,
-                material: material.clone(),
-            });
-            if strokes.len() > 1024 {
-                return Err("Area outline produces too many brush strokes.".into());
-            }
-        }
-    }
-    if strokes.is_empty() {
-        return Err("Outline has no fillable interior.".into());
-    }
-    Ok(strokes)
 }
