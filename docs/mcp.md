@@ -41,3 +41,28 @@ an SVG.”
   The server manages files in its output folder. Close or reopen a native editing
   session to pick up external revisions, and avoid saving over the same file from
   the app while Codex is editing it.
+## Choose how an area is painted
+
+An area can include a `drawing` object. The default `{"approach":"scanline"}`
+paints horizontal bands from top to bottom. Use `breadth_first` to begin near a
+point inside the smoothed outline and paint neighboring spans in waves.
+
+```json
+{
+  "name": "Atlantic",
+  "art": {
+    "kind": "area",
+    "brush": "water",
+    "material": "ocean",
+    "outline": [[0, 0], [1600, 0], [1600, 1000], [0, 1000]],
+    "drawing": {"approach": "breadth_first", "from": [420, 560]}
+  }
+}
+```
+
+Pass the feature to `create_map` or `edit_map` with a `put` change. Coordinates
+use world units. Starting points outside the smoothed outline are rejected.
+When an outline has more than one paintable piece, the closest remaining piece
+starts its own wave. Each area stays on one editable layer. Elmapa records the
+brush stroke order for **Replay this view**, which approximates the timing of
+merged land and water within each terrain tile.

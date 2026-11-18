@@ -309,3 +309,86 @@ fn mcp_uses_native_road_and_river_defaults_and_places_rotated_labels() {
     assert_eq!(invalid["isError"], true);
     assert_eq!(LocalDocumentStore.load(path).unwrap(), document);
 }
+
+#[test]
+fn breadth_first_areas_paint_outward_and_reject_an_invalid_origin_without_editing() {
+    let root = Sandbox::new();
+    let mut mcp = Client::connect(&root.0);
+    let outline = json!([
+        [0, 0],
+        [70, 0],
+        [70, 140],
+        [130, 140],
+        [130, 0],
+        [200, 0],
+        [200, 220],
+        [0, 220]
+    ]);
+    let make_feature = |from: [i32; 2]| {
+        json!({"name": "Bay", "art": {
+            "kind": "area", "brush": "water", "material": "ocean", "outline": outline,
+            "drawing": {"approach": "breadth_first", "from": from}
+        }})
+    };
+    let created = mcp.text(
+        "create_map",
+        json!({"name": "Bay", "features": [make_feature([35, 30])]}),
+    );
+    let map_id = &created["map_id"];
+    let path = Path::new(created["atlas_path"].as_str().unwrap());
+    let document = LocalDocumentStore.load(path).unwrap();
+    let layer = &document.layers[0];
+    assert_eq!(document.layers.len(), 1);
+    let strokes: Vec<_> = layer.strokes.iter().collect();
+    let first = strokes[0].points.first().unwrap();
+    assert!((first.x - 35.).abs() < 5. && (first.y - 30.).abs() < 5.);
+    assert!(
+        strokes
+            .windows(2)
+            .all(|pair| pair[0].creation_id < pair[1].creation_id)
+    );
+    assert!(strokes.iter().all(|stroke| {
+        stroke.brush == Brush::Water && stroke.material.as_deref() == Some("ocean")
+    }));
+    let bridge = strokes
+        .iter()
+        .position(|stroke| {
+            stroke
+                .points
+                .iter()
+                .any(|p| p.x > 90. && p.x < 110. && p.y > 140.)
+        })
+        .unwrap();
+    let other_arm = strokes
+        .iter()
+        .position(|stroke| stroke.points.iter().any(|p| p.x > 155. && p.y < 65.))
+        .unwrap();
+    assert!(bridge < other_arm, "the wave must go around the gap");
+
+    let failed = mcp.call(
+        "edit_map",
+        json!({"map_id": map_id, "expected_revision": created["revision"], "changes": [
+            {"op": "put", "layer_id": layer.id, "feature": make_feature([100, 35])}
+        ]}),
+    );
+    assert_eq!(failed["isError"], true);
+    assert!(
+        failed["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("inside the area outline")
+    );
+    assert_eq!(LocalDocumentStore.load(path).unwrap(), document);
+
+    let edited = mcp.text(
+        "edit_map",
+        json!({"map_id": map_id, "expected_revision": created["revision"], "changes": [
+            {"op": "put", "layer_id": layer.id, "feature": make_feature([165, 35])}
+        ]}),
+    );
+    assert_ne!(edited["revision"], created["revision"]);
+    let redrawn = LocalDocumentStore.load(path).unwrap();
+    let layer = &redrawn.layers[0];
+    let first = layer.strokes.iter().next().unwrap().points.first().unwrap();
+    assert!((first.x - 165.).abs() < 5. && (first.y - 35.).abs() < 5.);
+}
