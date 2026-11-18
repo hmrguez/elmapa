@@ -1,0 +1,182 @@
+//! Compose retained material and annotations into one ordered scene.
+use super::{
+    junctions::Junctions,
+    material::MaterialLayer,
+    snapshot::{Batch, RegionSource, Scene, TerritoryView},
+    territories::Territories,
+};
+use crate::{
+    document::{Document, Label, Landmark, Layer},
+    scene::{
+        ForestTree, LandmarkBatch, LandmarkPart, MountainPart, PathPart, RiverReach, generation,
+        label_shapes, landmark_batches, territories::Shoreline,
+    },
+};
+use std::{collections::HashMap, sync::Arc};
+
+#[derive(Default)]
+pub(super) struct AnnotationCache {
+    labels: Vec<(Label, Batch)>,
+    landmarks: Vec<(Landmark, Vec<LandmarkBatch>)>,
+}
+
+pub(super) enum AnnotationSource<'a> {
+    Committed,
+    Current {
+        document: &'a Document,
+        updated: &'a mut AnnotationCache,
+    },
+}
+
+impl<'a> AnnotationSource<'a> {
+    fn layer(&self, source: &'a Layer) -> Option<&'a Layer> {
+        match self {
+            Self::Committed => Some(source),
+            Self::Current { document, .. } => document.layer(source.id),
+        }
+    }
+
+    fn admits(&self, batch: &Batch) -> bool {
+        matches!(self, Self::Committed) || generation::vertices(batch.len().saturating_mul(3))
+    }
+}
+
+#[derive(Default)]
+struct Composition {
+    batches: Vec<Batch>,
+    trees: HashMap<usize, ForestTree>,
+    mountains: HashMap<usize, MountainPart>,
+    rivers: HashMap<usize, Arc<RiverReach>>,
+    paths: HashMap<usize, PathPart>,
+    opacity: HashMap<usize, f32>,
+    labels: HashMap<usize, Label>,
+    landmarks: HashMap<usize, LandmarkPart>,
+    regions: HashMap<usize, RegionSource>,
+    territory_views: HashMap<u64, TerritoryView>,
+}
+
+impl Composition {
+    fn push(&mut self, batch: Batch, opacity: f32) {
+        self.opacity.insert(Arc::as_ptr(&batch) as usize, opacity);
+        self.batches.push(batch);
+    }
+
+    fn terrain(&mut self, material: &MaterialLayer) {
+        let opacity = material.source.opacity;
+        material.mountain_parts(&mut self.mountains);
+        self.rivers.extend(
+            material
+                .rivers
+                .iter()
+                .map(|(key, reach)| (*key, reach.clone())),
+        );
+        material.path_parts(&mut self.paths);
+        self.regions.extend(material.region_sources());
+
+        for batch in material.forest.iter() {
+            let mut tree = batch.tree.clone();
+            tree.opacity *= opacity;
+            self.trees.insert(Arc::as_ptr(&batch.shapes) as usize, tree);
+        }
+        for batch in material.batches() {
+            self.push(batch, opacity);
+        }
+    }
+
+    fn annotations(
+        &mut self,
+        layer: &Layer,
+        cache: &AnnotationCache,
+        source: &mut AnnotationSource<'_>,
+    ) {
+        for landmark in &layer.landmarks {
+            let parts = cache
+                .landmarks
+                .iter()
+                .find(|(old, _)| old == landmark)
+                .map(|(_, parts)| parts.clone())
+                .unwrap_or_else(|| landmark_batches(landmark));
+            for batch in &parts {
+                if !source.admits(&batch.shapes) {
+                    break;
+                }
+                self.landmarks
+                    .insert(Arc::as_ptr(&batch.shapes) as usize, batch.part.clone());
+                self.push(batch.shapes.clone(), layer.opacity);
+            }
+            if let AnnotationSource::Current { updated, .. } = source {
+                updated.landmarks.push((landmark.clone(), parts));
+            }
+        }
+
+        for label in &layer.labels {
+            let batch = cache
+                .labels
+                .iter()
+                .find(|(old, _)| old == label)
+                .map(|(_, batch)| batch.clone())
+                .unwrap_or_else(|| label_shapes(label));
+            if !source.admits(&batch) {
+                break;
+            }
+            self.labels
+                .insert(Arc::as_ptr(&batch) as usize, label.clone());
+            if let AnnotationSource::Current { updated, .. } = source {
+                updated.labels.push((label.clone(), batch.clone()));
+            }
+            self.push(batch, layer.opacity);
+        }
+    }
+
+    fn finish(self, shoreline: Arc<Shoreline>) -> Scene {
+        Scene {
+            batches: Arc::new(self.batches),
+            trees: Arc::new(self.trees),
+            mountains: Arc::new(self.mountains),
+            rivers: Arc::new(self.rivers),
+            paths: Arc::new(self.paths),
+            opacity: Arc::new(self.opacity),
+            expanded: Arc::default(),
+            labels: Arc::new(self.labels),
+            landmarks: Arc::new(self.landmarks),
+            regions: Arc::new(self.regions),
+            shoreline,
+            territory_views: Arc::new(self.territory_views),
+        }
+    }
+}
+
+pub(super) fn compose<'a>(
+    materials: impl Iterator<Item = &'a MaterialLayer> + Clone,
+    cache: &AnnotationCache,
+    mut source: AnnotationSource<'_>,
+    junctions: &mut Junctions,
+    territories: &mut Territories,
+) -> Scene {
+    let mut composition = Composition::default();
+    territories.update_shore(materials.clone());
+    for material in materials
+        .clone()
+        .filter(|base| base.source.visible && base.source.opacity > 0.)
+    {
+        composition.terrain(material);
+        if let Some(layer) = source.layer(&material.source) {
+            if let Some((batch, view)) = territories.render(layer) {
+                composition.push(batch, layer.opacity);
+                composition.territory_views.insert(
+                    layer.id,
+                    (
+                        layer.territories.clone().expect("rendered region layer"),
+                        view,
+                    ),
+                );
+            }
+            composition.annotations(layer, cache, &mut source);
+        }
+    }
+    let mut scene = composition.finish(territories.shore.clone());
+    territories.retain(&scene);
+    junctions.apply(&mut scene, materials);
+    scene.order_paths_between_rivers_and_relief();
+    scene
+}

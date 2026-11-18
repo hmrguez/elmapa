@@ -1,0 +1,27 @@
+name: Bug report
+description: Report a reproducible problem with Elmapa.
+body:
+  - type: markdown
+    attributes:
+      value: For sensitive reports, follow the [security policy](https://github.com/hmrguez/elmapa-public/blob/main/SECURITY.md).
+  - type: input
+    id: environment
+    attributes:
+      label: Elmapa version or commit and operating system
+      placeholder: For example, release tag or commit SHA, macOS version and chip
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Start from a new atlas or the built-in example if possible.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected and observed behavior
+      description: Screenshots or a small atlas you can share are welcome.
+    validations:
+      required: true

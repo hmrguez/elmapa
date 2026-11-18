@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="128" viewBox="0 0 160 128">
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g id="bottom-step">
+      <path fill="#aa9b78" opacity=".18" d="M18 104l23-10 56-5 44 10 8 4-16 9-27 7-43 1-32-7Z"/>
+      <path fill="#c9b99a" stroke="#655640" stroke-width=".9" d="M27 101l16-11 62-4 28 11v7l-20 11-66 3-20-11Z"/>
+      <path fill="#b6a586" d="M113 108l19-10v5.5l-19 11Z"/>
+      <path fill="#eee2c3" stroke="#7e6b4e" stroke-width=".74" d="M27 101l16-11 62-4 28 11-20 11-66 3Z"/>
+      <path fill="#d9cbac" d="M37 100l14-8 49-3 22 9-12 7-62 3Z"/>
+      <path fill="none" stroke="#847357" stroke-width=".5" d="M30 105l17 9 65-3m2-1 15-8m-109 7 8 1m11 7 6 2m13 .4 11-1m35 1 15-2m12-4 9-3"/>
+    </g>
+    <g id="top-step">
+      <path fill="#d1c5a4" stroke="#655640" stroke-width=".82" d="M39 94l13-10 52-3 17 10v7l-15 8-51 2-16-7Z"/>
+      <path fill="#b6a586" d="M107 99l13-7v5.5l-13 7.5Z"/>
+      <path fill="#eee2c3" stroke="#7e6b4e" stroke-width=".68" d="M39 94l13-10 52-3 17 10-14 8-52 3Z"/>
+      <path fill="#d9cbac" d="M48 94l7-7 47-3 10 6-9 6-47 3Z"/>
+      <path fill="none" stroke="#847357" stroke-width=".56" d="M55 103v5m52-9v6m-56-1 3 1m9-1 26-1m21-3 7-4"/>
+    </g>
+    <g id="shaft">
+      <path fill="#eaddbd" stroke="#655640" stroke-width=".98" d="M84 12l17 19 8 58-15 10-29 1-14-9 10-57Z"/>
+      <path fill="#e8ddbf" d="M62 35l20 1-3 58-14 5-13-8Z"/>
+      <path fill="#c5b594" d="M82 36l18-4 8 57-14 9-15-4Z"/>
+      <path fill="#b6a586" d="M99 34l1-2 8 57-5 3Z"/>
+      <path fill="#eee2c3" stroke="#7e6b4e" stroke-width=".63" d="M84 12l-2 24-21-2Z"/>
+      <path fill="#d4c2a0" stroke="#7e6b4e" stroke-width=".63" d="M84 12l17 19-19 5Z"/>
+      <path fill="none" stroke="#7e6b4e" stroke-width=".66" d="M82 36l-3 58m-27-3 13 5 14-2 15 2 14-7"/>
+      <path fill="none" stroke="#8b7755" stroke-width=".56" d="M61 45l-6 41m-1 .5 11 4 14-2 15 2 12-7m-48 .9 8 2m31-2 6-3m-37-40 7-1m17 1 6-2"/>
+    </g>
+    <g id="inlay">
+      <path fill="#a18b69" stroke="#655640" stroke-width=".76" d="M80 47l13 14-13 16-14-14Z"/>
+      <path fill="#d7c6a4" d="M80 49v13l-12 .8Z"/>
+      <path fill="#eee2c3" d="M80 61l7 .2-7 8-7-7Z"/>
+      <path fill="#b6a586" d="M80 62l7-.8-7 8Z"/>
+      <path fill="none" stroke="#8b7755" stroke-width=".55" d="M80 44l4 4m-4 32-4-4"/>
+    </g>
+  </g>
+</svg>

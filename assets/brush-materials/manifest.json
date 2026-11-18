@@ -1,0 +1,112 @@
+{
+  "materials": [
+    {
+      "id": "parchment",
+      "brush": "land",
+      "name": "Parchment",
+      "color": "#f4ecd5"
+    },
+    {
+      "id": "ochre-sands",
+      "brush": "land",
+      "name": "Ochre Sands",
+      "color": "#e9dfc5",
+      "texture": "ochre-sands.png",
+      "tile_size": 240,
+      "source": "https://polyhaven.com/a/sand_01"
+    },
+    {
+      "id": "lichen-heath",
+      "brush": "land",
+      "name": "Lichen Heath",
+      "color": "#e1d6bd",
+      "texture": "lichen-heath.png",
+      "tile_size": 224,
+      "source": "https://polyhaven.com/a/forrest_ground_01"
+    },
+    {
+      "id": "weathered-shale",
+      "brush": "land",
+      "name": "Weathered Shale",
+      "color": "#d6cbb4",
+      "texture": "weathered-shale.png",
+      "tile_size": 208,
+      "source": "https://polyhaven.com/a/dry_ground_rocks"
+    },
+    {
+      "id": "ocean",
+      "brush": "water",
+      "name": "Ocean",
+      "color": "#b5b3a8",
+      "texture": "ocean.png",
+      "tile_size": 264
+    },
+    {
+      "id": "shallow-ocean",
+      "brush": "water",
+      "name": "Shallow Ocean",
+      "color": "#e0dac5",
+      "texture": "shallow-ocean.png",
+      "tile_size": 242
+    },
+    {
+      "id": "lake",
+      "brush": "water",
+      "name": "Lake",
+      "color": "#ccc9ba",
+      "texture": "lake.png",
+      "tile_size": 236,
+      "shoreline_ink": "#897e69"
+    },
+    {
+      "id": "mixed-woodland",
+      "brush": "forest",
+      "name": "Mixed Woodland",
+      "color": "#e5d6b5"
+    },
+    {
+      "id": "fir-grove",
+      "brush": "forest",
+      "name": "Fir Grove",
+      "color": "#e5d6b5",
+      "forest": "fir"
+    },
+    {
+      "id": "oak-grove",
+      "brush": "forest",
+      "name": "Oak Grove",
+      "color": "#e5d6b5",
+      "forest": "oak"
+    },
+    {
+      "id": "engraved-peaks",
+      "brush": "mountain",
+      "name": "Engraved Peaks",
+      "color": "#e9dfc2"
+    },
+    {
+      "id": "alpine-crags",
+      "brush": "mountain",
+      "name": "Alpine Crags",
+      "color": "#eee3ca",
+      "texture": "alpine-crags.png",
+      "sprite_frames": 2
+    },
+    {
+      "id": "ochre-escarpments",
+      "brush": "mountain",
+      "name": "Ochre Escarpments",
+      "color": "#e1c39a",
+      "texture": "ochre-escarpments.png",
+      "sprite_frames": 2
+    },
+    {
+      "id": "weathered-highlands",
+      "brush": "mountain",
+      "name": "Weathered Highlands",
+      "color": "#d9cfb6",
+      "texture": "weathered-highlands.png",
+      "sprite_frames": 2
+    }
+  ]
+}

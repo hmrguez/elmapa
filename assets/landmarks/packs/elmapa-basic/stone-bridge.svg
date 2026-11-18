@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="128" viewBox="0 0 160 128">
+  <title>Elmapa — engraved stone bridge</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <g id="river">
+      <path d="M41 75C57 66 84 66 119 74L128 88 153 100C141 110 110 117 81 116 62 114 52 108 42 106L12 99Z" fill="#aeb9a9" opacity=".19"/>
+      <path d="M12 93l15-3 13-1 12 6-8 5-16 1-14-1m106-14 7-5 14 2 11 5-10 4-13-1" fill="#b7aa83" fill-opacity=".25" stroke="#817359" stroke-opacity=".52" stroke-width=".55"/>
+      <path d="M20 96l10-2m4 2 7-.5m-17 3 6-.5m99-13 7-.5m2 3 9 .5m-8 2 5 .5M53 106q7 1 12 .5m-1 3 8 1m5 2 12 .7m7-.9 12-.7m4-3 12-1m-2-4 16-2m-44 1 10-.7m-5-6 13-1m-39 2 10 .1m-50 6 13-.6m-1 3 5-.7m36 9 13-.5" fill="none" stroke="#777b65" stroke-width=".59" opacity=".55"/>
+    </g>
+    <g id="arches">
+      <path d="M22 81 44 69 55 65 92 60 112 60 127 66 127 84 112 87C112 74 108 69 100 69 92 70 87 79 87 91L68 96C68 82 62 77 53 78 44 79 38 89 38 99L22 101Z" fill="#b2a180" stroke="#655640" stroke-width=".68"/>
+      <path d="M68 86l5 4m-4 1 6 5m-6-1 7 5m35-25 5 3m-4 2 6 4m-5 1 6 4" fill="none" stroke="#7b6c50" stroke-width=".56" opacity=".74"/>
+      <path d="M31 87 53 75 64 71 101 66 121 66 136 72 136 90 121 93C121 80 117 75 109 75 101 76 96 85 96 97L77 102C77 88 71 83 62 84 53 85 47 95 47 105L31 107Z" fill="#e8dcc0" stroke="#655640" stroke-width=".9"/>
+      <path d="M31 87 22 81 22 101 31 107Z" fill="#c7b99a" stroke="#655640" stroke-width=".64"/>
+      <path d="M42 105C42 91 51 80 61 79 73 77 82 87 82 101m9-3C91 83 98 71 109 70 119 69 126 79 126 92" fill="none" stroke="#735f45" stroke-width=".75"/>
+      <path d="M44 97l4 1m-2-6 4 2m1-8 3 3m2-7 2 4m6-7 .1 5m7-3-2 4m7 1-3 3m6 3-4 2m6 3-5 1m16-6 5 1m-3-7 4 2m0-8 4 3m2-8 2 5m2-7 1 5m6-3-2 4m7-1-3 4m7 0-4 3m6 3-5 2m6 3-5 1" fill="none" stroke="#77684f" stroke-width=".54" opacity=".81"/>
+      <path d="M32 90l11-3m-8 10 6-2m-8 7 5-1m-13-13 5 3m-5 2 5 2m-4 3 4 2m53-18 9-2m-7 12 5-1m-4 6 4-1m33-24 10 3m-2 5 5 1m-5 5 4 0M46 82l2 2m39 4 1 2m42-8 0 3" fill="none" stroke="#857557" stroke-width=".47" opacity=".83"/>
+      <path d="M77 98l7-9 6 6-.2 7-7 3-6-3Z" fill="#cdbb99" stroke="#6e5a43" stroke-width=".66"/>
+      <path d="M84 89l-.2 15m2-6 3 1m-10 1 4 1" fill="none" stroke="#867251" stroke-width=".55"/>
+      <path d="M54 88l-3 8m7-10-2 5m48-13-4 8m9-9-3 5m-83 6 1 7m2-4 1 7m22-24 1 2m32-5 5-1m5-1 4-.6m31 6 3 .8m-3 6 3 .9" fill="none" stroke="#6e5d42" stroke-width=".6" opacity=".65"/>
+    </g>
+    <g id="deck">
+      <path d="M16 78 37 67 56 60 94 55 114 55 130 60 130 64 113 59 94 59 57 64 38 71 16 83Z" fill="#d5c6a5" stroke="#655640" stroke-width=".74"/>
+      <path d="M16 80 37 69 56 62 94 57 114 57 130 62 139 66 136 73 119 69 102 69 66 74 48 81 31 91 25 85Z" fill="#f1e7ca" stroke="#655640" stroke-width=".79"/>
+      <path d="M36 83l4-2m4-3 6-3m7-2 6-3m5-2 8-1m8-2 10-1m6-1 8-.7m10 1 6 1m5 1 6 2m-62-1 2 2m32-7 1 2" fill="none" stroke="#8e7d5b" stroke-width=".47" opacity=".64"/>
+      <path d="M25 84 46 73 65 66 103 61 123 61 139 66 139 71 122 67 103 67 66 72 47 79 29 91 25 89Z" fill="#ddcda8" stroke="#655640" stroke-width=".86"/>
+      <path d="M25 84 46 73 65 66 103 61 123 61 139 66 136 67 122 63 103 63 65 68 47 75 29 87Z" fill="#f2e8cb" stroke="#655640" stroke-width=".52"/>
+      <path d="M35 85l4-2m9-5 4-2m6-2 5-2m9-1 7-1m10-2 8-1m12-1 6 0m12 2 6 1m-92 10 1 2m12-7 1 2m25-8 0 2m34-6 0 2m15 1 0 2" fill="none" stroke="#8c7755" stroke-width=".48" opacity=".77"/>
+    </g>
+  </g>
+</svg>

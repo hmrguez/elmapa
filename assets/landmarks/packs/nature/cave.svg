@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 124">
+  <g id="ground" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M13 96Q40 82 80 88Q130 85 153 103Q116 118 49 116Q26 114 13 96Z" fill="#d9bd89" opacity="0.26"/>
+    <path d="M17 108l19 3m78 1 22-5m-87 7 10 1" fill="none" stroke="#967a57" stroke-width="1.05" opacity="0.6"/>
+  </g>
+  <g id="cliff" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M18 100 24 77 36 66 40 51 58 43 70 29 94 26 105 32 120 33 130 49 140 56 143 77 151 102 128 110 96 105 71 110 43 105Z" fill="#f3e7cd" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M119 34 130 49 140 56 143 77 151 102 128 110 120 91 125 78 116 67 118 54 103 50Z" fill="#cbb28a" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M27 78 49 76 65 65 88 61 99 67 111 84 119 104 97 106 64 98 33 105 21 99Z" fill="#e9d7b3"/>
+    <path d="M35 102Q39 77 54 70L70 65 86 65 102 78 113 104Q94 98 79 105Q53 111 35 102Z" fill="#4e3a2b"/>
+    <path d="M45 103Q56 92 64 90L78 98 101 103Q74 111 45 103Z" fill="#ac8e66"/>
+    <path d="M44 51l22-3 17-13 14 1m-66 31 17-3 13-10 35-5m-77 34 21-4m54-22 12 8 13 1m7-14 4 12 9 5m-10 10 6 8 9 1m-15 3 7 15m-1-14 7 11m-88-1 10-4m6 0 10 4" fill="none" stroke="#967a57" stroke-width="1.15" opacity="0.86"/>
+  </g>
+  <g id="scree" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M28 108l6-7 12-2 9 7-12 7Z" fill="#cbb28a" stroke="#5c4733" stroke-width="1.3"/>
+    <path d="M104 110l8-8 12-2 7 8-8 5Z" fill="#e9d7b3" stroke="#5c4733" stroke-width="1.3"/>
+    <path d="M32 108l9 0 5 4m63-3 10 1 4 3" fill="none" stroke="#967a57" stroke-width="1.15" opacity="0.86"/>
+  </g>
+</svg>

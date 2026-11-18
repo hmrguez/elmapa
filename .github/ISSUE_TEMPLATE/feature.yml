@@ -1,0 +1,17 @@
+name: Feature proposal
+description: Describe a mapmaking or contributor workflow you would like to improve.
+body:
+  - type: textarea
+    id: workflow
+    attributes:
+      label: What are you trying to do?
+      description: Tell us about the map or task and where the current workflow gets in the way.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What would success look like?
+      description: Include an example or sketch if you have one.
+    validations:
+      required: true

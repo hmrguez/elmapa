@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 124">
+  <g id="ground" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M9 103Q32 88 77 90Q139 92 153 104Q128 121 72 117Q24 117 9 103Z" fill="#d9bd89" opacity="0.26"/>
+    <path d="M15 108l25 3m68 2 26-4" fill="none" stroke="#967a57" stroke-width="1.05" opacity="0.6"/>
+  </g>
+  <g id="rear-ridge" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M52 96Q81 80 91 61Q105 41 122 58Q132 72 133 84L149 103Q128 96 117 86Q91 105 52 96Z" fill="#e9d7b3" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M108 53Q120 48 127 63L134 87 149 103Q126 93 117 86 110 75 108 53Z" fill="#cbb28a"/>
+    <path d="M92 63q7-12 16-10 4 21 9 33m13-5 7 13" fill="none" stroke="#967a57" stroke-width="1.4" opacity="0.86"/>
+  </g>
+  <g id="crescent" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M11 102Q32 88 41 68Q52 42 70 42Q83 44 92 66Q103 94 131 108Q99 110 79 89Q57 110 11 102Z" fill="#f3e7cd" stroke="#5c4733" stroke-width="2"/>
+    <path d="M68 42Q86 44 92 66Q103 94 131 108Q99 110 79 89Q71 72 68 42Z" fill="#cbb28a" stroke="#5c4733" stroke-width="1.6"/>
+    <path d="M75 54q4 20 10 28m-6-26q6 19 13 30m-9-29 10 20m5 16q8 8 18 11m-75-8q15-7 27-10m-34 8 14-6" fill="none" stroke="#967a57" stroke-width="1.38" opacity="0.86"/>
+  </g>
+</svg>

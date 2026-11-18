@@ -1,0 +1,419 @@
+{
+  "name": "Elmapa Atlas Icons",
+  "version": "1.0.0",
+  "license": "MIT",
+  "grid": 24,
+  "strokeWidth": 2,
+  "minimumSize": 17,
+  "icons": [
+    {
+      "name": "land",
+      "label": "Land",
+      "category": "terrain",
+      "file": "land.svg",
+      "uses": [
+        "Land brush",
+        "Land layer swatch"
+      ]
+    },
+    {
+      "name": "water",
+      "label": "Water",
+      "category": "terrain",
+      "file": "water.svg",
+      "uses": [
+        "Water brush",
+        "Water layer swatch"
+      ]
+    },
+    {
+      "name": "forest",
+      "label": "Forest",
+      "category": "terrain",
+      "file": "forest.svg",
+      "uses": [
+        "Forest brush",
+        "Forest layer swatch"
+      ]
+    },
+    {
+      "name": "mountain",
+      "label": "Mountains",
+      "category": "terrain",
+      "file": "mountain.svg",
+      "uses": [
+        "Mountain brush",
+        "Mountain layer swatch"
+      ]
+    },
+    {
+      "name": "river",
+      "label": "River",
+      "category": "terrain",
+      "file": "river.svg",
+      "uses": [
+        "River brush",
+        "River layer swatch"
+      ]
+    },
+    {
+      "name": "trail",
+      "label": "Trail",
+      "category": "terrain",
+      "file": "trail.svg",
+      "uses": [
+        "Trail brush",
+        "Trail layer swatch"
+      ]
+    },
+    {
+      "name": "eraser",
+      "label": "Eraser",
+      "category": "terrain",
+      "file": "eraser.svg",
+      "uses": [
+        "Eraser brush"
+      ]
+    },
+    {
+      "name": "hand",
+      "label": "Pan",
+      "category": "navigation",
+      "file": "hand.svg",
+      "uses": [
+        "Hand tool"
+      ]
+    },
+    {
+      "name": "fit-artwork",
+      "label": "Fit artwork",
+      "category": "navigation",
+      "file": "fit-artwork.svg",
+      "uses": [
+        "Fit visible artwork"
+      ]
+    },
+    {
+      "name": "plus",
+      "label": "Increase",
+      "category": "adjustment",
+      "file": "plus.svg",
+      "uses": [
+        "Zoom in",
+        "Increase brush size, opacity or strength"
+      ]
+    },
+    {
+      "name": "minus",
+      "label": "Decrease",
+      "category": "adjustment",
+      "file": "minus.svg",
+      "uses": [
+        "Zoom out",
+        "Decrease brush size, opacity or strength"
+      ]
+    },
+    {
+      "name": "settings",
+      "label": "Settings",
+      "category": "adjustment",
+      "file": "settings.svg",
+      "uses": [
+        "Advanced brush settings",
+        "Selected layer settings",
+        "Application settings"
+      ]
+    },
+    {
+      "name": "layer",
+      "label": "Empty layer",
+      "category": "layers",
+      "file": "layer.svg",
+      "uses": [
+        "Empty layer swatch"
+      ]
+    },
+    {
+      "name": "layer-add",
+      "label": "Add layer",
+      "category": "layers",
+      "file": "layer-add.svg",
+      "uses": [
+        "Create layer"
+      ]
+    },
+    {
+      "name": "eye",
+      "label": "Visible",
+      "category": "layers",
+      "file": "eye.svg",
+      "uses": [
+        "Hide visible layer"
+      ]
+    },
+    {
+      "name": "eye-off",
+      "label": "Hidden",
+      "category": "layers",
+      "file": "eye-off.svg",
+      "uses": [
+        "Show hidden layer"
+      ]
+    },
+    {
+      "name": "arrow-up",
+      "label": "Move layer up",
+      "category": "layers",
+      "file": "arrow-up.svg",
+      "uses": [
+        "Raise selected layer"
+      ]
+    },
+    {
+      "name": "arrow-down",
+      "label": "Move layer down",
+      "category": "layers",
+      "file": "arrow-down.svg",
+      "uses": [
+        "Lower selected layer"
+      ]
+    },
+    {
+      "name": "delete",
+      "label": "Delete layer",
+      "category": "layers",
+      "file": "delete.svg",
+      "uses": [
+        "Delete selected layer"
+      ]
+    },
+    {
+      "name": "undo",
+      "label": "Undo",
+      "category": "history",
+      "file": "undo.svg",
+      "uses": [
+        "Undo edit"
+      ]
+    },
+    {
+      "name": "redo",
+      "label": "Redo",
+      "category": "history",
+      "file": "redo.svg",
+      "uses": [
+        "Redo edit"
+      ]
+    },
+    {
+      "name": "chevron-down",
+      "label": "Map actions",
+      "category": "documents",
+      "file": "chevron-down.svg",
+      "uses": [
+        "Expand or collapse map actions; rotates when open"
+      ]
+    },
+    {
+      "name": "save",
+      "label": "Save map",
+      "category": "documents",
+      "file": "save.svg",
+      "uses": [
+        "Save document"
+      ]
+    },
+    {
+      "name": "folder-open",
+      "label": "Open map",
+      "category": "documents",
+      "file": "folder-open.svg",
+      "uses": [
+        "Open document"
+      ]
+    },
+    {
+      "name": "export-svg",
+      "label": "Export SVG",
+      "category": "documents",
+      "file": "export-svg.svg",
+      "uses": [
+        "Export vector artwork"
+      ]
+    },
+    {
+      "name": "world-new",
+      "label": "New world",
+      "category": "documents",
+      "file": "world-new.svg",
+      "uses": [
+        "Create blank map",
+        "New atlas card on the shelf"
+      ]
+    },
+    {
+      "name": "world-example",
+      "label": "Example world",
+      "category": "documents",
+      "file": "world-example.svg",
+      "uses": [
+        "Load example map"
+      ]
+    },
+    {
+      "name": "sun",
+      "label": "Light appearance",
+      "category": "appearance",
+      "file": "sun.svg",
+      "uses": [
+        "Switch to light theme",
+        "Current light appearance in settings"
+      ]
+    },
+    {
+      "name": "moon",
+      "label": "Dark appearance",
+      "category": "appearance",
+      "file": "moon.svg",
+      "uses": [
+        "Switch to dark theme",
+        "Current dark appearance in settings"
+      ]
+    },
+    {
+      "name": "atlas",
+      "label": "Atlases",
+      "category": "navigation",
+      "file": "atlas.svg",
+      "uses": [
+        "Return to atlas library"
+      ]
+    },
+    {
+      "name": "chevron-right",
+      "label": "Open atlas",
+      "category": "navigation",
+      "file": "chevron-right.svg",
+      "uses": [
+        "Open an atlas from the shelf"
+      ]
+    },
+    {
+      "name": "close",
+      "label": "Close settings",
+      "category": "adjustment",
+      "file": "close.svg",
+      "uses": [
+        "Dismiss settings"
+      ]
+    },
+    {
+      "name": "check",
+      "label": "Enabled",
+      "category": "adjustment",
+      "file": "check.svg",
+      "uses": [
+        "Reduced motion enabled"
+      ]
+    },
+    {
+      "name": "select",
+      "label": "Select",
+      "category": "editor",
+      "file": "select.svg",
+      "uses": [
+        "Select text tool"
+      ]
+    },
+    {
+      "name": "text-edit",
+      "label": "Edit name",
+      "category": "lettering",
+      "file": "text-edit.svg",
+      "uses": [
+        "A pencil changes the name"
+      ]
+    },
+    {
+      "name": "text-duplicate",
+      "label": "Duplicate name",
+      "category": "lettering",
+      "file": "text-duplicate.svg",
+      "uses": [
+        "Two overlapping labels duplicate the selection"
+      ]
+    },
+    {
+      "name": "more",
+      "label": "More actions",
+      "category": "lettering",
+      "file": "more.svg",
+      "uses": [
+        "An ellipsis opens secondary selection actions"
+      ]
+    },
+    {
+      "name": "typography",
+      "label": "Advanced typography",
+      "category": "lettering",
+      "file": "typography.svg",
+      "uses": [
+        "A letter and fine adjustment slider open typography settings"
+      ]
+    },
+    {
+      "name": "letter-spacing",
+      "label": "Letter spacing",
+      "category": "lettering",
+      "file": "letter-spacing.svg",
+      "uses": [
+        "Opposing arrows and a letter adjust tracking"
+      ]
+    },
+    {
+      "name": "text-opacity",
+      "label": "Ink opacity",
+      "category": "lettering",
+      "file": "text-opacity.svg",
+      "uses": [
+        "A half filled circle adjusts ink transparency"
+      ]
+    },
+    {
+      "name": "text-curvature",
+      "label": "Curvature",
+      "category": "lettering",
+      "file": "text-curvature.svg",
+      "uses": [
+        "A letter above an arc adjusts the label baseline"
+      ]
+    },
+    {
+      "name": "text-reset",
+      "label": "Reset text style",
+      "category": "lettering",
+      "file": "text-reset.svg",
+      "uses": [
+        "A circular reset arrow surrounds a letter"
+      ]
+    },
+    {
+      "name": "text-add",
+      "label": "Add another name",
+      "category": "lettering",
+      "file": "text-add.svg",
+      "uses": [
+        "A new text label with a plus"
+      ]
+    },
+    {
+      "name": "text-rotate",
+      "label": "Rotate name",
+      "category": "lettering",
+      "file": "text-rotate.svg",
+      "uses": [
+        "A circular arrow turns a small selection frame"
+      ]
+    }
+  ]
+}

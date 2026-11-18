@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 124">
+  <g id="water" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M21 101Q45 86 77 89Q127 87 147 107Q104 120 61 116Q28 117 21 101Z" fill="#d6c39d" opacity="0.39"/>
+    <path d="M23 108l29 5m67 0 18-5" fill="none" stroke="#967a57" stroke-width="1.05" opacity="0.6"/>
+  </g>
+  <g id="cliff" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M22 99 36 78 37 55 47 38 60 29 69 17 88 23 108 19 126 25 132 41 124 62 135 83 139 97 115 103 90 98 69 105 44 101Z" fill="#f3e7cd" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M77 34 95 37 124 28 132 41 124 62 135 83 139 97 117 102 111 72 104 59 90 59Z" fill="#cbb28a" stroke="#5c4733" stroke-width="1.4"/>
+    <path d="M44 90 52 65 51 46 67 35 63 64 67 97 45 100Z" fill="#e9d7b3"/>
+    <path d="M43 51l9-8m-11 25 8-14m-14 35 11-13m8 17 7-12m50-32 13-7m-12 16 12-7m-10 14 9 12m-5 0 11 16m-24-2 7 10" fill="none" stroke="#967a57" stroke-width="1.15" opacity="0.86"/>
+  </g>
+  <g id="cascade" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M74 21Q84 24 93 22L97 26 91 36Q87 54 91 68L97 96 88 103 73 102 66 96Q77 74 77 56L75 36 68 30Z" fill="#fcf2dd" stroke="#5c4733" stroke-width="1.65"/>
+    <path d="M83 29q-3 8 0 18 5 21-3 44m7-53q-3 13 0 29l4 22m-14-8-5 14" fill="none" stroke="#ac8e66" stroke-width="1.15" opacity="0.86"/>
+  </g>
+  <g id="spray" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M50 105q7-8 16-6 1-9 11-5 7-8 12-1 11-3 13 6 10-3 17 6Q89 116 50 105Z" fill="#f3e7cd" stroke="#5c4733" stroke-width="1.35"/>
+    <path d="M56 108q19 5 39 3m-31-10 7 1m19 1 13 2m13 4 12-3" fill="none" stroke="#ac8e66" stroke-width="1.3" opacity="0.86"/>
+  </g>
+</svg>

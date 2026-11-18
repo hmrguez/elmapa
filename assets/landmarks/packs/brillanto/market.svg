@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="128" viewBox="0 0 160 128">
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g id="foundation">
+      <path fill="#aa9b78" opacity=".17" d="M14 103l23-9 49-4 41 1 19 9-15 10-31 5-60 2-18-6Z"/>
+      <path fill="#c9b99a" stroke="#655640" stroke-width=".84" d="M25 102l17-11 82-3 14 10v4l-17 11-81 2-15-9Z"/>
+      <path fill="#e8ddbf" stroke="#7d694e" stroke-width=".65" d="M25 102l17-11 82-3 14 10-18 11-80 2Z"/>
+      <path fill="#d9cbac" d="M37 102l13-8 70-3 10 7-14 8-74 2Z"/>
+      <path fill="none" stroke="#847357" stroke-width=".52" d="M17 110l9 .7m5 7 8 .4m14-1h11m52-1 9-2m8-5 8-2m-105 1 7 3 18-.5m35-1 18-.5m6-3 7-4"/>
+    </g>
+    <g id="frame">
+      <path fill="#9e8562" stroke="#655640" stroke-width=".82" d="M30 59l6-1 3 3v42l-4 3-5-2Zm74-3 8-1 3 3v41l-4 4-7-1Zm24-6 6-1v45l-4 3-4-2v-40Z"/>
+      <path fill="#c9b99a" d="M31 60l4 2v42l-4-1Zm74-3 5 2v42l-5-.4Zm23-4 3 2v40l-3-.4Z"/>
+      <path fill="#9e8562" stroke="#655640" stroke-width=".62" d="M33 69l72-4 24-8v4l-24 9-72 4Z"/>
+      <path fill="none" stroke="#7e6b4e" stroke-width=".57" d="M38 78l8-6m68 2 10-8m-91 14v10m75-11v9m23-18v9"/>
+    </g>
+    <g id="awning">
+      <path fill="#e8ddbf" stroke="#655640" stroke-width=".94" d="M18 62l21-29 77-4 24 24-28 5Z"/>
+      <path fill="#cbb998" d="M39 33l15-.8-18 28.6L18 62Zm31-1.6 15-.8-11 28.4-19 1Zm31-1.6 15-.8-4 29-19 1Z"/>
+      <path fill="none" stroke="#988363" stroke-width=".58" d="M54 32l-18 29m34-29-15 28m30-29-11 29m27-30-8 28"/>
+      <path fill="#b6a586" stroke="#7e6b4e" stroke-width=".66" d="M116 29l24 24-28 5Z"/>
+      <path fill="#d1c5a4" d="M116 32l11 23-14 2Z"/>
+      <path fill="#baa884" stroke="#655640" stroke-width=".76" d="M112 58l28-5v5l-6 5-5 1-5-2-6 6-6 1Z"/>
+      <path fill="#eee2c3" stroke="#655640" stroke-width=".86" d="M18 62l94-4v7l-6 4-7 .3-5-3-6 3.5-7 .3-6-3-6 3.5-7 .3-6-3-6 3.5-7 .3-6-3-6 3.5-7 .3-6-2Z"/>
+      <path fill="#cbb998" d="M18.5 62.5l18-1v7l-5.5 3.4-7 .3-5.5-2Zm36.5-1.7 19-1v7.2l-5.1 3.2-6.8 .3-6.2-3Zm38-1.7 18.5-1v6.6l-5.7 3.8-6.5 .3-5.3-3Z"/>
+      <path fill="none" stroke="#8b7755" stroke-width=".55" d="M18 64l94-4 28-5m-103 6v7m19-8v7m19-8v7m19-8v7"/>
+    </g>
+    <g id="produce-left">
+      <path fill="#ad9265" stroke="#655640" stroke-width=".72" d="M45 85l3-6 4-2 4 1 4-3 5 1 5 7-2 5H47Z"/>
+      <path fill="#e8dcba" stroke="#7e6b4e" stroke-width=".57" d="M45 84l25-1-2 6-20 1Z"/>
+      <path fill="none" stroke="#8b7755" stroke-width=".53" d="M51 85l1 4m4-5 1 4m4-4 1 4m4-4v3"/>
+    </g>
+    <g id="produce-right">
+      <path fill="#d7c6a4" stroke="#655640" stroke-width=".72" d="M78 86l1-6 3-3-1-2 5-.3-.5 2.3 4 4 2-5 3-2 4 1 3 3 1 6-5 3Z"/>
+      <path fill="#b49773" stroke="#7e6b4e" stroke-width=".57" d="M78 84l25-2-1 6-22 1Z"/>
+      <path fill="none" stroke="#7e6b4e" stroke-width=".53" d="M84 84v4m4-5v5m5-5v4m5-5v4"/>
+    </g>
+    <g id="counter">
+      <path fill="#ad9873" stroke="#655640" stroke-width=".82" d="M41 88l8-5 59-3 6 4v5l-6 1v9l-9 4-56 2V93l-2-1Z"/>
+      <path fill="#cbb998" stroke="#7e6b4e" stroke-width=".66" d="M41 88l8-5 59-3 6 4-12 5-59 3Z"/>
+      <path fill="#e5d7b6" stroke="#7e6b4e" stroke-width=".59" d="M47 94l51-2v8l-51 2Z"/>
+      <path fill="#8e7452" d="M102 89l6-2v11l-6 3Z"/>
+      <path fill="none" stroke="#8b7755" stroke-width=".52" d="M48 98l49-2m-37-3v8m25-9v8"/>
+    </g>
+  </g>
+</svg>

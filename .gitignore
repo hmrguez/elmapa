@@ -1,0 +1,7 @@
+/target
+.DS_Store
+*.elmapa.tmp
+.elmapa-*.tmp
+/.worktrees/
+/assets/icon-pack/
+__pycache__/

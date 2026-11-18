@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="128" viewBox="0 0 160 128">
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <g id="foundation">
+      <path fill="#aa9b78" opacity=".16" d="M15 102l19-8 36-3 47 1 25 7-10 10-30 5-48 1-30-5Z"/>
+      <path fill="#c9b99a" stroke="#655640" stroke-width=".84" d="M23 99l17-7 79-2 18 8v5l-17 7H42l-19-6Z"/>
+      <path fill="#e8ddbf" stroke="#7d694e" stroke-width=".66" d="M23 99l17-7 79-2 18 8-18 7H42Z"/>
+      <path fill="#d9cbac" d="M35 98l76-6 18 6-14 5H45Z"/>
+      <path fill="none" stroke="#847357" stroke-width=".5" d="M17 109l8 .6m15 3h11m51 .3 12-.3m12-1 11-2m-94-6h17m52-1 11-4"/>
+    </g>
+    <g id="rotunda">
+      <path fill="#eaddbd" stroke="#655640" stroke-width=".9" d="M36 65l16 4h52l17-6v28l-16 10H52l-16-8Z"/>
+      <path fill="#d1c5a4" stroke="#7e6b4e" stroke-width=".62" d="M36 65l16 4v32l-16-8Z"/>
+      <path fill="#b6a586" stroke="#7e6b4e" stroke-width=".62" d="M104 69l17-6v28l-16 10Z"/>
+      <path fill="#9e8562" stroke="#655640" stroke-width=".8" d="M68 100V85l4-6 8-3 8 3 4 6v15Z"/>
+      <path fill="#655640" d="M73 100V86l3-4 4-2 5 2 3 4v14Z"/>
+      <path fill="#8d7758" d="M80 80l5 2 3 4v14h-7Z"/>
+      <path fill="none" stroke="#897757" stroke-width=".56" d="M52 95h13m29 0h10l17-9m-85 1 16 8m2-18h9m32 0h7m4 12 14-8m-83 0 14 7"/>
+      <path fill="#8d7758" stroke="#655640" stroke-width=".46" d="M57 83h5v6h-5Zm55-3 4-2v6l-4 2Z"/>
+    </g>
+    <g id="dome">
+      <path fill="#c9ba98" stroke="#655640" stroke-width=".98" d="M29 65l9-19 15-14 22-10h15l19 10 15 15 7 17-2 5-20 7H51l-22-7Z"/>
+      <path fill="#e8ddbf" d="M31 64l8-17 15-14 21-10-11 9-11 16-7 17Z"/>
+      <path fill="#d9cbac" d="M75 23l-11 9-11 16-7 17h27l5-19 4-15-2-8Z"/>
+      <path fill="#aa9b78" d="M90 23l19 10 14 15 7 16-20 4-9-22Z"/>
+      <path fill="#b6a586" d="M80 23l2 8-4 15-5 19 37 3-9-22-11-23Z"/>
+      <path fill="none" stroke="#7e6b4e" stroke-width=".63" d="M31 64l15 1 28 1 36 2 20-4M46 65l7-17 11-16 11-9m35 45-9-22-11-23M47 65l4 10m59-7-1 7"/>
+      <path fill="#655640" stroke="#655640" stroke-width=".65" d="M79 24h5l5 9 6 15 5 19-9-.5-4-19-5-14Z"/>
+      <path fill="#d2a468" d="M82 25h2l4 8 6 15 4 18h-2l-4-17-6-15Z"/>
+      <path fill="#e4d7b7" stroke="#7e6b4e" stroke-width=".66" d="M30 65l21 6h58l21-7-1 5-20 7H51l-22-7Z"/>
+      <path fill="none" stroke="#847357" stroke-width=".52" d="M40 68l11 3m13 2h12m18 0h11m16-4 5-2"/>
+    </g>
+    <g id="star">
+      <path fill="#eee2c3" stroke="#847152" stroke-width=".76" d="M129 15l2.5 7.5 7.5 2.5-7.5 2.5-2.5 7.5-2.5-7.5-7.5-2.5 7.5-2.5Z"/>
+      <path fill="#ad9265" d="M129 15v10l10 0-7.5 2.5-2.5 7.5V25h-10l7.5-2.5Z"/>
+      <path fill="none" stroke="#a38957" stroke-width=".55" d="M129 11v1m0 26v1m-14-14h1m26 0h1"/>
+    </g>
+  </g>
+</svg>

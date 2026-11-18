@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Source checks
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - run: rustup toolchain install 1.95.0 --profile minimal --component rustfmt
+      - run: cargo +1.95.0 fmt --all -- --check
+      - run: python3 scripts/export-icons.py --check
+      - run: python3 -B scripts/test_performance_trace.py
+
+  build:
+    name: Build and test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libwayland-dev libxkbcommon-dev libx11-dev libxi-dev libxrandr-dev libxcursor-dev fonts-dejavu-core mesa-vulkan-drivers xvfb xauth
+      - run: rustup toolchain install 1.95.0 --profile minimal --component clippy
+      - run: rustup default 1.95.0
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          save-if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
+      - run: cargo test --locked
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - uses: taiki-e/install-action@75a7c0f87bd666af3cdb75c5b9e9d03ab6044e6f # v2
+        with:
+          tool: cargo-about@0.9.3
+      - name: Test packaged application in X11
+        if: runner.os == 'Linux'
+        run: xvfb-run -a -s "-screen 0 1600x1000x24" python scripts/release/package.py --native
+        env:
+          WGPU_FORCE_FALLBACK_ADAPTER: '1'
+      - name: Test packaged application with WARP
+        if: runner.os == 'Windows'
+        run: python scripts/release/package.py --native
+        env:
+          WGPU_BACKEND: dx12
+          WGPU_FORCE_FALLBACK_ADAPTER: '1'
+      - name: Test packaged macOS application
+        if: runner.os == 'macOS'
+        run: |
+          if system_profiler SPDisplaysDataType | grep -q 'Metal Support'; then
+            python scripts/release/package.py --native
+          else
+            echo "::notice::This runner exposes no Metal display. Running the extracted app's headless export."
+            python scripts/release/package.py
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: package-${{ matrix.os }}
+          path: target/packages/Elmapa-*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  publish:
+    name: Publish channel release
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
+    needs: [checks, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: package-*
+          merge-multiple: true
+          path: packages
+      - run: bash scripts/release/publish.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  latest:
+    name: Update latest stable download
+    if: github.ref == 'refs/heads/main'
+    needs: publish
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    # Each run considers every published stable build. Coalescing pending label
+    # updates is safe, while package publication itself runs for every push.
+    concurrency:
+      group: latest-main-release
+      cancel-in-progress: false
+    steps:
+      - run: |
+          stable=$(gh api --paginate "repos/$GH_REPO/releases" --jq '.[] | select(.draft == false and .prerelease == false) | .tag_name')
+          tag=$(grep -E '^main-[0-9]+-[0-9a-f]{12}$' <<< "$stable" | sort -t- -k2,2nr | sed -n '1p')
+          test -n "$tag"
+          gh release edit "$tag" --latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}

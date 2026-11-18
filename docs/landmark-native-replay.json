@@ -1,0 +1,345 @@
+[
+  {
+    "action": "ready"
+  },
+  {
+    "action": "reduced_motion",
+    "enabled": true
+  },
+  {
+    "action": "enter",
+    "id": 1
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "reduced_motion",
+    "enabled": false
+  },
+  {
+    "action": "layer"
+  },
+  {
+    "action": "landmarks"
+  },
+  {
+    "action": "landmark",
+    "kind": "town"
+  },
+  {
+    "action": "click",
+    "x": 0.43,
+    "y": 0.52
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 100
+  },
+  {
+    "action": "screenshot",
+    "path": "/tmp/elmapa-landmark-town-live.png"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 900
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 450
+  },
+  {
+    "action": "screenshot",
+    "path": "/tmp/elmapa-landmark-town.png"
+  },
+  {
+    "action": "landmarks"
+  },
+  {
+    "action": "landmark",
+    "kind": "castle"
+  },
+  {
+    "action": "click",
+    "x": 0.55,
+    "y": 0.38
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 900
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 450
+  },
+  {
+    "action": "screenshot",
+    "path": "/tmp/elmapa-landmark-castle.png"
+  },
+  {
+    "action": "landmarks"
+  },
+  {
+    "action": "landmark",
+    "kind": "port"
+  },
+  {
+    "action": "click",
+    "x": 0.6,
+    "y": 0.67
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 900
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 450
+  },
+  {
+    "action": "screenshot",
+    "path": "/tmp/elmapa-landmark-port.png"
+  },
+  {
+    "action": "landmarks"
+  },
+  {
+    "action": "landmark",
+    "kind": "pin"
+  },
+  {
+    "action": "click",
+    "x": 0.34,
+    "y": 0.62
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 900
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 450
+  },
+  {
+    "action": "screenshot",
+    "path": "/tmp/elmapa-landmark-pin.png"
+  },
+  {
+    "action": "select"
+  },
+  {
+    "action": "down",
+    "x": 0.43,
+    "y": 0.5
+  },
+  {
+    "action": "move",
+    "x": 0.46,
+    "y": 0.53
+  },
+  {
+    "action": "up",
+    "x": 0.46,
+    "y": 0.53
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 450
+  },
+  {
+    "action": "screenshot",
+    "path": "/tmp/elmapa-landmark-moved.png"
+  },
+  {
+    "action": "undo"
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 450
+  },
+  {
+    "action": "screenshot",
+    "path": "/tmp/elmapa-landmark-move-undone.png"
+  },
+  {
+    "action": "save"
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "export"
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "undo"
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 450
+  },
+  {
+    "action": "screenshot",
+    "path": "/tmp/elmapa-landmark-undo.png"
+  },
+  {
+    "action": "redo"
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 450
+  },
+  {
+    "action": "screenshot",
+    "path": "/tmp/elmapa-landmark-redo.png"
+  },
+  {
+    "action": "visibility"
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 450
+  },
+  {
+    "action": "screenshot",
+    "path": "/tmp/elmapa-landmark-hidden.png"
+  },
+  {
+    "action": "visibility"
+  },
+  {
+    "action": "opacity",
+    "delta": -0.4
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 450
+  },
+  {
+    "action": "screenshot",
+    "path": "/tmp/elmapa-landmark-opacity.png"
+  },
+  {
+    "action": "opacity",
+    "delta": 0.4
+  },
+  {
+    "action": "theme"
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 450
+  },
+  {
+    "action": "screenshot",
+    "path": "/tmp/elmapa-landmark-dark.png"
+  },
+  {
+    "action": "theme"
+  },
+  {
+    "action": "reduced_motion",
+    "enabled": true
+  },
+  {
+    "action": "landmarks"
+  },
+  {
+    "action": "landmark",
+    "kind": "castle"
+  },
+  {
+    "action": "click",
+    "x": 0.44,
+    "y": 0.72
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 450
+  },
+  {
+    "action": "screenshot",
+    "path": "/tmp/elmapa-landmark-reduced.png"
+  },
+  {
+    "action": "open"
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 450
+  },
+  {
+    "action": "screenshot",
+    "path": "/tmp/elmapa-landmark-reopened.png"
+  },
+  {
+    "action": "home"
+  },
+  {
+    "action": "ready"
+  },
+  {
+    "action": "idle",
+    "milliseconds": 450
+  },
+  {
+    "action": "screenshot",
+    "path": "/tmp/elmapa-landmark-shelf.png"
+  }
+]

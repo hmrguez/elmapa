@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 124">
+  <g id="ground" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M24 99Q46 90 74 88Q115 87 141 101Q125 116 75 116Q37 115 24 99Z" fill="#d9bd89" opacity="0.26"/>
+    <path d="M27 104l18 6m73 2 14-5" fill="none" stroke="#967a57" stroke-width="1.05" opacity="0.6"/>
+  </g>
+  <g id="vent" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M35 101 54 94 63 85 73 85 80 80 92 84 101 94 127 101Q109 111 78 110 53 110 35 101Z" fill="#e9d7b3" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M43 103q30 6 58 0l26-2q-31 17-84 2Z" fill="#ac8e66"/>
+    <path d="M53 99l14-6m1 9 8-9m14-3 9 6m-5 3 12 2" fill="none" stroke="#967a57" stroke-width="1.15" opacity="0.86"/>
+  </g>
+  <g id="jet" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M69 90Q77 73 73 57L70 41Q63 38 63 31 57 26 61 21 67 13 75 20 78 9 87 13 93 15 93 24 103 22 106 30 109 39 98 43 94 45 91 55L89 75 94 91Q80 96 69 90Z" fill="#fcf2dd" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M82 84Q85 71 80 56Q75 45 77 36m10 52q-2-17 1-31l6-17m-19-9q-8 0-9-5m14-2q3-5 7-3" fill="none" stroke="#ac8e66" stroke-width="1.4" opacity="0.86"/>
+  </g>
+  <g id="droplets" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M54 44l-4-6m5 15-2-3m61-5 5-7m-10 18 5-6m-13-33 4-5" fill="none" stroke="#765b40" stroke-width="2.35" opacity="0.86"/>
+  </g>
+</svg>

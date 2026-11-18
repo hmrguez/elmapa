@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="128" viewBox="0 0 160 128">
+  <title>Elmapa — engraved pin</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <g id="ground">
+      <path d="M57 105Q69 100 83 102 97 100 107 105 82 112 57 105Z" fill="#a7966d" opacity=".17"/>
+      <path d="M59 106l9-1m3 2 6-.7m7-.2 10-.8m3 1 7-.6m-27 4 7-.5" fill="none" stroke="#7c6a4b" stroke-width=".54" opacity=".69"/>
+    </g>
+    <g id="pin">
+      <path d="M80 104Q73 89 65 78 54 65 56 55 57 41 72 37 84 33 94 41 104 49 103 62 102 72 92 83 85 92 80 104Z" fill="#bba883" stroke="#655640" stroke-width=".85"/>
+      <path d="M80 104Q73 89 65 78 55 65 56 55 57 42 70 38 83 34 91 42 99 50 98 61 97 70 88 81 83 91 80 104Z" fill="#eadcbc" stroke="#655640" stroke-width=".8"/>
+      <path d="M81 99Q82 86 90 76 95 68 95 61 97 52 91 45M60 58q.2-12 11-16" fill="none" stroke="#8d7958" stroke-width=".58"/>
+      <path d="M61 64q1 5 5 10m-3-10q1 4 4 8m-1-7q1 2 3 5m17 15-1 5m4-10-.5 4m3-7-.5 4m4-8-.8 4m3-11-.5 5m3-8-.5 4m.8-10-.5 4" fill="none" stroke="#887451" stroke-width=".5" opacity=".78"/>
+      <path d="M64 58Q64 47 76 46 87 46 90 56 91 64 84 70 77 74 70 69 64 64 64 58Z" fill="#a99069" stroke="#655640" stroke-width=".78"/>
+      <path d="M67 57Q68 49 77 49 85 49 87 57 87 64 80 68 73 70 68 64 66 61 67 57Z" fill="#f1e5c9" stroke="#735f43" stroke-width=".56"/>
+      <path d="M70 56q2-4 6-5m-6 11q3 4 8 4m-4 5 2-.6m6 0 4-3" fill="none" stroke="#9c865e" stroke-width=".54" opacity=".75"/>
+    </g>
+  </g>
+</svg>

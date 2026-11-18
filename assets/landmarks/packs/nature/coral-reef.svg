@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 124">
+  <g id="water" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M12 100Q27 79 77 83Q134 77 151 99Q144 116 78 117Q28 117 12 100Z" fill="#d6c39d" opacity="0.39"/>
+    <path d="M14 104l17 2m94-4 22-4m-26 14 13-2" fill="none" stroke="#967a57" stroke-width="1.05" opacity="0.6"/>
+  </g>
+  <g id="reef-crest" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M26 102 36 89 61 91 77 83 100 84 129 94 140 101 117 109 103 107 86 113 56 110Z" fill="#e9d7b3" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M26 102 60 103 83 107 104 101 116 104 140 101 117 109 103 107 86 113 56 110Z" fill="#cbb28a"/>
+    <path d="M36 98l11-3m10 8 5-3m20 4 11-2m13-7 8 1m4 4 11-2" fill="none" stroke="#967a57" stroke-width="1.15" opacity="0.86"/>
+  </g>
+  <g id="elkhorn" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M87 96Q90 77 89 61L89 34M89 64Q77 63 69 47L63 34M76 58l-17-3-10-10M90 77Q109 67 114 53L123 39M109 63l19-2 9-9M89 48l13-9 4-14" fill="none" stroke="#5c4733" stroke-width="10"/>
+    <path d="M87 96Q90 77 89 61L89 34M89 64Q77 63 69 47L63 34M76 58l-17-3-10-10M90 77Q109 67 114 53L123 39M109 63l19-2 9-9M89 48l13-9 4-14" fill="none" stroke="#ac8e66" stroke-width="8"/>
+    <path d="M87 87 90 69m-2-9 0-22m-12 16-11-18m39 32 12-15m-20-10 8-8" fill="none" stroke="#f3e7cd" stroke-width="1.2" opacity="0.95"/>
+  </g>
+  <g id="front-coral" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M54 102l-1-24-9-14m9 21-15-4-5-10m22 26 13-18 6-10" fill="none" stroke="#5c4733" stroke-width="7"/>
+    <path d="M54 102l-1-24-9-14m9 21-15-4-5-10m22 26 13-18 6-10" fill="none" stroke="#ac8e66" stroke-width="5"/>
+    <path d="M54 97l-2-17-7-12m16 21 10-16" fill="none" stroke="#f3e7cd" stroke-width="1.2" opacity="0.95"/>
+    <path d="M94 111q13 3 26-1m-92 0 14 3" fill="none" stroke="#fcf2dd" stroke-width="1.3" opacity="0.86"/>
+  </g>
+</svg>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 124">
+  <g id="ground" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M24 101Q42 87 83 87Q125 87 140 104Q121 118 76 117Q40 115 24 101Z" fill="#d9bd89" opacity="0.26"/>
+    <path d="M31 109l17 3m58 2 22-6" fill="none" stroke="#967a57" stroke-width="1.05" opacity="0.6"/>
+  </g>
+  <g id="young-cactus" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(109 101) scale(0.68)">
+    <path d="M-7 0v-31h-8q-14-1-14-17v-14q0-8 6-8 7 0 7 8v15q0 5 5 5h4v-36q0-9 8-9 7 0 7 9v53h9q5 0 5-6v-21q0-7 6-7 7 0 7 7v23q0 16-15 17H8V0Q1 5-7 0Z" fill="#9d8259" stroke="#5c4733" stroke-width="2"/>
+    <path d="M-4-76q1-8 5-8 4 0 4 8v74q-4 3-9 0ZM-25-62q0-5 3-5 2 0 3 5v16q0 7 7 8h4v3h-6q-11-1-11-12Zm51 11q1-5 4-5v27q0 11-11 13H9v-4h8q9 0 9-10Z" fill="#e9d7b3"/>
+    <path d="M0-77V-5m-20-55v11m6 11h8M28-50v20q0 10-8 10" fill="none" stroke="#765b40" stroke-width="1.1" opacity="0.86"/>
+    </g>
+  </g>
+  <g id="mature-cactus" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(64 105) scale(1.03)">
+    <path d="M-7 0v-31h-8q-14-1-14-17v-14q0-8 6-8 7 0 7 8v15q0 5 5 5h4v-36q0-9 8-9 7 0 7 9v53h9q5 0 5-6v-21q0-7 6-7 7 0 7 7v23q0 16-15 17H8V0Q1 5-7 0Z" fill="#9d8259" stroke="#5c4733" stroke-width="2"/>
+    <path d="M-4-76q1-8 5-8 4 0 4 8v74q-4 3-9 0ZM-25-62q0-5 3-5 2 0 3 5v16q0 7 7 8h4v3h-6q-11-1-11-12Zm51 11q1-5 4-5v27q0 11-11 13H9v-4h8q9 0 9-10Z" fill="#e9d7b3"/>
+    <path d="M0-77V-5m-20-55v11m6 11h8M28-50v20q0 10-8 10" fill="none" stroke="#765b40" stroke-width="1.1" opacity="0.86"/>
+    </g>
+  </g>
+  <g id="desert-grass" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M29 106q-2-7-7-9m8 8q1-6 6-8m52 13q-2-7-7-8m9 9q3-7 8-8m24 3 7-6" fill="none" stroke="#765b40" stroke-width="1.7" opacity="0.86"/>
+  </g>
+</svg>

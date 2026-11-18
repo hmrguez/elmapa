@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 124">
+  <g id="ground" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M20 99Q52 84 82 86Q127 91 143 103Q132 116 78 117Q36 117 20 99Z" fill="#d9bd89" opacity="0.26"/>
+    <path d="M23 108l18 3m61 4 29-7" fill="none" stroke="#967a57" stroke-width="1.05" opacity="0.6"/>
+  </g>
+  <g id="east-spire" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(106 97) scale(0.8)">
+    <path d="M-17 0l5-15 6-9-4-9 7-11-2-12 7-5 11 6-4 11 4 9-2 10 6 9 1 16-18 5Z" fill="#e9d7b3" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M2-59l11 4-4 11 4 9-2 10 6 9 1 16-12 4 1-14-4-10 3-13-5-9Z" fill="#ac8e66"/>
+    <path d="M-9-15l19-3m-16-8 17-3m-19-6 18-2m-13-10 8 0" fill="none" stroke="#765b40" stroke-width="1.35" opacity="0.86"/>
+    </g>
+  </g>
+  <g id="east-cap" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(106 97) scale(0.8)">
+    <path d="M-12-56l3-8 12-4 13 2 6 8-8 5-16 1Z" fill="#cbb28a" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M-11-57l2-7 12-4 13 2 6 8-17-3Z" fill="#f3e7cd"/>
+    </g>
+  </g>
+  <g id="central-spire" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(78 101) scale(1.27)">
+    <path d="M-17 0l5-15 6-9-4-9 7-11-2-12 7-5 11 6-4 11 4 9-2 10 6 9 1 16-18 5Z" fill="#e9d7b3" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M2-59l11 4-4 11 4 9-2 10 6 9 1 16-12 4 1-14-4-10 3-13-5-9Z" fill="#ac8e66"/>
+    <path d="M-9-15l19-3m-16-8 17-3m-19-6 18-2m-13-10 8 0" fill="none" stroke="#765b40" stroke-width="1.35" opacity="0.86"/>
+    </g>
+  </g>
+  <g id="central-cap" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(78 101) scale(1.27)">
+    <path d="M-12-56l3-8 12-4 13 2 6 8-8 5-16 1Z" fill="#cbb28a" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M-11-57l2-7 12-4 13 2 6 8-17-3Z" fill="#f3e7cd"/>
+    </g>
+  </g>
+  <g id="west-spire" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(48 106) scale(0.76)">
+    <path d="M-17 0l5-15 6-9-4-9 7-11-2-12 7-5 11 6-4 11 4 9-2 10 6 9 1 16-18 5Z" fill="#e9d7b3" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M2-59l11 4-4 11 4 9-2 10 6 9 1 16-12 4 1-14-4-10 3-13-5-9Z" fill="#ac8e66"/>
+    <path d="M-9-15l19-3m-16-8 17-3m-19-6 18-2m-13-10 8 0" fill="none" stroke="#765b40" stroke-width="1.35" opacity="0.86"/>
+    </g>
+  </g>
+  <g id="west-cap" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(48 106) scale(0.76)">
+    <path d="M-12-56l3-8 12-4 13 2 6 8-8 5-16 1Z" fill="#cbb28a" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M-11-57l2-7 12-4 13 2 6 8-17-3Z" fill="#f3e7cd"/>
+    </g>
+  </g>
+</svg>

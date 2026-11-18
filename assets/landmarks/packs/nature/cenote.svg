@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 124">
+  <g id="ground" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M10 93Q21 69 77 66Q137 66 151 93Q135 117 78 119Q26 117 10 93Z" fill="#d9bd89" opacity="0.26"/>
+    <path d="M20 104l23 6m84-2 17-7" fill="none" stroke="#967a57" stroke-width="1.05" opacity="0.6"/>
+  </g>
+  <g id="limestone-rim" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M12 81 28 59 52 51 73 49 88 43 114 50 135 61 149 81 140 99 117 112 84 119 55 114 24 103Z" fill="#e9d7b3" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M12 81l8-10 22 5 24 8 29 0 19-9 21-14 14 20-9 18-23 13-33 7-29-5-31-11Z" fill="#cbb28a" stroke="#5c4733" stroke-width="1.5"/>
+    <path d="M30 78 42 63 66 57 86 55 109 59 130 71 135 86 115 103 87 109 60 104 41 95Z" fill="#4e3a2b" stroke="#5c4733" stroke-width="1.85"/>
+    <path d="M30 78l12-15 24-6 20-2 23 4 21 12-10-2-14-4-22-3-17 4-18 9-9 14Z" fill="#ac8e66"/>
+    <path d="M25 98l6-9m10 10-1 6m12-2 3 8m59-2 4-8m13-7 8-5m-7-28-9 3m-91-2 8-4" fill="none" stroke="#967a57" stroke-width="1.15" opacity="0.86"/>
+  </g>
+  <g id="spring-water" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M44 89q12-12 35-13 33-4 50 11l-14 12-27 8-27-5Z" fill="#d6c39d" stroke="#5c4733" stroke-width="1.55"/>
+    <path d="M56 91q10-6 34-6m-23 11 24 2m9-6 18-5" fill="none" stroke="#fcf2dd" stroke-width="1.8" opacity="0.86"/>
+  </g>
+  <g id="roots" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M102 58q4 8 1 14t-3 14m7-27q4 9 2 15m10-9q8 9 3 19m-62-25q-3 7-1 12" fill="none" stroke="#cbb28a" stroke-width="1.6"/>
+  </g>
+</svg>

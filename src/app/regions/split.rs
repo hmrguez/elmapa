@@ -1,0 +1,143 @@
+//! An editable subdivision held outside the document until Apply.
+use super::Selection;
+use elmapa::{
+    document::{Point, RegionAddress, RegionLayer, RegionNode},
+    scene::{
+        Shape,
+        territories::{RegionView, Shoreline, split_land},
+    },
+};
+
+struct Preview {
+    view: RegionView,
+    washes: Vec<Shape>,
+}
+
+impl Preview {
+    fn new(data: &RegionLayer, shore: &Shoreline) -> Option<Self> {
+        let view = RegionView::resolve(data, shore)?;
+        let washes = view.washes(shore, data);
+        // Every drafted piece needs visible land, including after a shoreline edit.
+        (washes.len() == view.faces.len()).then_some(Self { view, washes })
+    }
+}
+
+pub(super) struct SplitDraft {
+    pub(super) count: usize,
+    pub(super) data: RegionLayer,
+    pub(super) first_owner: usize,
+    preview: Preview,
+    moving: Option<(Vec<Point>, Preview)>,
+}
+
+impl SplitDraft {
+    pub(super) fn new(
+        selection: &Selection,
+        source: Option<&RegionLayer>,
+        count: usize,
+    ) -> Result<Self, String> {
+        let names = source.map_or_else(Vec::new, |data| data.names.clone());
+        let first_owner = selection.owner.unwrap_or(names.len());
+        let mut data = split_land(&selection.polygon, names, selection.owner, count)?;
+        if let Some(source) = source {
+            data.styles.clone_from(&source.styles);
+        }
+        let preview = Preview::new(&data, &selection.shore)
+            .ok_or("The split needs visible land in every region.")?;
+        Ok(Self {
+            count,
+            data,
+            first_owner,
+            preview,
+            moving: None,
+        })
+    }
+
+    pub(super) fn view(&self) -> &RegionView {
+        &self.current().view
+    }
+
+    pub(super) fn washes(&self) -> &[Shape] {
+        &self.current().washes
+    }
+
+    fn current(&self) -> &Preview {
+        self.moving.as_ref().map_or(&self.preview, |(_, view)| view)
+    }
+
+    fn border_mut(&mut self, address: RegionAddress) -> Option<&mut Vec<Point>> {
+        let RegionNode::Cut { path, .. } = self
+            .data
+            .areas
+            .get_mut(address.area)?
+            .nodes
+            .get_mut(address.node)?
+        else {
+            return None;
+        };
+        Some(path)
+    }
+
+    pub(super) fn preview_move(
+        &mut self,
+        address: RegionAddress,
+        path: &[Point],
+        shore: &Shoreline,
+    ) {
+        if path.is_empty() {
+            self.cancel_move();
+            return;
+        }
+        if self.moving.as_ref().is_some_and(|(last, _)| last == path)
+            || path.iter().any(|point| !point.is_in_world())
+        {
+            return;
+        }
+        let Some(border) = self.border_mut(address) else {
+            return;
+        };
+        let original = std::mem::replace(border, path.to_vec());
+        let preview = Preview::new(&self.data, shore);
+        *self.border_mut(address).expect("draft border") = original;
+        if let Some(preview) = preview {
+            self.moving = Some((path.to_vec(), preview));
+        }
+    }
+
+    pub(super) fn finish_move(&mut self, address: RegionAddress) {
+        if let Some((path, preview)) = self.moving.take()
+            && let Some(border) = self.border_mut(address)
+        {
+            *border = path;
+            self.preview = preview;
+        }
+    }
+
+    pub(super) fn cancel_move(&mut self) {
+        self.moving = None;
+    }
+
+    /// Extend the current layer by replacing just the selected leaf with the draft tree.
+    pub(super) fn apply_to(&self, target: &mut RegionLayer, selection: &Selection) -> Option<()> {
+        let draft = self.data.areas.first()?;
+        let address = selection
+            .address
+            .unwrap_or_else(|| target.claim(draft.land.clone(), self.first_owner));
+        let area = target.areas.get_mut(address.area)?;
+        if !matches!(area.nodes.get(address.node), Some(RegionNode::Owned(owner)) if *owner == self.first_owner)
+        {
+            return None;
+        }
+        let base = area.nodes.len();
+        let mut nodes = draft.nodes.iter().cloned().map(|mut node| {
+            if let RegionNode::Cut { children, .. } = &mut node {
+                *children = children.map(|child| base + child - 1);
+            }
+            node
+        });
+        area.nodes[address.node] = nodes.next()?;
+        area.nodes.extend(nodes);
+        target.names.clone_from(&self.data.names);
+        Some(())
+    }
+}

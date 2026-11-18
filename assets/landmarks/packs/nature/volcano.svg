@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 124">
+  <g id="ground" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M12 98Q50 81 85 87Q136 89 152 106Q122 121 62 117Q29 115 12 98Z" fill="#d9bd89" opacity="0.26"/>
+    <path d="M24 109l25 4m55 1 30-6" fill="none" stroke="#967a57" stroke-width="1.05" opacity="0.6"/>
+  </g>
+  <g id="cone" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M18 99Q42 82 51 59L62 39 72 32 93 31 104 38 110 57Q117 77 145 102L123 110 99 104 76 111 48 106Z" fill="#e9d7b3" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M98 40Q103 47 110 57Q118 81 145 102L123 110 99 104Q96 87 82 71L83 49Z" fill="#ac8e66"/>
+    <path d="M30 96Q44 88 64 44L73 45 63 70 52 102Z" fill="#f3e7cd"/>
+    <path d="M52 64l-12 22m21-32-7 15m21-15q-4 24-14 36m23-31 7 18m4-12 9 19m-5-6 17 22m-8-21 14 16m-47 3 12-4" fill="none" stroke="#765b40" stroke-width="1.2" opacity="0.86"/>
+    <path d="M61 39Q70 25 93 29Q107 30 108 41Q98 52 77 50Q64 48 61 39Z" fill="#f3e7cd" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M68 39Q77 31 92 34Q103 36 101 41Q92 46 79 45Q72 44 68 39Z" fill="#4e3a2b"/>
+  </g>
+  <g id="steam" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M83 39Q91 32 85 25Q80 20 84 15Q88 10 96 13Q98 6 107 7Q116 7 115 15Q127 13 129 21Q129 28 119 29Q104 27 99 30Q94 36 83 39Z" fill="#fcf2dd" stroke="#5c4733" stroke-width="1.55"/>
+    <path d="M91 22q3-5 9-5m8 4q9-3 14 0" fill="none" stroke="#967a57" stroke-width="1.15" opacity="0.86"/>
+  </g>
+</svg>

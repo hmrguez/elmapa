@@ -1,0 +1,869 @@
+{
+  "schema_version": 1,
+  "id": "elmapa.nature",
+  "name": "Nature Landmarks",
+  "description": "Engraved landforms, wild groves, and coastal features.",
+  "icon": "icon.svg",
+  "items": [
+    {
+      "id": "oasis",
+      "name": "Oasis",
+      "description": "Fan palms stand at the edge of a desert spring.",
+      "svg": "oasis.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "pool",
+          "delay": 0.04,
+          "duration": 0.28,
+          "motion": "stamp",
+          "pivot": [
+            75,
+            99
+          ]
+        },
+        {
+          "id": "far-palm-trunk",
+          "delay": 0.085,
+          "duration": 0.29,
+          "motion": "rise",
+          "pivot": [
+            108,
+            92
+          ]
+        },
+        {
+          "id": "far-palm-crown",
+          "delay": 0.265,
+          "duration": 0.32,
+          "motion": "unfurl",
+          "pivot": [
+            113.92,
+            60.18
+          ]
+        },
+        {
+          "id": "near-palm-trunk",
+          "delay": 0.11,
+          "duration": 0.29,
+          "motion": "rise",
+          "pivot": [
+            70,
+            91
+          ]
+        },
+        {
+          "id": "near-palm-crown",
+          "delay": 0.29,
+          "duration": 0.32,
+          "motion": "unfurl",
+          "pivot": [
+            78.24,
+            46.71
+          ]
+        },
+        {
+          "id": "reeds",
+          "delay": 0.32,
+          "duration": 0.26,
+          "motion": "rise",
+          "pivot": [
+            43,
+            99
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cave",
+      "name": "Cave",
+      "description": "A shadowed entrance opens beneath broken limestone ledges.",
+      "svg": "cave.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "cliff",
+          "delay": 0.06,
+          "duration": 0.4,
+          "motion": "rise",
+          "pivot": [
+            82,
+            103
+          ]
+        },
+        {
+          "id": "scree",
+          "delay": 0.31,
+          "duration": 0.24,
+          "motion": "drop",
+          "pivot": [
+            47,
+            107
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coral-reef",
+      "name": "Coral Reef",
+      "description": "Antler-shaped corals rise from a shallow reef crest.",
+      "svg": "coral-reef.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "water",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "reef-crest",
+          "delay": 0.04,
+          "duration": 0.31,
+          "motion": "rise",
+          "pivot": [
+            80,
+            101
+          ]
+        },
+        {
+          "id": "elkhorn",
+          "delay": 0.13,
+          "duration": 0.42,
+          "motion": "unfurl",
+          "pivot": [
+            88,
+            99
+          ]
+        },
+        {
+          "id": "front-coral",
+          "delay": 0.27,
+          "duration": 0.36,
+          "motion": "unfurl",
+          "pivot": [
+            55,
+            104
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sea-arch",
+      "name": "Sea Arch",
+      "description": "A wave-cut opening pierces a slanted headland.",
+      "svg": "sea-arch.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "water",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "arch",
+          "delay": 0.06,
+          "duration": 0.43,
+          "motion": "rise",
+          "pivot": [
+            78,
+            100
+          ]
+        },
+        {
+          "id": "surf",
+          "delay": 0.3,
+          "duration": 0.3,
+          "motion": "unfurl",
+          "pivot": [
+            81,
+            105
+          ]
+        }
+      ]
+    },
+    {
+      "id": "waterfall",
+      "name": "Waterfall",
+      "description": "A long white ribbon drops into a plunge pool.",
+      "svg": "waterfall.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "water",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "cliff",
+          "delay": 0.04,
+          "duration": 0.38,
+          "motion": "rise",
+          "pivot": [
+            80,
+            102
+          ]
+        },
+        {
+          "id": "cascade",
+          "delay": 0.15,
+          "duration": 0.43,
+          "motion": "unfurl",
+          "pivot": [
+            83,
+            21
+          ]
+        },
+        {
+          "id": "spray",
+          "delay": 0.4,
+          "duration": 0.28,
+          "motion": "stamp",
+          "pivot": [
+            83,
+            102
+          ]
+        }
+      ],
+      "icon": "waterfall-icon.svg"
+    },
+    {
+      "id": "geyser",
+      "name": "Geyser",
+      "description": "A narrow jet of water erupts above a low mineral cone.",
+      "svg": "geyser.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "vent",
+          "delay": 0.045,
+          "duration": 0.3,
+          "motion": "rise",
+          "pivot": [
+            79,
+            101
+          ]
+        },
+        {
+          "id": "jet",
+          "delay": 0.17,
+          "duration": 0.47,
+          "motion": "rise",
+          "pivot": [
+            81,
+            88
+          ]
+        },
+        {
+          "id": "droplets",
+          "delay": 0.35,
+          "duration": 0.27,
+          "motion": "stamp",
+          "pivot": [
+            84,
+            38
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sand-dunes",
+      "name": "Sand Dunes",
+      "description": "Wind carves crescent crests and steep slip faces in the sand.",
+      "svg": "sand-dunes.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "rear-ridge",
+          "delay": 0.04,
+          "duration": 0.35,
+          "motion": "rise",
+          "pivot": [
+            105,
+            96
+          ]
+        },
+        {
+          "id": "crescent",
+          "delay": 0.14,
+          "duration": 0.43,
+          "motion": "rise",
+          "pivot": [
+            70,
+            104
+          ]
+        }
+      ]
+    },
+    {
+      "id": "volcano",
+      "name": "Volcano",
+      "description": "An open summit crater crowns a steep cinder cone.",
+      "svg": "volcano.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "cone",
+          "delay": 0.055,
+          "duration": 0.43,
+          "motion": "rise",
+          "pivot": [
+            80,
+            102
+          ]
+        },
+        {
+          "id": "steam",
+          "delay": 0.25,
+          "duration": 0.39,
+          "motion": "unfurl",
+          "pivot": [
+            86,
+            39
+          ]
+        }
+      ]
+    },
+    {
+      "id": "basalt-columns",
+      "name": "Basalt Columns",
+      "description": "Hexagonal joints leave a staircase of dark stone pillars.",
+      "svg": "basalt-columns.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "tall-columns",
+          "delay": 0.03,
+          "duration": 0.38,
+          "motion": "rise",
+          "pivot": [
+            73,
+            97
+          ]
+        },
+        {
+          "id": "lower-columns",
+          "delay": 0.17,
+          "duration": 0.38,
+          "motion": "rise",
+          "pivot": [
+            80,
+            106
+          ]
+        },
+        {
+          "id": "talus",
+          "delay": 0.32,
+          "duration": 0.27,
+          "motion": "drop",
+          "pivot": [
+            72,
+            113
+          ]
+        }
+      ]
+    },
+    {
+      "id": "glacier",
+      "name": "Glacier",
+      "description": "Crevassed ice spreads down a valley to a broken terminus.",
+      "svg": "glacier.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "water",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "valley",
+          "delay": 0.05,
+          "duration": 0.38,
+          "motion": "rise",
+          "pivot": [
+            82,
+            99
+          ]
+        },
+        {
+          "id": "ice",
+          "delay": 0.15,
+          "duration": 0.48,
+          "motion": "unfurl",
+          "pivot": [
+            80,
+            44
+          ]
+        },
+        {
+          "id": "calved-ice",
+          "delay": 0.43,
+          "duration": 0.29,
+          "motion": "settle",
+          "pivot": [
+            115,
+            113
+          ]
+        }
+      ]
+    },
+    {
+      "id": "canyon",
+      "name": "Canyon",
+      "description": "Stepped rock walls frame a river far below.",
+      "svg": "canyon.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "far-rim",
+          "delay": 0.055,
+          "duration": 0.39,
+          "motion": "rise",
+          "pivot": [
+            77,
+            88
+          ]
+        },
+        {
+          "id": "river",
+          "delay": 0.27,
+          "duration": 0.34,
+          "motion": "unfurl",
+          "pivot": [
+            80,
+            91
+          ]
+        },
+        {
+          "id": "near-rim",
+          "delay": 0.11,
+          "duration": 0.43,
+          "motion": "rise",
+          "pivot": [
+            104,
+            106
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hoodoos",
+      "name": "Hoodoos",
+      "description": "Capstones perch on narrow, banded spires.",
+      "svg": "hoodoos.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "east-spire",
+          "delay": 0.075,
+          "duration": 0.37,
+          "motion": "rise",
+          "pivot": [
+            106,
+            97
+          ]
+        },
+        {
+          "id": "east-cap",
+          "delay": 0.265,
+          "duration": 0.29,
+          "motion": "drop",
+          "pivot": [
+            108.4,
+            53.0
+          ]
+        },
+        {
+          "id": "central-spire",
+          "delay": 0.1,
+          "duration": 0.37,
+          "motion": "rise",
+          "pivot": [
+            78,
+            101
+          ]
+        },
+        {
+          "id": "central-cap",
+          "delay": 0.29000000000000004,
+          "duration": 0.29,
+          "motion": "drop",
+          "pivot": [
+            81.81,
+            31.150000000000006
+          ]
+        },
+        {
+          "id": "west-spire",
+          "delay": 0.175,
+          "duration": 0.37,
+          "motion": "rise",
+          "pivot": [
+            48,
+            106
+          ]
+        },
+        {
+          "id": "west-cap",
+          "delay": 0.365,
+          "duration": 0.29,
+          "motion": "drop",
+          "pivot": [
+            50.28,
+            64.2
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cenote",
+      "name": "Cenote",
+      "description": "A limestone sinkhole reveals deep water and hanging roots.",
+      "svg": "cenote.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "limestone-rim",
+          "delay": 0.05,
+          "duration": 0.4,
+          "motion": "rise",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "spring-water",
+          "delay": 0.18,
+          "duration": 0.37,
+          "motion": "stamp",
+          "pivot": [
+            83,
+            90
+          ]
+        },
+        {
+          "id": "roots",
+          "delay": 0.29,
+          "duration": 0.32,
+          "motion": "unfurl",
+          "pivot": [
+            98,
+            55
+          ]
+        }
+      ],
+      "icon": "cenote-icon.svg"
+    },
+    {
+      "id": "mangrove",
+      "name": "Mangrove",
+      "description": "A spreading canopy stands above a fan of tidal prop roots.",
+      "svg": "mangrove.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "water",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "prop-roots",
+          "delay": 0.05,
+          "duration": 0.38,
+          "motion": "rise",
+          "pivot": [
+            81,
+            101
+          ]
+        },
+        {
+          "id": "canopy",
+          "delay": 0.2,
+          "duration": 0.39,
+          "motion": "unfurl",
+          "pivot": [
+            81,
+            71
+          ]
+        },
+        {
+          "id": "ripples",
+          "delay": 0.41,
+          "duration": 0.29,
+          "motion": "settle",
+          "pivot": [
+            81,
+            108
+          ]
+        }
+      ]
+    },
+    {
+      "id": "petrified-log",
+      "name": "Petrified Log",
+      "description": "Mineral bands preserve the rings of a fallen tree.",
+      "svg": "petrified-log.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "log",
+          "delay": 0.065,
+          "duration": 0.4,
+          "motion": "settle",
+          "pivot": [
+            82,
+            98
+          ]
+        },
+        {
+          "id": "rings",
+          "delay": 0.23,
+          "duration": 0.33,
+          "motion": "stamp",
+          "pivot": [
+            40,
+            91
+          ]
+        }
+      ]
+    },
+    {
+      "id": "saguaros",
+      "name": "Saguaros",
+      "description": "Ribbed cacti raise forked arms above the desert floor.",
+      "svg": "saguaros.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        99
+      ],
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.24,
+          "motion": "settle",
+          "pivot": [
+            80,
+            99
+          ]
+        },
+        {
+          "id": "young-cactus",
+          "delay": 0.055,
+          "duration": 0.4,
+          "motion": "rise",
+          "pivot": [
+            109,
+            101
+          ]
+        },
+        {
+          "id": "mature-cactus",
+          "delay": 0.13,
+          "duration": 0.4,
+          "motion": "rise",
+          "pivot": [
+            64,
+            105
+          ]
+        },
+        {
+          "id": "desert-grass",
+          "delay": 0.31,
+          "duration": 0.27,
+          "motion": "rise",
+          "pivot": [
+            87,
+            108
+          ]
+        }
+      ]
+    }
+  ]
+}

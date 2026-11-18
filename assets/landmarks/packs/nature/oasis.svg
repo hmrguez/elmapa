@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 124">
+  <g id="ground" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M13 94Q30 78 69 81Q137 78 148 102Q117 124 38 114Q16 108 13 94Z" fill="#d9bd89" opacity="0.26"/>
+    <path d="M18 101l15 3m-6 6 13 2m83-2 17-6" fill="none" stroke="#967a57" stroke-width="1.05" opacity="0.6"/>
+  </g>
+  <g id="pool" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M22 99Q23 91 40 89Q51 88 65 91Q79 94 93 89Q107 84 131 92Q143 98 133 104Q117 114 85 111L46 112Q26 109 22 99Z" fill="#d6c39d" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M30 97Q45 92 58 96M51 103l15 1m9-1 29-2m8-5 13 1m-26 9 19-1" fill="none" stroke="#fcf2dd" stroke-width="1.8" opacity="0.86"/>
+  </g>
+  <g id="far-palm-trunk" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(108 92) scale(0.74)">
+    <path d="M-4 0 Q-4-21 6-43 L11-43 Q3-20 4 0 Q0 3-4 0Z" fill="#cbb28a" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M-3-7 2-9M-2-15 3-17M0-23 5-25M3-31 8-33" fill="none" stroke="#765b40" stroke-width="1.15" opacity="0.86"/>
+    </g>
+  </g>
+  <g id="far-palm-crown" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(108 92) scale(0.74)">
+    <path d="M8-41 Q-7-48-22-36 Q-21-48-10-51 Q-7-52 2-49 Q-8-57-18-56 Q-10-64-1-59 L6-52 Q3-64-4-69 Q6-71 12-64 Q16-59 13-51 Q20-61 31-60 L39-56 Q23-57 16-48 Q35-53 42-39 Q28-46 17-41 Q27-33 24-25 Q19-34 10-38 L4-32-3-34 3-42Z" fill="#9d8259" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M8-47Q-7-51-18-41M10-48Q2-59-1-65M12-46Q19-56 32-57M13-44Q28-47 37-42M12-41Q19-39 22-30" fill="none" stroke="#f3e7cd" stroke-width="1.12" opacity="0.86"/>
+    </g>
+  </g>
+  <g id="near-palm-trunk" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(70 91) scale(1.03)">
+    <path d="M-4 0 Q-4-21 6-43 L11-43 Q3-20 4 0 Q0 3-4 0Z" fill="#cbb28a" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M-3-7 2-9M-2-15 3-17M0-23 5-25M3-31 8-33" fill="none" stroke="#765b40" stroke-width="1.15" opacity="0.86"/>
+    </g>
+  </g>
+  <g id="near-palm-crown" stroke-linejoin="round" stroke-linecap="round">
+    <g transform="translate(70 91) scale(1.03)">
+    <path d="M8-41 Q-7-48-22-36 Q-21-48-10-51 Q-7-52 2-49 Q-8-57-18-56 Q-10-64-1-59 L6-52 Q3-64-4-69 Q6-71 12-64 Q16-59 13-51 Q20-61 31-60 L39-56 Q23-57 16-48 Q35-53 42-39 Q28-46 17-41 Q27-33 24-25 Q19-34 10-38 L4-32-3-34 3-42Z" fill="#9d8259" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M8-47Q-7-51-18-41M10-48Q2-59-1-65M12-46Q19-56 32-57M13-44Q28-47 37-42M12-41Q19-39 22-30" fill="none" stroke="#f3e7cd" stroke-width="1.12" opacity="0.86"/>
+    </g>
+  </g>
+  <g id="reeds" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M31 100q-1-9-7-11m8 10q1-13-2-17m5 17q3-8 7-10m73 16q-1-6-5-8m8 7q1-10 5-13m-4 14 9-5" fill="none" stroke="#765b40" stroke-width="1.65" opacity="0.86"/>
+  </g>
+</svg>

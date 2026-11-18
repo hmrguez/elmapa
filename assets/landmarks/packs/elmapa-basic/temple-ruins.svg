@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="128" viewBox="0 0 160 128">
+  <title>Elmapa — engraved temple ruins</title>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <g id="ground">
+      <path d="M15 104Q34 93 54 97L93 90Q123 88 146 98 135 112 106 111L84 116 53 115 32 111Z" fill="#aa9b78" opacity=".15"/>
+      <path d="M18 103l8-1m-3 6 13 .2m2 3 8 .5m8 2 8 .2m17-1 9 .5m10-4 10-.5m8-2 11-2m4-4 10-2m-112-1 4-3 3 2m89 2 4-4 3 1m-7 3 .5-4" fill="none" stroke="#847357" stroke-width=".51" opacity=".66"/>
+    </g>
+    <g id="plinth">
+      <path d="M31 96 49 84 106 77 128 83 128 91 108 104 93 104 82 110 57 110 54 105 32 106Z" fill="#cbbd9c" stroke="#655640" stroke-width=".87"/>
+      <path d="M31 96 49 84 106 77 128 83 110 96 97 96 83 104 55 105Z" fill="#e8ddbf" stroke="#655640" stroke-width=".79"/>
+      <path d="M39 94 52 86 106 80 120 84 106 93 95 93 80 100 57 101Z" fill="#d9cbac" stroke="#7c694e" stroke-width=".65"/>
+      <path d="M34 100l17 1m-15 3 16 1m4 1 27-.6 12-6 13 .3 16-11m-63 20 18-.6m19-7 9-.1 18-11m-62 10l10-.7 4-2m32-13 6 1.2M45 92l8-4m-.1 6 10-2m39-9 6-1.1m5 9 5-3m-18 9 4-.4m-13 4 1 2" fill="none" stroke="#806d51" stroke-width=".55" opacity=".82"/>
+    </g>
+    <g id="back-column">
+      <path d="M96 80l3-4 12-.9 6 3-.4 6-5 3-14-.6Z" fill="#c9b99a" stroke="#655640" stroke-width=".72"/>
+      <path d="M97 78l4-3 11-1 5 4-5 4-11 .3Z" fill="#eee2c3" stroke="#7d694e" stroke-width=".58"/>
+      <path d="M101 76 100 62 104 58 107 60 111 57 113 61 112 76Q107 80 101 76Z" fill="#dfd2b1" stroke="#655640" stroke-width=".68"/>
+      <path d="M100 62 104 58 107 60 111 57 113 61 109 65 104 64Z" fill="#b6a586" stroke="#786547" stroke-width=".51"/>
+      <path d="M110 65v11m-4-10v11m-3-13v11m12 7-3 2m-13-.4 7 .5" fill="none" stroke="#8b7755" stroke-width=".56" opacity=".68"/>
+    </g>
+    <g id="standing-columns">
+      <path d="M43 91l5-4 13-.6 6 3 0 6-5 3-16-.7Z" fill="#cdbc9a" stroke="#655640" stroke-width=".76"/>
+      <path d="M43 91l5-4 13-.6 6 3-5 4-15 .3Z" fill="#ecdfbe" stroke="#776449" stroke-width=".59"/>
+      <path d="M49 88 50 43Q56 40 61 43L61 87Q56 92 49 88Z" fill="#e8dcba" stroke="#655640" stroke-width=".76"/>
+      <path d="M56 44l5-1v44q-2 2-5 2Z" fill="#cdbb98"/>
+      <path d="M52 47l-.2 39m3-38-.1 38m2.8-40 .2 40m-8-10 4 1m3-27 3-1m-4 17 4-.5m-8-6 3 .4" fill="none" stroke="#8b7657" stroke-width=".54" opacity=".74"/>
+      <path d="M46 39q8 3 17-1l2 4-3 4q-9 4-16 0l-1-4Z" fill="#d6c5a2" stroke="#655640" stroke-width=".71"/>
+      <path d="M47 43q8 2 15-1m-12 2v2m4-2v2m5-3v2" fill="none" stroke="#8b7454" stroke-width=".49"/>
+      <path d="M74 87l4-5 14-2 6 3 .4 5-6 5-16 1Z" fill="#c7b596" stroke="#655640" stroke-width=".76"/>
+      <path d="M74 87l4-5 14-2 6 3-6 5-15 1.6Z" fill="#ebdfbd" stroke="#776449" stroke-width=".63"/>
+      <path d="M80 83 81 38q6-3 12-1l.4 43q-4 7-13.4 3Z" fill="#e8dcba" stroke="#655640" stroke-width=".75"/>
+      <path d="M88 37l5 0 .4 43q-2.4 3-5 3Z" fill="#cdbb98"/>
+      <path d="M83 41l-.2 39m2.9-39-.1 40m3.5-42 .1 41m-8-20 4 1m4 8 3-.9m-9 8 2 .5m5-21 2-.8" fill="none" stroke="#8b7657" stroke-width=".54" opacity=".76"/>
+      <path d="M77 35q10 2 17-3l2 4-2 4q-9 4-17 2l-1-3Z" fill="#d3c3a0" stroke="#655640" stroke-width=".73"/>
+      <path d="M78 38q8 2 15-2m-12 3v2m5-2v2m4-3v2" fill="none" stroke="#8b7454" stroke-width=".48"/>
+    </g>
+    <g id="cornice">
+      <path d="M37 34 44 28 85 22 92 21 99 24 100 28 94 31 96 35 88 36 45 43 37 40Z" fill="#e5d7b6" stroke="#655640" stroke-width=".84"/>
+      <path d="M37 34 44 28 85 22 92 21 99 24 92 26 87 27 45 34Z" fill="#f0e4c6" stroke="#776449" stroke-width=".59"/>
+      <path d="M37 34 45 34 45 43 37 40Z" fill="#c5b594" stroke="#776449" stroke-width=".55"/>
+      <path d="M90 26l9-2 1 4-6 3 2 4-6 1-2-4 4-3Z" fill="#bcaa88" stroke="#776449" stroke-width=".52"/>
+      <path d="M46 36 87 29m-41 11 43-8m-49 5 3 1m5 0 3-.5m4 0 2-.5m5-.5 3-.6m5-.5 3-.5m5-.8 3-.6m3-.2 2-.5m-37-5 7-1m12-2 7-1" fill="none" stroke="#8b7553" stroke-width=".55" opacity=".88"/>
+    </g>
+    <g id="rubble">
+      <path d="M107 92l5-4 9-.2 4 4-2 5-10 3-6-3Z" fill="#cdbb9b" stroke="#655640" stroke-width=".67"/>
+      <path d="M107 92l5-4 9-.2 4 4-9 3Z" fill="#eaddbf" stroke="#79664c" stroke-width=".57"/>
+      <path d="M119 100l5-2 7 2 2 5-7 2-8-3Z" fill="#d4c4a3" stroke="#7a664b" stroke-width=".62"/>
+      <path d="M102 105l4-3 7 .4 4 3-4 4-9 .2Z" fill="#d9c9ab" stroke="#7a664b" stroke-width=".63"/>
+      <path d="M97 108l-4-1-5 2 5 2m12-5 6-.3m12-4 4 1.4m-12-8v4m-8-7 2 2" fill="none" stroke="#867253" stroke-width=".49"/>
+    </g>
+  </g>
+</svg>

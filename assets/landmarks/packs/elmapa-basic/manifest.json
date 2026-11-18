@@ -1,0 +1,617 @@
+{
+  "schema_version": 1,
+  "id": "elmapa.basic",
+  "name": "Elmapa Basic Landmarks",
+  "description": "Inked settlements, structures and markers in an engraved atlas style.",
+  "icon": "icon.svg",
+  "items": [
+    {
+      "name": "Pin",
+      "description": "A simple inked marker.",
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.18,
+          "motion": "settle",
+          "pivot": [
+            80,
+            105
+          ]
+        },
+        {
+          "id": "pin",
+          "delay": 0.035,
+          "duration": 0.3,
+          "motion": "drop",
+          "pivot": [
+            80,
+            104
+          ]
+        }
+      ],
+      "id": "pin",
+      "svg": "pin.svg",
+      "icon": "pin.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        104
+      ]
+    },
+    {
+      "name": "Town",
+      "description": "An engraved parish town: clustered roofs, a nave and a slender steeple.",
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.2,
+          "motion": "settle",
+          "pivot": [
+            80,
+            104
+          ]
+        },
+        {
+          "id": "rear-west",
+          "delay": 0.02,
+          "duration": 0.32,
+          "motion": "rise",
+          "pivot": [
+            49,
+            82
+          ]
+        },
+        {
+          "id": "rear-east",
+          "delay": 0.05,
+          "duration": 0.32,
+          "motion": "rise",
+          "pivot": [
+            112,
+            82
+          ]
+        },
+        {
+          "id": "rear-far-east",
+          "delay": 0.08,
+          "duration": 0.32,
+          "motion": "rise",
+          "pivot": [
+            127,
+            85
+          ]
+        },
+        {
+          "id": "cottage-west-rear",
+          "delay": 0.11,
+          "duration": 0.32,
+          "motion": "rise",
+          "pivot": [
+            37,
+            91
+          ]
+        },
+        {
+          "id": "church-nave",
+          "delay": 0.1,
+          "duration": 0.32,
+          "motion": "rise",
+          "pivot": [
+            87,
+            93
+          ]
+        },
+        {
+          "id": "church-steeple",
+          "delay": 0.34,
+          "duration": 0.34,
+          "motion": "rise",
+          "pivot": [
+            69,
+            94
+          ]
+        },
+        {
+          "id": "cottage-east-rear",
+          "delay": 0.17,
+          "duration": 0.32,
+          "motion": "rise",
+          "pivot": [
+            135,
+            97
+          ]
+        },
+        {
+          "id": "cottage-west-middle",
+          "delay": 0.18,
+          "duration": 0.32,
+          "motion": "rise",
+          "pivot": [
+            31,
+            99
+          ]
+        },
+        {
+          "id": "cottage-east-front",
+          "delay": 0.25,
+          "duration": 0.36,
+          "motion": "rise",
+          "pivot": [
+            117,
+            104
+          ]
+        },
+        {
+          "id": "cottage-west-front",
+          "delay": 0.23,
+          "duration": 0.32,
+          "motion": "rise",
+          "pivot": [
+            52,
+            105
+          ]
+        }
+      ],
+      "id": "town",
+      "svg": "town.svg",
+      "icon": "town.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        104
+      ]
+    },
+    {
+      "name": "Castle",
+      "description": "Paired ramparts and towers rise toward a dominant central keep.",
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.2,
+          "motion": "settle",
+          "pivot": [
+            80,
+            104
+          ]
+        },
+        {
+          "id": "keep",
+          "delay": 0.02,
+          "duration": 0.4,
+          "motion": "rise",
+          "pivot": [
+            80,
+            87
+          ]
+        },
+        {
+          "id": "shoulder-left",
+          "delay": 0.11,
+          "duration": 0.36,
+          "motion": "rise",
+          "pivot": [
+            56,
+            95
+          ]
+        },
+        {
+          "id": "shoulder-right",
+          "delay": 0.18,
+          "duration": 0.36,
+          "motion": "rise",
+          "pivot": [
+            104,
+            95
+          ]
+        },
+        {
+          "id": "wall",
+          "delay": 0.12,
+          "duration": 0.34,
+          "motion": "rise",
+          "pivot": [
+            80,
+            104
+          ]
+        },
+        {
+          "id": "tower-left",
+          "delay": 0.23,
+          "duration": 0.36,
+          "motion": "rise",
+          "pivot": [
+            34,
+            105
+          ]
+        },
+        {
+          "id": "tower-right",
+          "delay": 0.32,
+          "duration": 0.36,
+          "motion": "rise",
+          "pivot": [
+            126,
+            105
+          ]
+        },
+        {
+          "id": "gate",
+          "delay": 0.41,
+          "duration": 0.25,
+          "motion": "settle",
+          "pivot": [
+            80,
+            104
+          ]
+        }
+      ],
+      "id": "castle",
+      "svg": "castle.svg",
+      "icon": "castle.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        104
+      ]
+    },
+    {
+      "name": "Port",
+      "description": "A quay, timber piers, then a moored sailboat.",
+      "parts": [
+        {
+          "id": "water",
+          "delay": 0,
+          "duration": 0.3,
+          "motion": "settle",
+          "pivot": [
+            80,
+            105
+          ]
+        },
+        {
+          "id": "quay",
+          "delay": 0.02,
+          "duration": 0.34,
+          "motion": "rise",
+          "pivot": [
+            80,
+            96
+          ]
+        },
+        {
+          "id": "warehouse-center",
+          "delay": 0.1,
+          "duration": 0.34,
+          "motion": "rise",
+          "pivot": [
+            93,
+            79
+          ]
+        },
+        {
+          "id": "crane",
+          "delay": 0.18,
+          "duration": 0.34,
+          "motion": "rise",
+          "pivot": [
+            140,
+            80
+          ]
+        },
+        {
+          "id": "warehouse-east",
+          "delay": 0.14,
+          "duration": 0.34,
+          "motion": "rise",
+          "pivot": [
+            118,
+            79
+          ]
+        },
+        {
+          "id": "warehouse-west",
+          "delay": 0.16,
+          "duration": 0.34,
+          "motion": "rise",
+          "pivot": [
+            47.5,
+            85
+          ]
+        },
+        {
+          "id": "cargo",
+          "delay": 0.23,
+          "duration": 0.28,
+          "motion": "settle",
+          "pivot": [
+            80,
+            90
+          ]
+        },
+        {
+          "id": "pier-left",
+          "delay": 0.21,
+          "duration": 0.34,
+          "motion": "unfurl",
+          "pivot": [
+            42,
+            95
+          ]
+        },
+        {
+          "id": "pier-right",
+          "delay": 0.3,
+          "duration": 0.34,
+          "motion": "unfurl",
+          "pivot": [
+            108,
+            85
+          ]
+        },
+        {
+          "id": "boat",
+          "delay": 0.4,
+          "duration": 0.38,
+          "motion": "settle",
+          "pivot": [
+            85,
+            111
+          ]
+        }
+      ],
+      "id": "port",
+      "svg": "port.svg",
+      "icon": "port.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        104
+      ]
+    },
+    {
+      "id": "stone-bridge",
+      "name": "Stone Bridge",
+      "description": "Two stone arches carry a road over a shallow river.",
+      "svg": "stone-bridge.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        104
+      ],
+      "parts": [
+        {
+          "id": "river",
+          "delay": 0,
+          "duration": 0.22,
+          "motion": "settle",
+          "pivot": [
+            80,
+            104
+          ]
+        },
+        {
+          "id": "arches",
+          "delay": 0.045,
+          "duration": 0.36,
+          "motion": "rise",
+          "pivot": [
+            82,
+            103
+          ]
+        },
+        {
+          "id": "deck",
+          "delay": 0.22,
+          "duration": 0.28,
+          "motion": "drop",
+          "pivot": [
+            82,
+            72
+          ]
+        }
+      ]
+    },
+    {
+      "id": "windmill",
+      "name": "Windmill",
+      "description": "A stone tower mill with four canvas sails and a storehouse.",
+      "svg": "windmill.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        104
+      ],
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.18,
+          "motion": "settle",
+          "pivot": [
+            80,
+            104
+          ]
+        },
+        {
+          "id": "storehouse",
+          "delay": 0.125,
+          "duration": 0.29,
+          "motion": "rise",
+          "pivot": [
+            110,
+            100
+          ]
+        },
+        {
+          "id": "tower",
+          "delay": 0.035,
+          "duration": 0.36,
+          "motion": "rise",
+          "pivot": [
+            79,
+            106
+          ]
+        },
+        {
+          "id": "cap",
+          "delay": 0.235,
+          "duration": 0.24,
+          "motion": "drop",
+          "pivot": [
+            80,
+            54
+          ]
+        },
+        {
+          "id": "sails",
+          "delay": 0.36,
+          "duration": 0.38,
+          "motion": "turn",
+          "pivot": [
+            71.5,
+            53.2
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lighthouse",
+      "name": "Lighthouse",
+      "description": "A stone beacon with a warm lantern on a rocky shoal.",
+      "svg": "lighthouse.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        104
+      ],
+      "parts": [
+        {
+          "id": "shoal",
+          "delay": 0,
+          "duration": 0.22,
+          "motion": "settle",
+          "pivot": [
+            80,
+            104
+          ]
+        },
+        {
+          "id": "rock",
+          "delay": 0.025,
+          "duration": 0.24,
+          "motion": "rise",
+          "pivot": [
+            82,
+            106
+          ]
+        },
+        {
+          "id": "tower",
+          "delay": 0.1,
+          "duration": 0.36,
+          "motion": "rise",
+          "pivot": [
+            83,
+            99
+          ]
+        },
+        {
+          "id": "lantern",
+          "delay": 0.31,
+          "duration": 0.25,
+          "motion": "drop",
+          "pivot": [
+            82,
+            47
+          ]
+        },
+        {
+          "id": "light",
+          "delay": 0.485,
+          "duration": 0.23,
+          "motion": "stamp",
+          "pivot": [
+            79,
+            38
+          ]
+        }
+      ]
+    },
+    {
+      "id": "temple-ruins",
+      "name": "Temple Ruins",
+      "description": "Two fluted columns support a broken cornice above scattered stone.",
+      "svg": "temple-ruins.svg",
+      "width": 160,
+      "anchor": [
+        80,
+        104
+      ],
+      "parts": [
+        {
+          "id": "ground",
+          "delay": 0,
+          "duration": 0.18,
+          "motion": "settle",
+          "pivot": [
+            80,
+            104
+          ]
+        },
+        {
+          "id": "plinth",
+          "delay": 0.025,
+          "duration": 0.28,
+          "motion": "rise",
+          "pivot": [
+            80,
+            104
+          ]
+        },
+        {
+          "id": "back-column",
+          "delay": 0.15,
+          "duration": 0.28,
+          "motion": "rise",
+          "pivot": [
+            107,
+            81
+          ]
+        },
+        {
+          "id": "standing-columns",
+          "delay": 0.1,
+          "duration": 0.37,
+          "motion": "rise",
+          "pivot": [
+            71,
+            91
+          ]
+        },
+        {
+          "id": "cornice",
+          "delay": 0.335,
+          "duration": 0.27,
+          "motion": "drop",
+          "pivot": [
+            73,
+            37
+          ]
+        },
+        {
+          "id": "rubble",
+          "delay": 0.42,
+          "duration": 0.21,
+          "motion": "settle",
+          "pivot": [
+            116,
+            103
+          ]
+        }
+      ]
+    }
+  ]
+}

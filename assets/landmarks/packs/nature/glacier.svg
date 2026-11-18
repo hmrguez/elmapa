@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 124">
+  <g id="water" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M11 95Q25 84 83 86Q137 84 153 103Q134 119 84 118Q21 116 11 95Z" fill="#d6c39d" opacity="0.39"/>
+    <path d="M16 107l19 3m91 3 18-7" fill="none" stroke="#967a57" stroke-width="1.05" opacity="0.6"/>
+  </g>
+  <g id="valley" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M12 98 30 68 44 57 55 35 69 24 79 50 95 44 110 22 119 29 126 52 141 66 149 100 127 105 103 92 57 88 34 106Z" fill="#e9d7b3" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M12 98 35 86 49 62 64 49 69 24 79 50 70 73 57 88 34 106Z" fill="#ac8e66"/>
+    <path d="M110 22 113 50 127 62 141 66 149 100 127 105 118 82 107 66Z" fill="#cbb28a"/>
+    <path d="M29 77l10-7m-18 21 12-4m26-34 2-10m64 28 11 8m-8-1 12 13" fill="none" stroke="#967a57" stroke-width="1.15" opacity="0.86"/>
+  </g>
+  <g id="ice" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M65 53 77 47 87 50 100 42 111 50 103 63 107 75 130 94 125 104 113 106 101 111 83 108 67 113 53 105 41 107 34 100 49 87 57 71Z" fill="#fcf2dd" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M34 100l13-6 14 5 12-4 12 5 18-4 11 2 16-4-5 10-12 2-12 5-18-3-16 5-14-8-12 2Z" fill="#cbb28a" stroke="#5c4733" stroke-width="1.4"/>
+    <path d="M67 60l10 7-7 10m23-27-9 11 8 5m13 6-19 8 10 7m-31-9 11 7-12 11m-12 3 2 6m25-6 1 6m17-6 1 9m18-11 2 6" fill="none" stroke="#765b40" stroke-width="1.26" opacity="0.86"/>
+  </g>
+  <g id="calved-ice" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M112 114l4-6 5 1 6 5-8 3Z M37 113l5-3 7 4-7 3Z" fill="#fcf2dd" stroke="#5c4733" stroke-width="1.28"/>
+  </g>
+</svg>

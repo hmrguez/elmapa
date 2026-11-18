@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 124">
+  <g id="ground" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M12 92Q28 76 74 78Q137 82 153 100Q123 119 69 116Q22 110 12 92Z" fill="#d9bd89" opacity="0.26"/>
+    <path d="M19 104l19 5m92 1 15-7" fill="none" stroke="#967a57" stroke-width="1.05" opacity="0.6"/>
+  </g>
+  <g id="far-rim" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M11 51 36 39 56 41 68 30 92 30 112 37 145 36 153 48 131 67 116 72 100 72 90 90 70 98 51 87 22 92Z" fill="#cbb28a" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M11 51 36 39 56 41 68 30 92 30 112 37 145 36 153 48 132 52 111 49 96 56 79 51 66 63 43 60 31 71 16 69Z" fill="#f3e7cd" stroke="#5c4733" stroke-width="1.55"/>
+    <path d="M17 70l14 1 13-11 22 3 14-12 16 5 16-7 20 3 21-4-22 19-15 5-16 0-10 18-20 8L51 87l-29 5Z" fill="#ac8e66"/>
+    <path d="M20 76l16 0 10-9 17 2m14-8 18 3 14-9 19 4m-106 24 19-1 9-6 16 2m12-10 21 3 14-9m-30 17-8 8m-20-3 11 7" fill="none" stroke="#5c4733" stroke-width="1.15" opacity="0.86"/>
+  </g>
+  <g id="river" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M118 67q-14 0-19 8-5 12-17 11-16-4-23-2-7 3-7 9-2 6-15 9l18 4q11-5 15-10 3-5 12-1 25 4 27-16 3-5 17-7Z" fill="#fcf2dd" stroke="#5c4733" stroke-width="1.4"/>
+  </g>
+  <g id="near-rim" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M18 101l20-9 10 4 10 6 17-2 10-6 20-3 7-10 16-2 13-17 11 5-6 31-22 14-26-3-17 8-30-2-21-6Z" fill="#cbb28a" stroke="#5c4733" stroke-width="1.8"/>
+    <path d="M18 101l20-9 10 4 10 6 17-2 10-6 20-3 7-10 16-2 13-17 11 5-8 14-14 6-10 12-22 4-18 7-24-1-17-5-13 1Z" fill="#e9d7b3" stroke="#5c4733" stroke-width="1.45"/>
+    <path d="M44 107l15 5 20 0m9-1 12-5 20 1 17-8m-6-8 12-6" fill="none" stroke="#765b40" stroke-width="1.15" opacity="0.86"/>
+  </g>
+</svg>

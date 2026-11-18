@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 124">
+  <g id="water" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M10 95Q37 84 71 89Q105 84 151 98L156 110Q105 120 50 116Q18 110 10 95Z" fill="#d6c39d" opacity="0.39"/>
+    <path d="M12 106l23 4m19-2 35 3m19 1 30-5m-82-9 32 2" fill="none" stroke="#967a57" stroke-width="1.05" opacity="0.6"/>
+  </g>
+  <g id="arch" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M15 99 25 79 28 57 41 40 64 33 91 34 108 44 119 58 122 74 132 88 143 99 125 105 110 102 102 87 98 71 88 63 71 60 59 64 52 72 46 98 31 107Z" fill="#e9d7b3" stroke="#5c4733" stroke-width="2.1"/>
+    <path d="M15 99 25 79 28 57 41 40 64 33 91 34 108 44 97 47 72 44 54 50 42 66 39 83 31 107Z" fill="#f3e7cd" stroke="#5c4733" stroke-width="1.5"/>
+    <path d="M59 64 71 60 88 63 98 71 102 87 110 102 120 104 110 83 106 67 94 56 74 55Z" fill="#ac8e66" stroke="#5c4733" stroke-width="1.65"/>
+    <path d="M107 51 119 58 122 74 132 88 143 99 126 104 121 97 116 82 113 68Z" fill="#cbb28a"/>
+    <path d="M30 57l15 0m-20 13 14-4m-17 15 16-4m-19 13 14-3m10-45 8 2m49-2 8 4m2 9 6 8m0 6 4 10m0 4 7 12m1-5 6 5m-30-16 4 11" fill="none" stroke="#967a57" stroke-width="1.15" opacity="0.86"/>
+  </g>
+  <g id="surf" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M17 102q11 8 24 6m11-7q18 5 42 2m14 4q17 4 34-4" fill="none" stroke="#fcf2dd" stroke-width="2.55" opacity="0.86"/>
+    <path d="M43 114l19 1m26-1 17-2m-41-14 24 2" fill="none" stroke="#967a57" stroke-width="1.15" opacity="0.86"/>
+  </g>
+</svg>
