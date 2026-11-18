@@ -1,6 +1,6 @@
 //! Rasterize an outlined area once, then choose the order of its native brushwork.
 use super::{MAX_POINTS, Position, mix, point, smooth};
-use elmapa::document::{Brush, Point, Stroke};
+use elmapa::document::{Brush, Point, Stroke, TerrainReplay, limits::MAX_REPLAY_PATHS};
 use rmcp::schemars::{self, JsonSchema};
 use serde::Deserialize;
 use std::{collections::VecDeque, ops::Range, sync::Arc};
@@ -18,6 +18,13 @@ pub(super) enum Drawing {
     BreadthFirst {
         /// Starting point inside the area, in world units with x right and y down.
         from: Position,
+    },
+    /// Sweep a fixed-radius brush along explicit paths while revealing a land or water area.
+    BrushPaths {
+        /// Brush radius in world units, between 1 and 1024.
+        radius: f32,
+        /// Ordered gestures. Each path is a sequence of world coordinates, x right and y down.
+        paths: Vec<Vec<Position>>,
     },
 }
 
@@ -72,7 +79,7 @@ pub(super) fn fill(
     brush: Brush,
     material: Option<Arc<str>>,
     seed: u64,
-) -> Result<Vec<Stroke>, String> {
+) -> Result<(Vec<Stroke>, Option<TerrainReplay>), String> {
     outline.dedup();
     if outline.len() > 1 && outline.first() == outline.last() {
         outline.pop();
@@ -80,9 +87,37 @@ pub(super) fn fill(
     if !(3..=MAX_POINTS).contains(&outline.len()) {
         return Err(format!("Area outlines need 3 to {MAX_POINTS} vertices."));
     }
-    let origin = match drawing {
-        Drawing::Scanline => None,
-        Drawing::BreadthFirst { from } => Some(point(from)?),
+    let surface = matches!(brush, Brush::Land | Brush::Water);
+    let (origin, replay) = match drawing {
+        Drawing::Scanline => (None, None),
+        Drawing::BreadthFirst { from } => (
+            Some(point(from)?),
+            surface.then_some(TerrainReplay::BreadthFirst),
+        ),
+        Drawing::BrushPaths { radius, paths } => {
+            if !surface {
+                return Err("Brush paths draw land and water areas.".into());
+            }
+            if !(1. ..=1024.).contains(&radius) {
+                return Err("Brush path radius must be between 1 and 1024 world units.".into());
+            }
+            super::check_count(paths.len(), MAX_REPLAY_PATHS, "brush paths")?;
+            let paths = paths
+                .into_iter()
+                .map(|path| {
+                    super::check_count(path.len(), MAX_POINTS, "points per brush path")?;
+                    let points = path.into_iter().map(point).collect::<Result<Vec<_>, _>>()?;
+                    Ok(smooth(points, false).into())
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            (
+                None,
+                Some(TerrainReplay::BrushPaths {
+                    radius,
+                    paths: Arc::new(paths),
+                }),
+            )
+        }
     };
     let mut outline = smooth(outline, true);
     outline.push(outline[0]);
@@ -91,7 +126,7 @@ pub(super) fn fill(
         None => rows.spans.iter().map(|&span| (span, None)).collect(),
         Some(origin) => rows.breadth_first(origin),
     };
-    Ok(order
+    let strokes = order
         .into_iter()
         .map(|(span, from)| Stroke {
             creation_id: None,
@@ -103,7 +138,8 @@ pub(super) fn fill(
             seed,
             material: material.clone(),
         })
-        .collect())
+        .collect();
+    Ok((strokes, replay))
 }
 
 fn crossings(outline: &[Point], y: f32, result: &mut Vec<f32>) {

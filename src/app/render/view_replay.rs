@@ -1,4 +1,5 @@
 //! Replay this view prototype. Cues animate the retained, final scene.
+mod paint_order;
 #[cfg(test)]
 mod tests;
 mod timeline;
@@ -24,6 +25,7 @@ use elmapa::{
         PathPart, RiverAnimation, RiverReach, Scene,
     },
 };
+use paint_order::PaintOrder;
 use std::collections::{HashMap, VecDeque};
 use timeline::timeline;
 
@@ -41,9 +43,15 @@ struct InkReveal {
     /// Progress, layer opacity, leading corner and span along the wash direction.
     #[uniform(0)]
     wash: Vec4,
+    /// World-space origin and reciprocal extent of the shared arrival texture.
+    #[uniform(0)]
+    placement: Vec4,
     #[texture(1)]
     #[sampler(2)]
     texture: Option<Handle<Image>>,
+    #[texture(3)]
+    #[sampler(4)]
+    arrival: Option<Handle<Image>>,
 }
 
 impl Material2d for InkReveal {
@@ -63,7 +71,11 @@ enum Entrance {
     River(RiverReach, Handle<RiverMaterial>),
     Label(Point),
     Landmark(LandmarkPart, Handle<ColorMaterial>, f32),
-    Wash(Handle<ColorMaterial>, Option<Handle<InkReveal>>),
+    Wash {
+        original: Handle<ColorMaterial>,
+        material: Option<Handle<InkReveal>>,
+        order: Option<PaintOrder>,
+    },
 }
 
 impl Entrance {
@@ -83,7 +95,10 @@ impl Entrance {
             Self::River(..) => 0.58,
             Self::Label(_) => 0.30,
             Self::Landmark(part, ..) => landmark_render::replay_duration(part),
-            Self::Wash(..) => 0.64,
+            Self::Wash {
+                order: Some(order), ..
+            } => order.duration,
+            Self::Wash { .. } => 0.64,
         }
     }
 }
@@ -129,6 +144,7 @@ pub struct PlaybackGraphics<'w, 's> {
     ink: ResMut<'w, Assets<ColorMaterial>>,
     rivers: ResMut<'w, Assets<RiverMaterial>>,
     washes: ResMut<'w, Assets<InkReveal>>,
+    images: ResMut<'w, Assets<Image>>,
     entities: Query<'w, 's, (&'static mut Transform, &'static mut Visibility), With<WorldContent>>,
 }
 
@@ -141,6 +157,7 @@ impl PlaybackGraphics<'_, '_> {
             *visible = Visibility::Inherited;
         }
         let z = cue.z;
+        let duration = cue.entrance.duration();
         match &mut cue.entrance {
             Entrance::Tree(tree) => {
                 *transform = tree_transform(tree, z, ForestAnimation::replay_factor(tree, age));
@@ -166,7 +183,11 @@ impl PlaybackGraphics<'_, '_> {
                         .set_alpha(*opacity * landmark_render::alpha(part, age, false));
                 }
             }
-            Entrance::Wash(original, wash) => {
+            Entrance::Wash {
+                original,
+                material: wash,
+                order,
+            } => {
                 let mut entity = self.commands.entity(cue.entity);
                 if settled {
                     if wash.take().is_some() {
@@ -176,12 +197,19 @@ impl PlaybackGraphics<'_, '_> {
                     }
                 } else if let Some(handle) = wash {
                     if let Some(mut material) = self.washes.get_mut(handle) {
-                        material.wash.x = age / 0.64;
+                        material.wash.x = age / duration;
                     }
                 } else if let Some(material) = self.ink.get(original) {
                     let handle = self.washes.add(InkReveal {
-                        wash: Vec4::new(age / 0.64, material.color.alpha(), cue.span.0, cue.span.1),
+                        wash: Vec4::new(
+                            age / duration,
+                            material.color.alpha(),
+                            cue.span.0,
+                            cue.span.1,
+                        ),
+                        placement: order.as_ref().map_or(Vec4::ZERO, |order| order.position),
                         texture: material.texture.clone(),
+                        arrival: order.as_ref().map(|order| order.texture.clone()),
                     });
                     entity
                         .remove::<MeshMaterial2d<ColorMaterial>>()
@@ -287,6 +315,7 @@ pub fn play(
         &canvas,
         studio.editor.document(),
         frame,
+        &mut graphics.images,
     );
     if queued.is_empty() {
         studio.status = "No artwork in this view.".into();

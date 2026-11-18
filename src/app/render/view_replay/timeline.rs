@@ -1,9 +1,9 @@
 //! Group visible artwork into chronological replay cues.
-use super::{Canvas, Cue, Entrance};
+use super::{Canvas, Cue, Entrance, paint_order};
 use crate::app::render::{
     forest_atlas::TreeSprite, motion::tree_transform, retained::TerrainMaterial,
 };
-use bevy::prelude::{Entity, Vec3};
+use bevy::prelude::{Assets, Entity, Image, Vec3};
 use elmapa::{
     document::{Brush, ContentBounds, Document, Point, Stroke},
     scene::{ForestTree, Scene, Shape, region_stroke_covers},
@@ -18,6 +18,7 @@ enum Source {
     Stroke(u64, usize),
     Object(u64),
     Region(u64, Brush, usize),
+    OrderedRegion(u64, Brush),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -88,7 +89,11 @@ fn cue_source(
             let (layer, brush, tile) = scene.region(batch)?;
             (
                 Source::Region(layer, brush, tile),
-                Entrance::Wash(handle.clone(), None),
+                Entrance::Wash {
+                    original: handle.clone(),
+                    material: None,
+                    order: None,
+                },
             )
         }
         TerrainMaterial::Ink(handle) => {
@@ -129,14 +134,28 @@ pub(super) fn timeline(
     canvas: &Canvas,
     doc: &Document,
     frame: ContentBounds,
+    images: &mut Assets<Image>,
 ) -> VecDeque<Cue> {
     let mut groups = HashMap::<Source, Group>::new();
+    let mut surface_orders = HashMap::new();
+    let mut budget = paint_order::SAMPLE_BUDGET;
     for (order, batch) in scene.batches().enumerate() {
-        let Some((source, entity, bounds, entrance)) =
+        let Some((mut source, entity, bounds, mut entrance)) =
             cue_source(scene, batch, canvas).filter(|(_, _, bounds, _)| bounds.intersects(frame))
         else {
             continue;
         };
+        if let Source::Region(layer, brush, _) = source
+            && let Entrance::Wash { order, .. } = &mut entrance
+            && let Some((field, _)) = surface_orders.entry((layer, brush)).or_insert_with(|| {
+                let layer = doc.layer(layer)?;
+                layer.terrain_replay.as_ref()?;
+                paint_order::prepare(layer, brush, frame, images, &mut budget)
+            })
+        {
+            source = Source::OrderedRegion(layer, brush);
+            *order = Some(field.clone());
+        }
         let group = groups.entry(source).or_insert_with(|| Group {
             bounds,
             painter_order: order,
@@ -188,6 +207,13 @@ pub(super) fn timeline(
                     .map_or(Chronology::Unattributed, |stroke| {
                         Chronology::stroke(layer, index, stroke)
                     }),
+                Source::OrderedRegion(layer, brush) => surface_orders[&(layer, brush)]
+                    .as_ref()
+                    .and_then(|(_, index)| {
+                        let stroke = doc.layer(layer)?.strokes.get(*index)?;
+                        Some(Chronology::stroke(layer, *index, stroke))
+                    })
+                    .unwrap_or(Chronology::Unattributed),
                 Source::Region(layer, brush, _) => {
                     let visible = clip(group.bounds, frame);
                     let center = Point::new(
@@ -208,17 +234,25 @@ pub(super) fn timeline(
                         .unwrap_or(Chronology::Unattributed)
                 }
             };
-            (chronology, group)
+            (
+                chronology,
+                group,
+                matches!(source, Source::OrderedRegion(..)),
+            )
         })
         .collect();
-    ordered.sort_by(|(a, first), (b, second)| {
+    ordered.sort_by(|(a, first, _), (b, second, _)| {
         a.cmp(b)
             .then_with(|| first.painter_order.cmp(&second.painter_order))
     });
     let spacing = (4.8 / ordered.len().saturating_sub(1).max(1) as f32).min(0.22);
     let mut cues = Vec::new();
-    for (index, (_, mut group)) in ordered.into_iter().enumerate() {
-        let start = 0.12 + index as f32 * spacing;
+    let mut hold = 0.0;
+    for (index, (_, mut group, waits_for_wash)) in ordered.into_iter().enumerate() {
+        let start = 0.12 + index as f32 * spacing + hold;
+        if waits_for_wash {
+            hold += group.cues[0].entrance.duration();
+        }
         let min_step = group
             .cues
             .iter()

@@ -23,6 +23,7 @@ impl Document {
                 strokes: strokes.into(),
                 labels: Vec::new(),
                 landmarks: Vec::new(),
+                terrain_replay: None,
                 territories: None,
             }
         }

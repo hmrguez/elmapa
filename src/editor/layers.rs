@@ -17,6 +17,7 @@ impl Editor {
             strokes: Vec::new().into(),
             labels: Vec::new(),
             landmarks: Vec::new(),
+            terrain_replay: None,
             territories: None,
         });
         self.active_layer = id;

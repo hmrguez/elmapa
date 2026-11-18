@@ -1,6 +1,6 @@
 use super::{Canvas, Entrance, timeline};
 use crate::app::render::retained::{RetainedMesh, RetainedTree, TerrainMaterial};
-use bevy::prelude::{Handle, World, default};
+use bevy::prelude::{Assets, Handle, World, default};
 use elmapa::{
     document::{Brush, ContentBounds, Label, Point, Stroke},
     editor::Editor,
@@ -78,6 +78,7 @@ fn replay_keeps_stroke_timing_and_sorts_trees_and_peaks_by_ground_depth() {
             min: Point::new(0., 0.),
             max: Point::new(450., 300.),
         },
+        &mut Assets::default(),
     );
     let peaks: Vec<_> = cues
         .iter()
@@ -116,4 +117,91 @@ fn replay_keeps_stroke_timing_and_sorts_trees_and_peaks_by_ground_depth() {
             assert_eq!(cue.z > peak.z, tree.center.y > part.base.y);
         }
     }
+}
+
+#[test]
+fn ordered_water_shares_one_reveal_across_terrain_tiles() {
+    let mut editor = Editor::blank();
+    for x in [350., 450., 250., 550., 150., 650., 50.] {
+        assert!(editor.commit_stroke(Stroke {
+            brush: Brush::Water,
+            creation_id: None,
+            material: Some("ocean".into()),
+            points: vec![Point::new(x, 110.)].into(),
+            size: 146.,
+            strength: 1.,
+            seed: 42,
+        }));
+    }
+    editor.add_layer();
+    assert!(editor.add_label(Label::default()).is_some());
+    let mut saved = serde_json::to_value(editor.document()).unwrap();
+    saved["layers"][0]["terrain_replay"] = serde_json::json!("breadth_first");
+    let doc = serde_json::from_value(saved).unwrap();
+    let scene = SceneCache::default().render(&doc, None);
+    let mut world = World::new();
+    let mut canvas = Canvas::default();
+    for batch in scene.batches() {
+        let material = if scene.region(batch).is_some() {
+            TerrainMaterial::Tile {
+                handle: Handle::default(),
+                opacity: 1.,
+            }
+        } else {
+            TerrainMaterial::Ink(Handle::default())
+        };
+        canvas.meshes.insert(
+            Arc::as_ptr(batch) as usize,
+            RetainedMesh {
+                entity: world.spawn_empty().id(),
+                _source: batch.clone(),
+                material,
+            },
+        );
+    }
+    let mut images = Assets::default();
+    let cues = timeline(
+        &scene,
+        &canvas,
+        &doc,
+        ContentBounds {
+            min: Point::new(-40., 0.),
+            max: Point::new(740., 230.),
+        },
+        &mut images,
+    );
+    let washes: Vec<_> = cues
+        .iter()
+        .filter(|c| matches!(&c.entrance, Entrance::Wash { .. }))
+        .collect();
+    assert!(washes.len() > 2);
+    assert!(
+        washes.iter().all(|c| c.start == washes[0].start),
+        "tile-local clocks restart the wash"
+    );
+    let label = cues
+        .iter()
+        .find(|c| matches!(&c.entrance, Entrance::Label(_)))
+        .unwrap();
+    assert!(label.start >= washes[0].start + washes[0].entrance.duration());
+    let Entrance::Wash {
+        order: Some(order), ..
+    } = &washes[0].entrance
+    else {
+        panic!("the ordered area must use a shared arrival texture");
+    };
+    assert!(washes.iter().all(|c| match &c.entrance {
+        Entrance::Wash {
+            order: Some(other), ..
+        } => other.texture == order.texture,
+        _ => false,
+    }));
+    let image = images.get(&order.texture).unwrap();
+    let sample = |x: f32| {
+        let column = ((x - order.position.x) * order.position.z * image.width() as f32) as usize;
+        let row = ((110. - order.position.y) * order.position.w * image.height() as f32) as usize;
+        image.data.as_ref().unwrap()[row * image.width() as usize + column]
+    };
+    assert!(sample(350.) < sample(150.) && sample(350.) < sample(550.));
+    assert!((sample(573.) as i16 - sample(579.) as i16).abs() < 12);
 }

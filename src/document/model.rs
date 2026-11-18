@@ -84,12 +84,26 @@ pub struct Stroke {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TerrainReplay {
+    /// Spread a continuous wash from the first stroke through the painted area.
+    BreadthFirst,
+    /// Sweep one fixed-radius brush along the supplied gestures.
+    BrushPaths {
+        radius: f32,
+        paths: std::sync::Arc<Vec<SharedVec<Point>>>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Layer {
     pub id: u64,
     pub name: String,
     pub visible: bool,
     pub opacity: f32,
     pub strokes: SharedChunks<Stroke>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub terrain_replay: Option<TerrainReplay>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<super::Label>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -140,6 +154,7 @@ impl Document {
                 strokes: Vec::new().into(),
                 labels: Vec::new(),
                 landmarks: Vec::new(),
+                terrain_replay: None,
                 territories: None,
             }]
             .into(),

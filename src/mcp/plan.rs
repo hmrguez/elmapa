@@ -6,6 +6,7 @@ use elmapa::{
     brush_materials,
     document::{
         Brush, ContentBounds, Document, Label, Landmark, LandmarkKind, Layer, Point, Stroke,
+        TerrainReplay,
     },
     scene,
 };
@@ -200,6 +201,11 @@ fn apply_change(document: &mut Document, change: Change) -> Result<(), String> {
                 })
                 .collect::<Vec<_>>()
                 .into();
+            if let Some(TerrainReplay::BrushPaths { paths, .. }) = &mut layer.terrain_replay {
+                for path in std::sync::Arc::make_mut(paths) {
+                    path.iter_mut().for_each(offset);
+                }
+            }
             for label in &mut layer.labels {
                 offset(&mut label.position);
             }
@@ -284,6 +290,7 @@ fn put(
         strokes: Default::default(),
         labels: Vec::new(),
         landmarks: Vec::new(),
+        terrain_replay: None,
         territories: None,
     };
     match feature.art {
@@ -303,8 +310,9 @@ fn put(
                 .into_iter()
                 .map(point)
                 .collect::<Result<Vec<_>, _>>()?;
-            let mut strokes =
+            let (mut strokes, terrain_replay) =
                 area::fill(outline, drawing.unwrap_or_default(), brush, material, seed)?;
+            layer.terrain_replay = terrain_replay;
             for stroke in &mut strokes {
                 stroke.creation_id = Some(document.allocate_id()?);
             }

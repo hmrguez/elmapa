@@ -77,6 +77,7 @@ pub fn fixture(name: &str, size: usize) -> Result<Document, String> {
                     opacity: 0.6,
                     labels: Vec::new(),
                     landmarks: Vec::new(),
+                    terrain_replay: None,
                     territories: None,
                     strokes: vec![stroke(
                         Brush::Land,

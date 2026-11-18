@@ -1,6 +1,6 @@
 use base64::{Engine, engine::general_purpose::STANDARD};
 use elmapa::{
-    document::{Brush, Point},
+    document::{Brush, Point, TerrainReplay},
     storage::{DocumentStore, LocalDocumentStore},
 };
 use serde_json::{Value, json};
@@ -339,6 +339,7 @@ fn breadth_first_areas_paint_outward_and_reject_an_invalid_origin_without_editin
     let document = LocalDocumentStore.load(path).unwrap();
     let layer = &document.layers[0];
     assert_eq!(document.layers.len(), 1);
+    assert_eq!(layer.terrain_replay, Some(TerrainReplay::BreadthFirst));
     let strokes: Vec<_> = layer.strokes.iter().collect();
     let first = strokes[0].points.first().unwrap();
     assert!((first.x - 35.).abs() < 5. && (first.y - 30.).abs() < 5.);
@@ -391,4 +392,55 @@ fn breadth_first_areas_paint_outward_and_reject_an_invalid_origin_without_editin
     let layer = &redrawn.layers[0];
     let first = layer.strokes.iter().next().unwrap().points.first().unwrap();
     assert!((first.x - 165.).abs() < 5. && (first.y - 35.).abs() < 5.);
+}
+
+#[test]
+fn brush_paths_survive_a_saved_area_move() {
+    let root = Sandbox::new();
+    let mut mcp = Client::connect(&root.0);
+    let created = mcp.text(
+        "create_map",
+        json!({"name": "Painted bay", "features": [{
+            "name": "Bay", "art": {
+                "kind": "area", "brush": "water", "material": "ocean",
+                "outline": [[0, 0], [400, 0], [400, 300], [0, 300]],
+                "drawing": {
+                    "approach": "brush_paths", "radius": 60,
+                    "paths": [[[300, 100], [250, 180], [150, 160]], [[90, 230]]]
+                }
+            }
+        }]}),
+    );
+    let map_id = &created["map_id"];
+    let path = Path::new(created["atlas_path"].as_str().unwrap());
+    let doc = LocalDocumentStore.load(path).unwrap();
+    let layer = &doc.layers[0];
+    let Some(TerrainReplay::BrushPaths { radius, paths }) = &layer.terrain_replay else {
+        panic!("the gestures must persist with the area");
+    };
+    assert_eq!(*radius, 60.);
+    assert_eq!(paths.len(), 2);
+    assert_eq!(paths[0][0], Point::new(300., 100.));
+    assert_eq!(paths[1][0], Point::new(90., 230.));
+
+    let inspected = mcp.text(
+        "inspect_map",
+        json!({"map_id": map_id, "layer_id": layer.id}),
+    );
+    let anchor = &inspected["layer"]["anchor"];
+    mcp.text(
+        "edit_map",
+        json!({
+            "map_id": map_id, "expected_revision": inspected["revision"],
+            "changes": [{"op": "move", "layer_id": layer.id, "to": [
+                anchor[0].as_f64().unwrap()+25., anchor[1].as_f64().unwrap()+50.
+            ]}]
+        }),
+    );
+    let moved = LocalDocumentStore.load(path).unwrap();
+    let Some(TerrainReplay::BrushPaths { paths, .. }) = &moved.layers[0].terrain_replay else {
+        panic!("moving the area must preserve its gestures");
+    };
+    assert_eq!(paths[0][0], Point::new(325., 150.));
+    assert_eq!(paths[1][0], Point::new(115., 280.));
 }

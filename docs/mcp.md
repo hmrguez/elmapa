@@ -64,5 +64,23 @@ Pass the feature to `create_map` or `edit_map` with a `put` change. Coordinates
 use world units. Starting points outside the smoothed outline are rejected.
 When an outline has more than one paintable piece, the closest remaining piece
 starts its own wave. Each area stays on one editable layer. Elmapa records the
-brush stroke order for **Replay this view**, which approximates the timing of
-merged land and water within each terrain tile.
+brush stroke order for **Replay this view**. Breadth-first land and water use
+one continuous wash across tile edges. The wash spreads by distance from
+the first stroke through the painted area.
+
+For a hand-drawn reveal, supply `brush_paths` on a land or water area. Each
+path is a separate gesture with the same brush radius in world units. List
+gesture points in the order the brush should travel. The outline clips the
+artwork, so the brush can sweep across a coast without changing its shape.
+Portions of the area outside the gestures fade in at the end.
+
+```json
+"drawing": {
+  "approach": "brush_paths",
+  "radius": 100,
+  "paths": [
+    [[190, 140], [250, 90], [340, 125], [370, 200], [305, 250], [220, 230]],
+    [[330, 270], [410, 320], [485, 280]]
+  ]
+}
+```

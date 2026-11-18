@@ -20,3 +20,6 @@ pub const MAX_LANDMARK_SIZE: f32 = 640.;
 pub(crate) fn valid_name(name: &str) -> bool {
     !name.trim().is_empty() && name.len() <= MAX_NAME_BYTES
 }
+
+pub const MAX_REPLAY_PATHS: usize = 32;
+pub const MAX_REPLAY_PATH_POINTS: usize = 512;

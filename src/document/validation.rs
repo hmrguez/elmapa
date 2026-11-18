@@ -40,6 +40,18 @@ impl Document {
             if !valid_name(&layer.name) || !(0.0..=1.0).contains(&layer.opacity) {
                 return Err("A layer has an invalid name or opacity.".into());
             }
+            if let Some(super::TerrainReplay::BrushPaths { radius, paths }) = &layer.terrain_replay
+                && (!(1. ..=1024.).contains(radius)
+                    || paths.is_empty()
+                    || paths.len() > super::limits::MAX_REPLAY_PATHS
+                    || paths.iter().any(|path| {
+                        path.is_empty()
+                            || path.len() > super::limits::MAX_REPLAY_PATH_POINTS
+                            || path.iter().any(|point| !point.is_in_world())
+                    }))
+            {
+                return Err("A layer has invalid terrain replay brush paths.".into());
+            }
             if let Some(regions) = &layer.territories {
                 regions.validate()?;
                 if !layer.strokes.is_empty()
