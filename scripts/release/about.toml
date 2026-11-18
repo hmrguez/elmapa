@@ -4,3 +4,6 @@ accepted = [
 ]
 ignore-dev-dependencies = true
 ignore-build-dependencies = true
+
+[option-ext]
+accepted = ["MPL-2.0"]

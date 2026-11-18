@@ -20,12 +20,12 @@ ROOT = Path(__file__).resolve().parents[2]
 RELEASE = Path(__file__).resolve().parent
 
 
-def cargo_info():
+def package_version():
     metadata = json.loads(subprocess.check_output(
         ["cargo", "metadata", "--no-deps", "--locked", "--format-version", "1"], cwd=ROOT
     ))
     app = next(package for package in metadata["packages"] if package["name"] == "elmapa")
-    return Path(metadata["target_directory"]), app["version"]
+    return app["version"]
 
 
 def mac_bundle(binary, destination, version):
@@ -102,17 +102,19 @@ def smoke(archive, unpack, executable, native):
         native_smoke.check(unpack / executable)
 
 
-def package(offline, native):
-    _, version = cargo_info()
-    rust_info = subprocess.check_output(["rustc", "-vV"], text=True).splitlines()
-    host = next(line.removeprefix("host: ") for line in rust_info if line.startswith("host: "))
+def build_binary(flags):
     # Cargo reports the executable path even with a custom target directory.
     messages = subprocess.check_output([
-        "cargo", "build", "--locked", "--release", "--bin", "elmapa",
-        "--message-format=json-render-diagnostics", *offline,
+        "cargo", "build", "--bin", "elmapa", "--message-format=json-render-diagnostics", *flags,
     ], cwd=ROOT, text=True).splitlines()
-    binary = next(Path(item["executable"]) for item in map(json.loads, messages)
+    return next(Path(item["executable"]) for item in map(json.loads, messages)
                   if item.get("executable") and item["target"]["name"] == "elmapa")
+
+
+def package(offline, native):
+    version = package_version()
+    rust_info = subprocess.check_output(["rustc", "-vV"], text=True).splitlines()
+    host = next(line.removeprefix("host: ") for line in rust_info if line.startswith("host: "))
     packages = ROOT / "target/packages"
     packages.mkdir(parents=True, exist_ok=True)
     suffix = "tar.gz" if sys.platform.startswith("linux") else "zip"
@@ -128,14 +130,14 @@ def package(offline, native):
         workspace = Path(temporary)
         stage = workspace / "Elmapa"
         stage.mkdir()
+        bundle = stage / "Elmapa.app"
+        notice_folder = bundle / "Contents/Resources" if sys.platform == "darwin" else stage
+        notice_folder.mkdir(parents=True, exist_ok=True)
+        notices(notice_folder, host, offline)
+        binary = build_binary(["--locked", "--release", *offline])
         if sys.platform == "darwin":
-            bundle = stage / "Elmapa.app"
-            resources = bundle / "Contents/Resources"
-            resources.mkdir(parents=True)
-            notices(resources, host, offline)
             executable = mac_bundle(binary, bundle, version)
         else:
-            notices(stage, host, offline)
             executable = stage / binary.name
             shutil.copy2(binary, executable)
         archive = workspace / archive_name
@@ -151,12 +153,9 @@ def main():
         # The development bundle command forwards the caller's Cargo build flags.
         if sys.platform != "darwin":
             raise SystemExit("The application bundle requires macOS")
-        flags = sys.argv[2:]
-        target_dir, version = cargo_info()
-        subprocess.run(["cargo", "build", *flags], cwd=ROOT, check=True)
-        profile = "release" if "--release" in flags else "debug"
-        bundle = target_dir / "Elmapa.app"
-        mac_bundle(target_dir / profile / "elmapa", bundle, version)
+        binary = build_binary(sys.argv[2:])
+        bundle = ROOT / "target/Elmapa.app"
+        mac_bundle(binary, bundle, package_version())
         print(f"Built {bundle}")
         return
     parser = argparse.ArgumentParser(description=__doc__)

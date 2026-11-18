@@ -3,7 +3,7 @@ Rust dependencies included in this build of Elmapa
 {{#each licenses}}
 {{name}}
 {{#each used_by}}
-  {{crate.name}} {{crate.version}}
+  {{crate.name}} {{crate.version}}{{#if crate.source}} — https://crates.io/api/v1/crates/{{crate.name}}/{{crate.version}}/download{{/if}}
 {{/each}}
 
 {{{text}}}
