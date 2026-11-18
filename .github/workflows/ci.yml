@@ -8,6 +8,9 @@ on:
 permissions:
   contents: read
 
+env:
+  RUST_VERSION: 1.95.0
+
 jobs:
   checks:
     name: Source checks
@@ -22,8 +25,8 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - run: rustup toolchain install 1.95.0 --profile minimal --component rustfmt
-      - run: cargo +1.95.0 fmt --all -- --check
+      - run: rustup toolchain install ${{ env.RUST_VERSION }} --profile minimal --component rustfmt
+      - run: cargo +${{ env.RUST_VERSION }} fmt --all -- --check
       - run: python3 scripts/export-icons.py --check
       - run: python3 -B scripts/test_performance_trace.py
 
@@ -56,11 +59,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 libx11-dev libxi-dev libxrandr-dev libxcursor-dev fonts-dejavu-core mesa-vulkan-drivers xvfb xauth
-      - run: rustup toolchain install 1.95.0 --profile minimal --component clippy
-      - run: rustup default 1.95.0
+      - run: rustup toolchain install ${{ env.RUST_VERSION }} --profile minimal --component clippy
+      - run: rustup default ${{ env.RUST_VERSION }}
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
-          key: ${{ matrix.task }}
+          # Hosted images also carry an unused rolling toolchain. Key on the compiler we run.
+          key: ${{ matrix.task }}-rust${{ env.RUST_VERSION }}
+          add-rust-environment-hash-key: false
           cache-on-failure: true
           save-if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
       - if: matrix.task == 'Test'
@@ -129,7 +134,7 @@ jobs:
 
   latest:
     name: Update latest stable download
-    if: github.ref == 'refs/heads/main'
+    if: ${{ !cancelled() && needs.publish.result == 'success' && github.ref == 'refs/heads/main' }}
     needs: publish
     runs-on: ubuntu-24.04
     permissions:
