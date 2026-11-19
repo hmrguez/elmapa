@@ -7,6 +7,7 @@ use super::{
     widgets::{Builder, Palette, color, column, row},
 };
 use crate::app::{
+    branding,
     files::Jobs,
     state::{Action, Studio},
 };
@@ -89,8 +90,15 @@ pub(super) fn build(
             ..row(24.)
         },
     );
+    let identity = b.node(header, row(12.));
+    b.icon(
+        identity,
+        branding::SYMBOL,
+        ink,
+        if compact { 48. } else { 60. },
+    );
     let title = b.text(
-        header,
+        identity,
         "Your atlases",
         if compact { 48. } else { 56. },
         ink,

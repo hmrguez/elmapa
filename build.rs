@@ -1,5 +1,17 @@
 use std::{env, fs, path::PathBuf};
 fn main() {
+    #[cfg(windows)]
+    if env::var_os("CARGO_FEATURE_APP").is_some() {
+        println!("cargo:rerun-if-changed=assets/branding/elmapa.rc");
+        println!("cargo:rerun-if-changed=assets/branding/elmapa.ico");
+        embed_resource::compile_for(
+            "assets/branding/elmapa.rc",
+            ["elmapa"],
+            embed_resource::ParamsIncludeDirs(["assets/branding"]),
+        )
+        .manifest_required()
+        .expect("embed the Elmapa executable icon");
+    }
     println!("cargo:rerun-if-changed=assets/icons");
     let mut code = String::from("fn embedded_icon(path:&str)->Option<&'static [u8]>{match path{\n");
     if let Ok(entries) = fs::read_dir("assets/icons") {

@@ -1,5 +1,5 @@
 //! Embedded icons, brush textures and system fonts for the native UI.
-use crate::app::render;
+use crate::app::{branding, render};
 use bevy::{prelude::*, text::TextLayoutInfo};
 use elmapa::{
     brush_materials::{self, ForestStyle},
@@ -42,6 +42,10 @@ pub fn setup(
     canvas: Res<render::Canvas>,
 ) {
     let mut icons = HashMap::new();
+    icons.insert(
+        branding::SYMBOL.into(),
+        images.add(render::rgba_image(128, 128, branding::icon_pixels(128))),
+    );
     let manifest: serde_json::Value =
         serde_json::from_str(include_str!("../../../assets/icons/manifest.json")).expect("icons");
     for icon in manifest["icons"].as_array().expect("icon manifest") {

@@ -39,11 +39,13 @@ def mac_bundle(binary, destination, version):
     resources = contents / "Resources"
     resources.mkdir(exist_ok=True)
     shutil.copy2(ROOT / "assets/icons/LICENSE", resources / "ELMAPA-ICONS-LICENSE")
+    shutil.copy2(ROOT / "assets/branding/elmapa.icns", resources / "Elmapa.icns")
     (resources / "LUCIDE-LICENSE").unlink(missing_ok=True)
     with (contents / "Info.plist").open("wb") as plist:
         plistlib.dump({
             "CFBundleExecutable": "Elmapa", "CFBundleIdentifier": "studio.elmapa.app",
             "CFBundleName": "Elmapa", "CFBundleDisplayName": "Elmapa",
+            "CFBundleIconFile": "Elmapa.icns",
             "CFBundleVersion": version, "CFBundleShortVersionString": version,
             "CFBundlePackageType": "APPL", "NSHighResolutionCapable": True,
             "LSMinimumSystemVersion": "12.0",

@@ -201,7 +201,11 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             .spawn((
                 ImageNode {
                     image,
-                    color: color(hex, 1.),
+                    color: if symbol == crate::app::branding::SYMBOL {
+                        Color::WHITE
+                    } else {
+                        color(hex, 1.)
+                    },
                     ..default()
                 },
                 Node {
