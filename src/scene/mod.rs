@@ -16,7 +16,7 @@ mod terrain;
 pub mod territories;
 
 pub use builder::build_scene;
-pub use cache::{Scene, SceneCache, region_stroke_covers};
+pub use cache::{Scene, SceneCache, TerrainHit, region_stroke_covers};
 pub use forest_animation::ForestAnimation;
 pub use mountain_animation::{MountainAnimation, MountainId, MountainPart};
 pub use paper::paper_detail;

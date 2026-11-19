@@ -33,6 +33,7 @@ impl Document {
                 strokes: strokes.into(),
                 labels: Vec::new(),
                 landmarks: Vec::new(),
+                relief_moves: Default::default(),
                 terrain_replay: None,
                 territories: None,
             }

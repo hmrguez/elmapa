@@ -3,6 +3,7 @@ mod annotations;
 mod history;
 mod labels;
 mod layers;
+mod selection;
 mod strokes;
 mod territories;
 

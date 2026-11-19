@@ -178,14 +178,9 @@ impl Scene {
         let mut nearest = None;
         let mut distance = tolerance;
         for batch in self.batches.iter().rev() {
-            let Some((layer, index, seed, _)) = self
-                .path_part(batch)
-                .map(|path| path.id)
-                .or_else(|| self.river_reach(batch).map(|reach| reach.id))
-            else {
+            let Some(id) = self.course_id(batch) else {
                 continue;
             };
-            let id = LinearStrokeId { layer, index, seed };
             for shape in batch.iter() {
                 let Shape::Polygon { points, .. } = shape else {
                     continue;

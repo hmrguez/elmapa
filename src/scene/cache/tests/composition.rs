@@ -4,6 +4,23 @@ use crate::scene::SceneCache;
 use std::sync::Arc;
 
 #[test]
+fn woodland_mountain_face_is_selectable_above_its_ground_wash() {
+    use crate::document::{AtlasStyle, SelectionId, Specimen};
+
+    let mut doc = Document::blank();
+    doc.style = AtlasStyle::Woodland;
+    doc.layers[0].strokes.push(stroke(Brush::Mountain));
+    let scene = SceneCache::default().render(&doc, None);
+    let peak = scene.mountain_parts().next().unwrap();
+    let point = Point::new(peak.base.x + 13., peak.base.y - 50.);
+    let hit = scene.relief_at(point, 0.).expect("visible mountain face");
+    assert!(matches!(
+        hit.id,
+        SelectionId::Relief { key, .. } if key.specimen == Specimen::Peak(0)
+    ));
+}
+
+#[test]
 fn trees_and_mountain_flanks_follow_ground_depth_within_a_layer() {
     for brushes in [
         [Brush::Forest, Brush::Mountain, Brush::River, Brush::Path],

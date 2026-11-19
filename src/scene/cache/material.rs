@@ -49,10 +49,12 @@ impl MaterialLayer {
     }
 
     pub(super) fn matches(&self, source: &Layer) -> bool {
-        self.source.id == source.id && self.source.strokes == source.strokes
+        self.source.id == source.id
+            && self.source.strokes == source.strokes
+            && self.source.relief_moves == source.relief_moves
     }
-    /// A course edit leaves the terrain, eraser index, and other lines usable.
-    pub(super) fn with_linear_edits(&self, source: &Layer) -> Option<Self> {
+    /// Course and specimen edits share the existing terrain and eraser index.
+    pub(super) fn with_selection_edits(&self, source: &Layer) -> Option<Self> {
         let previous = &self.source.strokes;
         if previous.len() != source.strokes.len() {
             return None;
@@ -73,14 +75,43 @@ impl MaterialLayer {
             }
             offset += old.len();
         }
-        if edits.is_empty() {
+        let mut forest_changed = false;
+        if self.source.relief_moves != source.relief_moves {
+            let changed = self
+                .source
+                .relief_moves
+                .iter()
+                .filter(|item| source.relief_move(item.key) != Some(**item))
+                .chain(
+                    source
+                        .relief_moves
+                        .iter()
+                        .filter(|item| self.source.relief_move(item.key) != Some(**item)),
+                );
+            for item in changed {
+                match item.key.specimen {
+                    crate::document::Specimen::Tree { .. } => forest_changed = true,
+                    crate::document::Specimen::Peak(_) => edits.push(item.key.stroke),
+                }
+            }
+        }
+        if edits.is_empty() && !forest_changed {
             return None;
         }
+        edits.sort_unstable();
+        edits.dedup();
         let mut result = self.clone();
         result.source = source.clone();
         result.memory = OnceLock::new();
         let mut opaque = source.clone();
         opaque.opacity = 1.;
+        if forest_changed {
+            result.forest = Arc::new(result.placement.batches(
+                &result.forest,
+                &opaque,
+                &result.field,
+            ));
+        }
         for index in edits {
             let slot = result
                 .lines
@@ -138,7 +169,7 @@ impl MaterialLayer {
             memory: OnceLock::new(),
             valid: true,
             terrain,
-            forest: Arc::new(placement.batches(&[])),
+            forest: Arc::new(placement.batches(&[], source, &field)),
             placement,
             lines: source
                 .strokes
@@ -163,14 +194,22 @@ impl MaterialLayer {
         self.lines
             .iter()
             .filter(|(index, _)| self.source.strokes[*index].brush == Brush::Mountain)
-            .flat_map(|(index, chunks)| {
+            .flat_map(move |(index, chunks)| {
                 chunks
                     .as_chunks::<2>()
                     .0
                     .iter()
                     .enumerate()
                     .filter_map(move |(ordinal, flanks)| {
-                        Some((*index, ordinal, mountain_base(&flanks[0])?, flanks))
+                        let inferred = mountain_base(&flanks[0])?;
+                        let base = self
+                            .source
+                            .relief_move(crate::document::ReliefKey {
+                                stroke: *index,
+                                specimen: crate::document::Specimen::Peak(ordinal),
+                            })
+                            .map_or(inferred, |item| item.position);
+                        Some((*index, ordinal, base, flanks))
                     })
             })
     }
@@ -204,6 +243,7 @@ impl MaterialLayer {
                             1.
                         },
                         width: bounds.max.x - bounds.min.x,
+                        bounds,
                     },
                 );
             }

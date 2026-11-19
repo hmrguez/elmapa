@@ -56,6 +56,25 @@ impl Stroke {
 }
 
 impl Layer {
+    pub(crate) fn stroke_bounds(&self, index: usize) -> Option<ContentBounds> {
+        let stroke = self.strokes.get(index)?;
+        let start = self
+            .relief_moves
+            .partition_point(|item| item.key.stroke < index);
+        self.relief_moves[start..]
+            .iter()
+            .take_while(|item| item.key.stroke == index)
+            .fold(stroke.bounds(), |bounds, item| {
+                let point = item.position;
+                let moved = ContentBounds {
+                    min: point,
+                    max: point,
+                }
+                .padded(stroke.size * 1.3 + 32.);
+                Some(bounds.map_or(moved, |bounds| bounds.union(moved)))
+            })
+    }
+
     /// Bounds of the visible artwork on this layer.
     pub fn content_bounds(&self) -> Option<ContentBounds> {
         if !self.visible || self.opacity <= 0. {
@@ -63,8 +82,9 @@ impl Layer {
         }
         self.strokes
             .iter()
-            .filter(|stroke| stroke.brush != Brush::Erase && stroke.strength > 0.)
-            .filter_map(Stroke::bounds)
+            .enumerate()
+            .filter(|(_, stroke)| stroke.brush != Brush::Erase && stroke.strength > 0.)
+            .filter_map(|(index, _)| self.stroke_bounds(index))
             .chain(
                 self.labels
                     .iter()

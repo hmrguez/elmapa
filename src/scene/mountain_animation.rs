@@ -13,6 +13,7 @@ pub struct MountainPart {
     pub base: Point,
     pub side: f32,
     pub width: f32,
+    pub bounds: crate::document::ContentBounds,
 }
 #[derive(Clone, Default)]
 pub struct MountainAnimation {

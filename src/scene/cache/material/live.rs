@@ -85,6 +85,12 @@ impl LiveMaterial {
                 .terrain
                 .apply(&base.terrain, stroke, &self.distance, &delta.points);
         }
+        if stroke.brush == Brush::Erase {
+            self.material.field = Arc::new(FieldIndex::reconcile(
+                &opaque_source,
+                Some(&self.material.field),
+            ));
+        }
         if matches!(stroke.brush, Brush::Forest | Brush::Erase) {
             if stroke.brush == Brush::Erase {
                 let mut tail = stroke.clone();
@@ -92,20 +98,19 @@ impl LiveMaterial {
                 Arc::make_mut(&mut self.material.placement).erase(&tail);
             } else {
                 Arc::make_mut(&mut self.material.placement).append(
-                    self.material.source.id,
-                    1.,
+                    &opaque_source,
                     self.material.source.strokes.len() - 1,
                     stroke,
                     &mut self.dabs,
                 );
             }
-            self.material.forest = Arc::new(self.material.placement.batches(&self.material.forest));
+            self.material.forest = Arc::new(self.material.placement.batches(
+                &self.material.forest,
+                &opaque_source,
+                &self.material.field,
+            ));
         }
         if stroke.brush == Brush::Erase {
-            self.material.field = Arc::new(FieldIndex::reconcile(
-                &opaque_source,
-                Some(&self.material.field),
-            ));
             self.material.lines = self
                 .material
                 .lines
@@ -113,7 +118,7 @@ impl LiveMaterial {
                 .map(|(index, shapes)| {
                     let affected = delta
                         .bounds()
-                        .zip(base.source.strokes[*index].bounds())
+                        .zip(base.source.stroke_bounds(*index))
                         .is_some_and(|(a, b)| a.intersects(b));
                     (
                         *index,

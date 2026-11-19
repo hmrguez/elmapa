@@ -54,9 +54,7 @@ Landmarks remembers the last icon you placed in the current atlas. Press `L` aga
 
 Use **Select** (or `V` / `9`) to edit an existing landmark. Drag to move it, choose a different icon in the orbit, or use the orbit’s size, Duplicate, and Delete controls. Each placement, icon change, size adjustment and completed drag is one undo step. Settings → Landmark packs controls the available artwork. Turning a pack off leaves placed landmarks visible and editable. Landmarks follow layer visibility, opacity and order, and erasing terrain leaves them intact. Reduced Motion shows finished artwork immediately. Saves, shelf previews and SVG use finished geometry. The [SVG registry guide](../assets/landmarks/README.md) describes how to install and author packs and their animation instructions.
 
-Choose **Select** (or press `V` / `9`) to select labels across visible layers. Double-click empty canvas to draft one label and stay in Select when you finish. Drag a name to move it, drag any corner of its selection frame to resize it proportionally from the opposite corner, or drag the round handle beneath the frame to rotate. Hold Shift while rotating to snap to 15° increments. Handles keep their screen size at every zoom, and each completed move, resize, or rotation is one undo step. Escape cancels an active gesture. Use **Regions** to select land for division.
-
-Click a river or trail with **Select** to show its nodes. Drag a node to bend the nearby course, or drag an endpoint to move where it begins or ends. The orbit adds or removes editing handles for finer or broader adjustments. Release to commit one undo step. Press Escape during a drag to cancel it. Click empty canvas or choose **Done** in the orbit to deselect.
+Double-click empty canvas to draft a label and stay in Select when you finish. With one label selected, drag a corner to resize it proportionally or drag the round handle beneath it to rotate. Hold Shift during rotation to snap to 15° increments. Use **Regions** to select land for division.
 
 The selected name has five actions in its first ring. Clockwise from the top, they are **Typeface**, **Ink**, **Duplicate**, **Delete**, and **Advanced typography**. Typeface, Ink, and Advanced typography each open a second ring while keeping the first ring visible and highlighting the active action. The second ring fills clockwise with a staggered reveal. Reduced Motion shows it immediately. Hover a bubble for its action name. Click an open parent again or use the outer ring’s close button to close that level. Clicking empty canvas deselects.
 
@@ -65,6 +63,12 @@ The selected name has five actions in its first ring. Clockwise from the top, th
 Start typing while a label is selected to replace its name. The first keystroke replaces the old name and shows a caret directly on the map. Arrow keys, Shift selection, Home/End, Backspace, and macOS copy, cut, paste, and select-all work as text editing keys. Canvas shortcuts are suspended while the label is selected. Enter commits the name and keeps the label selected. Escape or a click on empty canvas commits the name and deselects it.
 
 Name edits preview live. New names descend gently and settle over 300 ms; Reduced Motion skips this. The animation never changes saved or exported geometry. SVG exports include font outlines, so recipients need no installed fonts. Older version 1 atlases open with no labels and retain their existing terrain.
+
+## Selecting and moving artwork
+
+Choose **Select** (or press `V` / `9`). Click a label, landmark, tree, mountain peak, river or trail on any visible layer. Hold Shift and click to add or remove an item. Drag a box from empty canvas to select several items, or hold Shift while drawing the box to add to your selection. Drag any selected item or the hand grip to move the selection together. Each completed move is one undo step. Click empty canvas or press Escape to clear the selection. During a drag, Escape cancels the move.
+
+Click a river or trail to select its entire course. Drag the hand grip or the course between nodes to move every node by the same amount. Drag an individual node to reshape the course or move an endpoint. Use **− / +** beside the course name to adjust the number of editing handles.
 
 ## Regions
 

@@ -19,7 +19,7 @@ pub use editor::{ChromeMotion, advance_motion, brush_icon, menu_animation};
 pub use feedback::{alpha, hover, hover_follow};
 pub use overlays::{
     TextCard, landmark_cursor, landmark_selection_follow, path_selection_follow, radial_follow,
-    region_selection_follow, text_ime, text_selection_follow, tooltips,
+    region_selection_follow, selection_follow, text_ime, text_selection_follow, tooltips,
 };
 pub use shelf::{PreviewSlot, cover_rect};
 pub use widgets::color;

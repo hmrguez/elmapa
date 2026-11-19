@@ -10,7 +10,7 @@ use crate::scene::{
 };
 use crate::{
     brush_materials::{self, ForestStyle},
-    document::{AtlasStyle, Brush, Layer, Point, Stroke},
+    document::{AtlasStyle, Brush, Layer, Point, ReliefKey, Specimen, Stroke},
 };
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
@@ -72,6 +72,7 @@ pub type TreeId = (u64, usize, usize, usize);
 #[derive(Clone, Debug, PartialEq)]
 pub struct ForestTree {
     pub id: TreeId,
+    pub seed: u64,
     pub center: Point,
     pub origin: Point,
     pub radius: f32,
@@ -92,22 +93,27 @@ pub(in crate::scene) struct ForestBatch {
 // cannot reshuffle trees that have already appeared.
 #[cfg(test)]
 pub(in crate::scene) fn trees(layer: &Layer) -> Vec<ForestTree> {
-    let mut trees: Vec<_> = Placement::new(layer).trees.into_iter().flatten().collect();
-    trees.sort_by(painter_order);
-    trees
+    let field = super::field_index::FieldIndex::new(layer);
+    Placement::new(layer)
+        .batches(&[], layer, &field)
+        .into_iter()
+        .map(|batch| batch.tree)
+        .collect()
 }
 
 /// Retained collision cells and accepted candidates; live updates never replay
 /// committed forest RNGs. Tombstones preserve indices while erasing locally.
 #[derive(Clone, Default)]
 pub(in crate::scene) struct Placement {
-    trees: Vec<Option<ForestTree>>,
+    trees: Vec<ForestTree>,
+    erased: Vec<bool>,
     cells: HashMap<(i32, i32), Vec<usize>>,
     active: usize,
 }
 impl Placement {
     pub fn bytes(&self) -> usize {
-        self.trees.capacity() * std::mem::size_of::<Option<ForestTree>>()
+        self.trees.capacity() * std::mem::size_of::<ForestTree>()
+            + self.erased.capacity()
             + self.cells.capacity() * std::mem::size_of::<((i32, i32), Vec<usize>)>()
             + self
                 .cells
@@ -121,13 +127,7 @@ impl Placement {
             if super::super::generation::stopped() {
                 break;
             }
-            state.append(
-                layer.id,
-                layer.opacity,
-                index,
-                stroke,
-                &mut DabSampler::default(),
-            );
+            state.append(layer, index, stroke, &mut DabSampler::default());
         }
         state
     }
@@ -163,21 +163,21 @@ impl Placement {
             if super::super::generation::stopped() {
                 break;
             }
-            if self.trees[i].as_ref().is_some_and(|tree| {
-                distance.as_ref().map_or_else(
-                    || stroke_distance(tree.center, stroke),
-                    |index| index.distance(tree.center),
+            let center = self.trees[i].center;
+            if !self.erased[i]
+                && distance.as_ref().map_or_else(
+                    || stroke_distance(center, stroke),
+                    |index| index.distance(center),
                 ) < super::field::radius(stroke)
-            }) {
-                self.trees[i] = None;
+            {
+                self.erased[i] = true;
                 self.active -= 1;
             }
         }
     }
     pub fn append(
         &mut self,
-        layer_id: u64,
-        opacity: f32,
+        layer: &Layer,
         stroke_index: usize,
         stroke: &Stroke,
         sampler: &mut DabSampler,
@@ -230,9 +230,8 @@ impl Placement {
                     (x - 1..=x + 1).any(|cx| {
                         self.cells.get(&(cx, cy)).is_some_and(|ids| {
                             ids.iter().any(|i| {
-                                self.trees[*i]
-                                    .as_ref()
-                                    .is_some_and(|tree| distance(tree.center, center) < clearance)
+                                !self.erased[*i]
+                                    && distance(self.trees[*i].center, center) < clearance
                             })
                         })
                     })
@@ -244,8 +243,9 @@ impl Placement {
                     break;
                 }
                 self.cells.entry((x, y)).or_default().push(self.trees.len());
-                self.trees.push(Some(ForestTree {
-                    id: (layer_id, stroke_index, dab, candidate),
+                let tree = ForestTree {
+                    id: (layer.id, stroke_index, dab, candidate),
+                    seed: stroke.seed,
                     center,
                     origin,
                     radius,
@@ -254,19 +254,50 @@ impl Placement {
                     scale: scale * 0.8,
                     rotation,
                     variant,
-                    opacity: opacity.clamp(0., 1.),
-                }));
+                    opacity: layer.opacity.clamp(0., 1.),
+                };
+                self.trees.push(tree);
+                self.erased.push(false);
                 self.active += 1;
                 placed += 1;
             }
         }
     }
-    pub fn batches(&self, previous: &[ForestBatch]) -> Vec<ForestBatch> {
+    pub fn batches(
+        &self,
+        previous: &[ForestBatch],
+        layer: &Layer,
+        field: &super::field_index::FieldIndex,
+    ) -> Vec<ForestBatch> {
         let old: HashMap<_, _> = previous
             .iter()
             .map(|batch| (batch.tree.id, batch))
             .collect();
-        let mut trees: Vec<_> = self.trees.iter().flatten().cloned().collect();
+        // Resolve edited placements after the seeded scatter. Moving one tree
+        // cannot change the collision layout or looks of its original neighbors.
+        let mut trees: Vec<_> = self
+            .trees
+            .iter()
+            .zip(&self.erased)
+            .filter_map(|(tree, erased)| {
+                let (_, stroke, dab, candidate) = tree.id;
+                if let Some(item) = layer.relief_move(ReliefKey {
+                    stroke,
+                    specimen: Specimen::Tree { dab, candidate },
+                }) {
+                    if field.erased(item.position, item.after_strokes.saturating_sub(1)) {
+                        return None;
+                    }
+                    let mut moved = tree.clone();
+                    moved.origin.x += item.position.x - tree.center.x;
+                    moved.origin.y += item.position.y - tree.center.y;
+                    moved.center = item.position;
+                    Some(moved)
+                } else {
+                    (!erased).then(|| tree.clone())
+                }
+            })
+            .collect();
         trees.sort_by(painter_order);
         trees
             .into_iter()
@@ -410,3 +441,79 @@ pub(in crate::scene) fn tree_shapes(tree: &ForestTree, style: AtlasStyle) -> Vec
 
 #[cfg(test)]
 mod tests;
+
+impl ForestTree {
+    pub(in crate::scene) fn contains(
+        &self,
+        point: Point,
+        tolerance: f32,
+        style: AtlasStyle,
+    ) -> bool {
+        use crate::scene::geometry::{contains, segment_distance};
+        let (sin, cos) = self.rotation.to_radians().sin_cos();
+        let x = (point.x - self.center.x) / self.scale;
+        let y = (point.y - self.center.y) / self.scale;
+        let local = p(x * cos + y * sin, y * cos - x * sin);
+        vector::specimens(style)[self.variant]
+            .iter()
+            .any(|shape| match shape {
+                Shape::Polygon {
+                    points, opacity, ..
+                } => *opacity > 0. && contains(points, local),
+                Shape::Line {
+                    points,
+                    width,
+                    opacity,
+                    ..
+                } => {
+                    *opacity > 0.
+                        && points.windows(2).any(|edge| {
+                            segment_distance(local, edge[0], edge[1])
+                                <= width / 2. + tolerance / self.scale
+                        })
+                }
+                _ => false,
+            })
+    }
+
+    /// A tight rectangle around the inked specimen in world coordinates.
+    pub fn bounds(&self, style: AtlasStyle) -> crate::document::ContentBounds {
+        use crate::document::ContentBounds;
+        static BOUNDS: OnceLock<[ContentBounds; FOREST_SPECIMEN_COUNT]> = OnceLock::new();
+        static WOODLAND: OnceLock<[ContentBounds; FOREST_SPECIMEN_COUNT]> = OnceLock::new();
+        let bounds = if style.is_classic() {
+            &BOUNDS
+        } else {
+            &WOODLAND
+        };
+        let local = bounds.get_or_init(|| {
+            std::array::from_fn(|variant| {
+                vector::specimens(style)[variant]
+                    .iter()
+                    .filter_map(Shape::bounds)
+                    .reduce(ContentBounds::union)
+                    .expect("inked specimen")
+            })
+        })[self.variant];
+        let (sin, cos) = self.rotation.to_radians().sin_cos();
+        [
+            local.min,
+            p(local.max.x, local.min.y),
+            local.max,
+            p(local.min.x, local.max.y),
+        ]
+        .map(|q| {
+            let point = p(
+                self.center.x + (q.x * cos - q.y * sin) * self.scale,
+                self.center.y + (q.x * sin + q.y * cos) * self.scale,
+            );
+            ContentBounds {
+                min: point,
+                max: point,
+            }
+        })
+        .into_iter()
+        .reduce(ContentBounds::union)
+        .expect("four corners")
+    }
+}

@@ -50,7 +50,7 @@ pub enum Action {
     LandmarkDelete,
     SelectTool,
     PathNodeDensity(i32),
-    DeselectPath,
+    ClearSelection,
     TextField(super::lettering::Field),
     TextFont(elmapa::document::LabelFont),
     TextInk(elmapa::document::LabelInk),
@@ -109,6 +109,7 @@ pub struct Studio {
     pub text: super::lettering::TextTool,
     pub landmarks: super::landmarks::LandmarkTool,
     pub regions: super::regions::RegionTool,
+    pub selection: super::selection::MapSelection,
     pub path_selection: Option<super::selection::PathSelection>,
     pub library: Option<Library>,
     pub path: Option<PathBuf>,
@@ -160,6 +161,7 @@ impl Default for Studio {
             text: super::lettering::TextTool::default(),
             landmarks: super::landmarks::LandmarkTool::default(),
             regions: default(),
+            selection: Default::default(),
             path_selection: None,
             viewport,
             library: None,
@@ -209,7 +211,7 @@ impl Studio {
     pub fn map_point(&self, point: Vec2) -> Point {
         self.viewport.transform(self.bounds).map_point(point)
     }
-    fn invalidate(&mut self) {
+    pub(super) fn invalidate(&mut self) {
         self.scene.invalidate();
     }
     pub(super) fn invalidate_preview(&mut self) {
@@ -224,7 +226,7 @@ impl Studio {
     pub(super) fn cancel_canvas_interaction(&mut self) {
         self.cancel_text();
         self.cancel_landmark();
-        self.clear_path_selection();
+        self.clear_map_selection();
         self.regions.clear();
         self.stroke = None;
         self.drag = None;
@@ -256,6 +258,7 @@ impl Studio {
         self.landmarks = super::landmarks::LandmarkTool::default();
         self.regions = default();
         self.path_selection = None;
+        self.selection = Default::default();
         if self.atlas != Some(id) {
             self.layer_branches.clear();
         }

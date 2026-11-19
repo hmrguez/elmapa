@@ -197,7 +197,7 @@ impl Studio {
         self.advanced = false;
         self.cancel_text();
         self.cancel_landmark();
-        self.clear_path_selection();
+        self.clear_map_selection();
         self.tool = Tool::Brush;
     }
 

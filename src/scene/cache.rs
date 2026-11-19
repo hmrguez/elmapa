@@ -2,6 +2,7 @@
 mod composition;
 mod junctions;
 mod material;
+mod picking;
 mod snapshot;
 mod territories;
 
@@ -12,6 +13,7 @@ use super::{
 use crate::document::{AtlasStyle, Brush, Document, Point, Stroke};
 use composition::{AnnotationCache, AnnotationSource, compose};
 use material::{LiveMaterial, MaterialLayer};
+pub use picking::TerrainHit;
 use snapshot::Batch;
 pub use snapshot::Scene;
 
@@ -127,6 +129,7 @@ impl SceneCache {
                 };
                 if layer.strokes.len() != base.source.strokes.len() + 1
                     || layer.opacity != base.source.opacity
+                    || layer.relief_moves != base.source.relief_moves
                     || !layer.strokes.has_prefix(&base.source.strokes)
                 {
                     continue;
@@ -193,7 +196,7 @@ impl SceneCache {
                     .iter()
                     .enumerate()
                     .find(|(_, cached)| cached.source.id == layer.id)
-                    .and_then(|(index, cached)| Some((index, cached.with_linear_edits(layer)?)));
+                    .and_then(|(index, cached)| Some((index, cached.with_selection_edits(layer)?)));
                 if let Some((index, material)) = edited {
                     if material.valid {
                         old.swap_remove(index);
