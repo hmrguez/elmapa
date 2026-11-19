@@ -68,8 +68,8 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, scroll: f32) {
     if s.regions.active {
         b.button(
             controls,
+            "regions-layer-add",
             "",
-            "New Regions layer",
             Action::Regions(RegionAction::NewLayer),
             false,
         );

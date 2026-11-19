@@ -143,6 +143,15 @@
       ]
     },
     {
+      "name": "regions-layer-add",
+      "label": "New Regions layer",
+      "category": "layers",
+      "file": "regions-layer-add.svg",
+      "uses": [
+        "Create a Regions layer"
+      ]
+    },
+    {
       "name": "eye",
       "label": "Visible",
       "category": "layers",
@@ -323,6 +332,15 @@
       "file": "select.svg",
       "uses": [
         "Select text tool"
+      ]
+    },
+    {
+      "name": "regions",
+      "label": "Regions",
+      "category": "editor",
+      "file": "regions.svg",
+      "uses": [
+        "Regions tool"
       ]
     },
     {

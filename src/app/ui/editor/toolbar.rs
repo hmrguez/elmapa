@@ -167,8 +167,8 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
     brush_button(b, toolbar, s, Brush::Erase);
     let regions = b.button(
         toolbar,
-        "",
-        "Regions",
+        "regions",
+        if s.regions.active { "Regions" } else { "" },
         Action::Regions(RegionAction::Tool),
         s.regions.active,
     );
