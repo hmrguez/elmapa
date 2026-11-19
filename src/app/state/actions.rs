@@ -21,6 +21,11 @@ impl Studio {
         if self.quit_requested || jobs.switching() && !matches!(action, Action::Quit) {
             return;
         }
+        if let Action::SetLayerBranch(branch, expanded) = action {
+            self.layer_branches.insert(branch, expanded);
+            self.ui_dirty = true;
+            return;
+        }
         if !matches!(action, Action::Menu | Action::ReplayView) {
             self.stop_view_replay();
         }
@@ -74,6 +79,7 @@ impl Studio {
         let revision = self.editor.revision();
         match action {
             Action::Regions(action) => self.region_action(action),
+            Action::SetLayerBranch(..) => unreachable!(),
             Action::Brush(b) => {
                 self.set_tool(Tool::Brush);
                 self.brush = b;

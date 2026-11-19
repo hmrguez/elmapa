@@ -10,12 +10,21 @@ use super::{
 };
 use bevy::prelude::*;
 use elmapa::{
-    document::{Brush, Document, Point, Stroke},
+    document::{Brush, Document, Point, RegionParent, Stroke},
     editor::Editor,
     library::Library,
     scene::{ForestAnimation, MountainAnimation, PathAnimation, RiverAnimation},
 };
-use std::{collections::HashSet, path::PathBuf};
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+};
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum LayerBranch {
+    Layer(u64),
+    Region(RegionParent),
+}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Action {
@@ -56,6 +65,7 @@ pub enum Action {
     Menu,
     ReplayView,
     LayerTools,
+    SetLayerBranch(LayerBranch, bool),
     Radius(f32),
     Strength(f32),
     AddLayer,
@@ -114,6 +124,7 @@ pub struct Studio {
     pub menu: bool,
     pub replay_view: bool,
     pub layer_tools: bool,
+    pub layer_branches: HashMap<LayerBranch, bool>,
     pub radius: f32,
     pub strength: f32,
     pub bounds: Bounds,
@@ -164,6 +175,7 @@ impl Default for Studio {
             menu: false,
             replay_view: false,
             layer_tools: false,
+            layer_branches: HashMap::new(),
             radius: Brush::DEFAULT_SIZE,
             strength: Brush::DEFAULT_STRENGTH,
             bounds: Bounds {
@@ -240,6 +252,9 @@ impl Studio {
         self.landmarks = super::landmarks::LandmarkTool::default();
         self.regions = default();
         self.path_selection = None;
+        if self.atlas != Some(id) {
+            self.layer_branches.clear();
+        }
         self.editor = Editor::new(document).expect("validated document");
         self.path = path;
         self.atlas = Some(id);

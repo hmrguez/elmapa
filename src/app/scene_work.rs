@@ -117,7 +117,7 @@ impl SceneWork {
         (generated.epoch == self.epoch).then_some(generated.result)
     }
 
-    fn publish(&mut self, scene: Scene, meshes: Vec<SceneMesh>) {
+    pub(super) fn publish(&mut self, scene: Scene, meshes: Vec<SceneMesh>) {
         self.snapshot = scene;
         self.meshes = meshes;
         self.request_sync();
