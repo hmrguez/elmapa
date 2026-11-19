@@ -25,10 +25,11 @@ pub const WASHES: [u32; 9] = [
 ];
 
 pub fn pigment(data: &RegionLayer, owner: usize) -> u32 {
+    let palette_offset = if data.parent.is_some() { 3 } else { 0 };
     data.styles
         .get(&owner)
         .and_then(|style| style.color)
-        .unwrap_or(WASHES[owner % WASHES.len()])
+        .unwrap_or(WASHES[(owner + palette_offset) % WASHES.len()])
 }
 
 #[derive(Default)]
@@ -66,6 +67,48 @@ impl Shoreline {
                 .filter_map(|polygon| Some((bounds(polygon.iter().flatten())?, polygon)))
                 .collect()
         })
+    }
+
+    /// Restrict terrain to every enclosing region, preserving disconnected land.
+    pub fn scoped(
+        world: &Arc<Self>,
+        ancestors: &[(usize, &Arc<RegionLayer>)],
+    ) -> Option<Arc<Self>> {
+        let mut shore = world.clone();
+        for &(owner, layer) in ancestors {
+            let view = RegionView::resolve(layer, &shore)?;
+            let mut pieces: Vec<_> = view
+                .faces
+                .iter()
+                .filter(|face| face.owner == owner)
+                .flat_map(|face| visible_face(&face.polygon, &shore))
+                .collect();
+            if pieces.len() > 1 {
+                let rings: RegionPolygon = pieces.into_iter().flatten().collect();
+                pieces = Vec::<RegionPolygon>::new().overlay_as::<i64>(
+                    &rings,
+                    OverlayRule::Union,
+                    FillRule::NonZero,
+                );
+            }
+            let land: Vec<_> = pieces
+                .into_iter()
+                .filter_map(|piece| Some((bounds(piece.iter().flatten())?, piece)))
+                .collect();
+            shore = Arc::new(Self {
+                land: OnceLock::from(land),
+                ..Self::default()
+            });
+        }
+        Some(shore)
+    }
+
+    pub fn visible_path(&self, path: &[Point]) -> Vec<Vec<Point>> {
+        let path = coordinates(path);
+        clip(&path, &self.nearby(path.iter()))
+            .iter()
+            .map(|span| points(span))
+            .collect()
     }
 
     pub fn island_at(&self, point: Point) -> Option<&RegionPolygon> {
@@ -250,11 +293,30 @@ where
     )
 }
 
+fn continuous_border(mut spans: Vec<Vec<[f64; 2]>>) -> Option<Vec<[f64; 2]>> {
+    let mut border = spans.pop()?;
+    // The clipper can return adjoining segments separately and out of order.
+    while !spans.is_empty() {
+        let index = spans
+            .iter()
+            .position(|span| span.first() == border.last() || span.last() == border.first())?;
+        let mut span = spans.swap_remove(index);
+        if span.first() == border.last() {
+            border.extend(span.into_iter().skip(1));
+        } else {
+            span.pop();
+            span.append(&mut border);
+            border = span;
+        }
+    }
+    Some(border)
+}
+
 /// Extract one directed border and its two neighbors. A cut through more than
 /// one span (for example, across an inlet) can be made as separate gestures.
 pub fn cut(polygon: &RegionPolygon, path: &[Point]) -> Option<([RegionPolygon; 2], Vec<[f64; 2]>)> {
     let path = coordinates(path);
-    let [border]: [_; 1] = clip(&path, polygon).try_into().ok()?;
+    let border = continuous_border(clip(&path, polygon))?;
     let [first, second]: [_; 2] = polygon
         .slice_by_as::<i64>(&path, FillRule::EvenOdd)
         .try_into()

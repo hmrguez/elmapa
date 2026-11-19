@@ -179,7 +179,10 @@ impl Studio {
             }
             Action::DeleteLayer => {
                 self.regions.clear();
-                if !self.editor.remove_layer(self.editor.active_layer()) {
+                let layer = self.editor.active_layer();
+                if self.editor.layer_has_children(layer) {
+                    self.status = "Remove the child Regions layers first.".into();
+                } else if !self.editor.remove_layer(layer) {
                     self.status = "Keep at least one layer in your world.".into();
                 }
             }

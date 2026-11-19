@@ -161,7 +161,12 @@ pub(super) fn compose<'a>(
     {
         composition.terrain(material);
         if let Some(layer) = source.layer(&material.source) {
-            if let Some((batch, view)) = territories.render(layer) {
+            if let Some((batch, view)) = territories.render(layer, |id| {
+                let material = materials
+                    .clone()
+                    .find(|material| material.source.id == id)?;
+                source.layer(&material.source)?.territories.as_ref()
+            }) {
                 composition.push(batch, layer.opacity);
                 composition.territory_views.insert(
                     layer.id,

@@ -19,6 +19,7 @@ pub(super) struct Territories {
 
 struct Rendered {
     source: Arc<RegionLayer>,
+    ancestors: Vec<Arc<RegionLayer>>,
     view: Arc<RegionView>,
     batch: Batch,
 }
@@ -63,15 +64,27 @@ impl Territories {
         self.layers.clear();
     }
 
-    pub(super) fn render(&mut self, layer: &Layer) -> Option<(Batch, Arc<RegionView>)> {
+    pub(super) fn render<'a>(
+        &mut self,
+        layer: &Layer,
+        lookup: impl Fn(u64) -> Option<&'a Arc<RegionLayer>>,
+    ) -> Option<(Batch, Arc<RegionView>)> {
         let source = layer.territories.as_ref()?;
+        let ancestors = source.ancestors(lookup)?;
         if let Some(previous) = self.layers.get(&layer.id)
             && Arc::ptr_eq(&previous.source, source)
+            && previous.ancestors.len() == ancestors.len()
+            && previous
+                .ancestors
+                .iter()
+                .zip(&ancestors)
+                .all(|(prior, (_, current))| Arc::ptr_eq(prior, current))
         {
             return Some((previous.batch.clone(), previous.view.clone()));
         }
-        let view = Arc::new(RegionView::resolve(source, &self.shore)?);
-        let batch = Arc::new(view.shapes(&self.shore, source));
+        let shore = Shoreline::scoped(&self.shore, &ancestors)?;
+        let view = Arc::new(RegionView::resolve(source, &shore)?);
+        let batch = Arc::new(view.shapes(&shore, source));
         if crate::scene::generation::stopped() {
             return None;
         }
@@ -79,6 +92,10 @@ impl Territories {
             layer.id,
             Rendered {
                 source: source.clone(),
+                ancestors: ancestors
+                    .into_iter()
+                    .map(|(_, data)| data.clone())
+                    .collect(),
                 view: view.clone(),
                 batch: batch.clone(),
             },
