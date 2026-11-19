@@ -63,6 +63,17 @@ After the preview passes CI, a maintainer promotes the verified commit to
 `main`. Each Cargo version can ship as stable once. See the
 [release guide](docs/releases.md#prepare-and-promote-a-stable-release).
 
+## Required pull request checks
+
+The [dev ruleset](.github/rulesets/dev-required-checks.json) requires the source
+checks, Linux Rust tests and Clippy, and the Linux, macOS, and Windows MCP and
+package smoke checks. GitHub accepts the intentional skips for the Rust and
+package jobs on documentation-only pull requests.
+
+After the ruleset file merges into `dev`, a repository administrator can activate
+it by importing the JSON under **Settings → Rules → Rulesets → New ruleset →
+Import a ruleset** and selecting **Create**. See [GitHub's ruleset import guide](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/managing-rulesets-for-a-repository#importing-a-ruleset).
+
 ## Working with Codex
 
 The optional [iconpack skill](.agents/skills/iconpack/SKILL.md) covers artwork, manifests, placement and animation for landmark packs. The [brush-material skill](.agents/skills/brush-material/SKILL.md) covers texture and sprite finishes. For example, ask Codex to “use $brush-material to add a silty water finish.” Both workflows use the same asset guides, app and tests as a manual contribution. Repository agents also follow the [worktree instructions](AGENTS.md).
