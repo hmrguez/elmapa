@@ -17,6 +17,7 @@ impl Editor {
             strokes: Vec::new().into(),
             labels: Vec::new(),
             landmarks: Vec::new(),
+            relief_moves: Default::default(),
             terrain_replay: None,
             territories: None,
         });

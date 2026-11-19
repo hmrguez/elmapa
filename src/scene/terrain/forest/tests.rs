@@ -157,7 +157,11 @@ fn trees_remain_small_and_upright_and_paint_from_back_to_front() {
             .windows(2)
             .all(|pair| pair[0].center.y <= pair[1].center.y)
     );
-    let batches = Placement::new(&layer).batches(&[]);
+    let batches = Placement::new(&layer).batches(
+        &[],
+        &layer,
+        &super::super::field_index::FieldIndex::new(&layer),
+    );
     assert_eq!(
         trees,
         batches.into_iter().map(|b| b.tree).collect::<Vec<_>>()

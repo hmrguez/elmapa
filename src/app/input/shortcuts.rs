@@ -78,7 +78,10 @@ pub(super) fn key_down(
             studio.act(Action::SelectTool, jobs);
             return;
         }
-        if studio.cancel_path_drag() || studio.cancel_region_step() {
+        if studio.cancel_selection_gesture()
+            || studio.cancel_path_drag()
+            || studio.cancel_region_step()
+        {
             return;
         }
         studio.cancel_canvas_interaction();

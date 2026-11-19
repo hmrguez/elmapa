@@ -6,7 +6,11 @@ mod model;
 mod validation;
 
 pub use bounds::ContentBounds;
+mod relief;
+mod selection;
 pub use model::{Brush, Document, Layer, LinearStrokeId, Point, Stroke, TerrainReplay};
+pub use relief::{ReliefKey, ReliefMove, Specimen};
+pub use selection::SelectionId;
 pub const DOCUMENT_VERSION: u32 = 1;
 
 #[cfg(test)]

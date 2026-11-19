@@ -69,7 +69,7 @@ impl Brush {
 }
 
 /// Layer, stroke position, and variation seed identify a rendered river or trail.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct LinearStrokeId {
     pub layer: u64,
     pub index: usize,
@@ -110,6 +110,8 @@ pub struct Layer {
     pub visible: bool,
     pub opacity: f32,
     pub strokes: SharedChunks<Stroke>,
+    #[serde(default, skip_serializing_if = "relief_is_empty")]
+    pub relief_moves: std::sync::Arc<Vec<super::ReliefMove>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub terrain_replay: Option<TerrainReplay>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -118,6 +120,10 @@ pub struct Layer {
     pub landmarks: Vec<super::Landmark>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub territories: Option<std::sync::Arc<super::RegionLayer>>,
+}
+
+fn relief_is_empty(moves: &[super::ReliefMove]) -> bool {
+    moves.is_empty()
 }
 
 impl Layer {
@@ -162,6 +168,7 @@ impl Document {
                 strokes: Vec::new().into(),
                 labels: Vec::new(),
                 landmarks: Vec::new(),
+                relief_moves: Default::default(),
                 terrain_replay: None,
                 territories: None,
             }]

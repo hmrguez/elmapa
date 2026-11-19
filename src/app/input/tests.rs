@@ -2,6 +2,7 @@
 mod canvas;
 mod lettering;
 mod painting;
+mod selection;
 mod shortcuts;
 
 use super::dispatch;

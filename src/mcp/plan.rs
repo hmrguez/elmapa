@@ -206,6 +206,9 @@ fn apply_change(document: &mut Document, change: Change) -> Result<(), String> {
                     path.iter_mut().for_each(offset);
                 }
             }
+            for item in std::sync::Arc::make_mut(&mut layer.relief_moves) {
+                offset(&mut item.position);
+            }
             for label in &mut layer.labels {
                 offset(&mut label.position);
             }
@@ -290,6 +293,7 @@ fn put(
         strokes: Default::default(),
         labels: Vec::new(),
         landmarks: Vec::new(),
+        relief_moves: Default::default(),
         terrain_replay: None,
         territories: None,
     };

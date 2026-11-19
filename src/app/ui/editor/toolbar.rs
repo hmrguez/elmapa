@@ -37,6 +37,8 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
     );
     if s.regions.active {
         super::regions::build(b, bottom, s);
+    } else if s.tool == Tool::Select && s.text.draft.is_none() {
+        selection_controls(b, bottom, s);
     }
     if s.advanced && s.tool == Tool::Brush && !s.regions.active {
         let advanced = b.panel(
@@ -261,5 +263,66 @@ fn tool_surface(b: &mut Builder, button: Entity, selected: bool) {
         });
     if selected {
         b.commands.entity(button).insert(SelectedTool);
+    }
+}
+
+fn selection_controls(b: &mut Builder, bottom: Entity, studio: &Studio) {
+    use elmapa::document::{SelectionId, Specimen};
+
+    let items = &studio.selection.items;
+    let count = items.len();
+    let (title, hint) = if let Some(path) = &studio.path_selection {
+        let title = studio
+            .editor
+            .linear_stroke(path.id)
+            .map_or("Course", |stroke| stroke.brush.label());
+        (
+            title.to_string(),
+            "Drag the hand to move · Drag a node to shape",
+        )
+    } else if let [item] = items.as_slice() {
+        let title = match item.id {
+            SelectionId::Relief { key, .. } => match key.specimen {
+                Specimen::Tree { .. } => "Tree",
+                Specimen::Peak(_) => "Peak",
+            },
+            _ => "Selection",
+        };
+        (title.into(), "Drag to move · Shift-click to add")
+    } else if count > 1 {
+        (
+            format!("{count} selected"),
+            "Drag to move together · Shift-click to toggle",
+        )
+    } else if studio.landmarks.selected.is_some() {
+        ("Landmark".into(), "Drag to move · Shift-click to add")
+    } else if studio.text.selected.is_some() {
+        ("Label".into(), "Drag to move · Shift-click to add")
+    } else {
+        ("Select artwork".into(), "Drag a box · Shift-click to add")
+    };
+    let panel = b.panel(bottom, row(8.), 15., 4., 0.95, false);
+    let copy = b.node(
+        panel,
+        Node {
+            padding: UiRect::horizontal(px(10.)),
+            ..column(0.)
+        },
+    );
+    b.text(copy, title, 17., b.p.text, true);
+    if studio.bounds.size.x >= 520. {
+        b.text(copy, hint, 11., b.p.text, false);
+    }
+    if let Some(path) = &studio.path_selection
+        && path.nodes().len() > 1
+    {
+        for (step, symbol) in [(-1, "minus"), (1, "plus")] {
+            if (-2..=2).contains(&(path.density + step)) {
+                b.button(panel, symbol, "", Action::PathNodeDensity(step), false);
+            }
+        }
+    }
+    if studio.has_selection() {
+        b.button(panel, "close", "", Action::ClearSelection, false);
     }
 }

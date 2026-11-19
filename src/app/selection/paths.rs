@@ -207,18 +207,25 @@ impl PathSelection {
 }
 
 impl Studio {
-    pub(in crate::app) fn select_path(&mut self, point: Point) {
+    pub(in crate::app) fn select_path(&mut self, id: LinearStrokeId, point: Point) {
         let scale = self.viewport.transform(self.bounds).scale;
-        let id = self.scene.snapshot().linear_stroke_at(point, 6. / scale);
-        self.path_selection = id.and_then(|id| {
-            let stroke = self.editor.linear_stroke(id)?;
-            if let Some(mut selection) = self.path_selection.take().filter(|s| s.id == id) {
-                selection.anchor = point;
-                return Some(selection);
-            }
+        self.path_selection = self.editor.linear_stroke(id).map(|stroke| {
             let budget = MAX_STROKE_POINTS - self.editor.point_count();
-            Some(PathSelection::new(id, point, scale, &stroke.points, budget))
+            PathSelection::new(id, point, scale, &stroke.points, budget)
         });
+    }
+
+    pub(super) fn translate_path_selection(&mut self, delta: Point) {
+        if let Some(selection) = &mut self.path_selection {
+            for point in selection
+                .points
+                .iter_mut()
+                .chain(std::iter::once(&mut selection.anchor))
+            {
+                point.x += delta.x;
+                point.y += delta.y;
+            }
+        }
     }
 
     pub(in crate::app) fn clear_path_selection(&mut self) {
@@ -299,6 +306,12 @@ impl Studio {
         {
             selection.anchor = points[selection.nodes[node]];
             selection.points = points;
+            let id = selection.id;
+            if let Some(item) = self.item(elmapa::document::SelectionId::Course(id))
+                && let [selected] = self.selection.items.as_mut_slice()
+            {
+                *selected = item;
+            }
             self.changed();
         } else {
             self.invalidate_preview();

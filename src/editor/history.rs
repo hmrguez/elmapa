@@ -62,6 +62,12 @@ impl Editor {
                 {
                     bytes += regions.bytes();
                 }
+                if !layer.relief_moves.is_empty()
+                    && seen.insert(std::sync::Arc::as_ptr(&layer.relief_moves) as usize)
+                {
+                    bytes += layer.relief_moves.capacity()
+                        * std::mem::size_of::<crate::document::ReliefMove>();
+                }
                 if !seen.insert(layer.strokes.storage_id()) {
                     continue;
                 }

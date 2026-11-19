@@ -318,11 +318,7 @@ pub fn dispatch(
                                 && studio.opening.is_none()
                                 && !studio.menu;
                             studio.down_with_shift(point, shift);
-                            if can_start_text
-                                && studio.text.selected.is_none()
-                                && studio.landmarks.selected.is_none()
-                                && studio.path_selection.is_none()
-                            {
+                            if can_start_text && !shift && !studio.has_selection() {
                                 empty_select = Some(point);
                             }
                         } else if alt {
@@ -445,6 +441,7 @@ pub fn dispatch(
             WindowEvent::WindowFocused(event)
                 if event.window == window_entity && !event.focused =>
             {
+                studio.cancel_selection_gesture();
                 studio.finish();
                 studio.regions.cancel_gesture();
                 if studio.text.draft.is_none() {

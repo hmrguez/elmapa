@@ -156,6 +156,7 @@ pub fn run() {
                     ui::text_selection_follow,
                     ui::region_selection_follow,
                     ui::path_selection_follow,
+                    ui::selection_follow,
                     ui::radial_follow,
                     ui::text_ime,
                 )
