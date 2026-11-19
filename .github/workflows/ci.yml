@@ -8,8 +8,13 @@ on:
 permissions:
   contents: read
 
+# Superseded PR revisions can stop. Every channel push must finish publication.
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
-  RUST_VERSION: 1.95.0
+  RUSTUP_TOOLCHAIN: 1.95.0
 
 jobs:
   checks:
@@ -18,6 +23,7 @@ jobs:
       contents: read
       actions: read
     outputs:
+      docs_only: ${{ steps.changes.outputs.docs_only }}
       preview_run: ${{ steps.preview.outputs.preview_run }}
       preview_tag: ${{ steps.preview.outputs.preview_tag }}
       release_version: ${{ steps.version.outputs.version }}
@@ -26,8 +32,19 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - run: rustup toolchain install ${{ env.RUST_VERSION }} --profile minimal --component rustfmt
-      - run: cargo +${{ env.RUST_VERSION }} fmt --all -- --check
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 1 }}
+      - name: Identify documentation-only pull requests
+        id: changes
+        if: github.event_name == 'pull_request'
+        run: |
+          # Compare the tested merge tree with its base parent, including deletions.
+          if git diff --quiet --no-renames HEAD^1 HEAD -- . \
+              ':(top,exclude)README.md' ':(top,exclude)CONTRIBUTING.md' \
+              ':(top,exclude,glob)docs/**/*.md' ':(top,exclude)docs/images/**'; then
+            echo "docs_only=true" >> "$GITHUB_OUTPUT"
+          fi
+      - run: rustup toolchain install ${{ env.RUSTUP_TOOLCHAIN }} --profile minimal --component rustfmt
+      - run: cargo fmt --all -- --check
       - run: python3 scripts/export-icons.py --check
       - run: python3 -B scripts/test_performance_trace.py
       - run: python3 -B scripts/release/test_publish.py
@@ -38,8 +55,6 @@ jobs:
         run: |
           version=$(python3 -B scripts/release/package.py --print-version)
           echo "version=$version" >> "$GITHUB_OUTPUT"
-        env:
-          RUSTUP_TOOLCHAIN: ${{ env.RUST_VERSION }}
 
       - name: Find verified packages for stable promotion
         id: preview
@@ -50,13 +65,13 @@ jobs:
 
   build:
     needs: checks
-    if: needs.checks.outputs.preview_run == ''
+    if: needs.checks.outputs.docs_only != 'true' && needs.checks.outputs.preview_run == ''
     name: ${{ matrix.task }} (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-15, windows-2025]
-        task: [Test, Package]
+        task: ${{ fromJSON(github.event_name == 'pull_request' && '["Test"]' || '["Test","Package"]') }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -69,44 +84,46 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential pkg-config libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 libx11-dev libxi-dev libxrandr-dev libxcursor-dev fonts-dejavu-core mesa-vulkan-drivers xvfb xauth
-      - run: rustup toolchain install ${{ env.RUST_VERSION }} --profile minimal --component clippy
-      - run: rustup default ${{ env.RUST_VERSION }}
+          sudo apt-get install -y --no-install-recommends --no-upgrade build-essential pkg-config libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 libx11-dev libxi-dev libxrandr-dev libxcursor-dev fonts-dejavu-core mesa-vulkan-drivers xvfb xauth
+      - name: Install the CI Rust toolchain
+        shell: bash
+        env:
+          # rust-cache fingerprints every installed toolchain. Keep its environment stable.
+          RUSTUP_HOME: ${{ runner.temp }}/elmapa-rustup
+        run: |
+          rustup toolchain install "$RUSTUP_TOOLCHAIN" --no-self-update --profile minimal ${{ matrix.task == 'Test' && '--component clippy' || '' }}
+          echo "RUSTUP_HOME=$RUSTUP_HOME" >> "$GITHUB_ENV"
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
-          # Hosted images also carry an unused rolling toolchain. Key on the compiler we run.
-          key: ${{ matrix.task }}-rust${{ env.RUST_VERSION }}
-          add-rust-environment-hash-key: false
-          cache-on-failure: true
+          key: ${{ matrix.task }}
           save-if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
       - if: matrix.task == 'Test'
         run: cargo test --locked
       - if: matrix.task == 'Test'
         run: cargo clippy --locked --all-targets -- -D warnings
       - uses: taiki-e/install-action@75a7c0f87bd666af3cdb75c5b9e9d03ab6044e6f # v2
-        if: matrix.task == 'Package'
+        if: github.event_name == 'pull_request' || matrix.task == 'Package'
         with:
           tool: cargo-about@0.9.3
-      - name: Test packaged application in X11
-        if: matrix.task == 'Package' && runner.os == 'Linux'
-        run: xvfb-run -a -s "-screen 0 1600x1000x24" python scripts/release/package.py --native
-        env:
-          WGPU_FORCE_FALLBACK_ADAPTER: '1'
-      - name: Test packaged application with WARP
-        if: matrix.task == 'Package' && runner.os == 'Windows'
-        run: python scripts/release/package.py --native
-        env:
-          WGPU_BACKEND: dx12
-          WGPU_FORCE_FALLBACK_ADAPTER: '1'
-      - name: Test packaged macOS application
-        if: matrix.task == 'Package' && runner.os == 'macOS'
+      - name: Smoke-test the extracted package
+        if: github.event_name == 'pull_request' || matrix.task == 'Package'
+        shell: bash
         run: |
-          if system_profiler SPDisplaysDataType | grep -q 'Metal Support'; then
-            python scripts/release/package.py --native
-          else
+          args=(--native)
+          if [[ "$RUNNER_OS" == macOS ]] && ! system_profiler SPDisplaysDataType | grep 'Metal Support' >/dev/null; then
             echo "::notice::This runner exposes no Metal display. Running the extracted app's headless export."
-            python scripts/release/package.py
+            args=()
           fi
+          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+            binary=target/debug/elmapa
+            if [[ "$RUNNER_OS" == Windows ]]; then binary+=.exe; fi
+            args+=(--check-binary "$binary")
+          fi
+          case "$RUNNER_OS" in
+            Linux) WGPU_FORCE_FALLBACK_ADAPTER=1 xvfb-run -a -s "-screen 0 1600x1000x24" python scripts/release/package.py "${args[@]}" ;;
+            Windows) WGPU_BACKEND=dx12 WGPU_FORCE_FALLBACK_ADAPTER=1 python scripts/release/package.py "${args[@]}" ;;
+            macOS) python scripts/release/package.py "${args[@]}" ;;
+          esac
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: matrix.task == 'Package'
         with:

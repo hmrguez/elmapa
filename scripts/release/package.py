@@ -113,7 +113,7 @@ def build_binary(flags):
                   if item.get("executable") and item["target"]["name"] == "elmapa")
 
 
-def package(offline, native):
+def package(offline, native, check_binary):
     version = package_version()
     rust_info = subprocess.check_output(["rustc", "-vV"], text=True).splitlines()
     host = next(line.removeprefix("host: ") for line in rust_info if line.startswith("host: "))
@@ -136,7 +136,7 @@ def package(offline, native):
         notice_folder = bundle / "Contents/Resources" if sys.platform == "darwin" else stage
         notice_folder.mkdir(parents=True, exist_ok=True)
         notices(notice_folder, host, offline)
-        binary = build_binary(["--locked", "--release", *offline])
+        binary = check_binary or build_binary(["--locked", "--release", *offline])
         if sys.platform == "darwin":
             executable = mac_bundle(binary, bundle, version)
         else:
@@ -145,6 +145,9 @@ def package(offline, native):
         archive = workspace / archive_name
         archive_package(stage, archive)
         smoke(archive, workspace / "unpacked", executable.relative_to(workspace), native)
+        if check_binary:
+            print(f"Verified test package built from {check_binary}")
+            return
         output = packages / archive_name
         archive.replace(output)
     print(f"Verified {output}")
@@ -163,12 +166,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--offline", action="store_true", help="use cached crates and license data")
     parser.add_argument("--native", action="store_true", help="also launch and edit in a desktop session")
+    parser.add_argument("--check-binary", type=Path, help="smoke-test an existing executable in a temporary archive")
     parser.add_argument("--print-version", action="store_true", help="print the Cargo package version and exit")
     args = parser.parse_args()
     if args.print_version:
         print(package_version())
         return
-    package(["--offline"] if args.offline else [], args.native)
+    package(["--offline"] if args.offline else [], args.native, args.check_binary)
 
 
 if __name__ == "__main__":
