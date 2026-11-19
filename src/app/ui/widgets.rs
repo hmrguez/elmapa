@@ -345,6 +345,10 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             Action::Redo => crate::app::input::shortcut_hint("Redo", "Z", true),
             Action::LayerTools => "Selected layer settings".into(),
             Action::AddLayer => "New layer".into(),
+            Action::Regions(crate::app::regions::RegionAction::Tool) => "Regions".into(),
+            Action::Regions(crate::app::regions::RegionAction::NewLayer) => {
+                "New Regions layer".into()
+            }
             Action::Regions(crate::app::regions::RegionAction::ParentLayer) => {
                 "Back to parent Regions layer".into()
             }
