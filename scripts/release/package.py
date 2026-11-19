@@ -161,7 +161,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--offline", action="store_true", help="use cached crates and license data")
     parser.add_argument("--native", action="store_true", help="also launch and edit in a desktop session")
+    parser.add_argument("--print-version", action="store_true", help="print the Cargo package version and exit")
     args = parser.parse_args()
+    if args.print_version:
+        print(package_version())
+        return
     package(["--offline"] if args.offline else [], args.native)
 
 

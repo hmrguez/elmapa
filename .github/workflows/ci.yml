@@ -20,6 +20,7 @@ jobs:
     outputs:
       preview_run: ${{ steps.preview.outputs.preview_run }}
       preview_tag: ${{ steps.preview.outputs.preview_tag }}
+      release_version: ${{ steps.version.outputs.version }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -29,6 +30,16 @@ jobs:
       - run: cargo +${{ env.RUST_VERSION }} fmt --all -- --check
       - run: python3 scripts/export-icons.py --check
       - run: python3 -B scripts/test_performance_trace.py
+      - run: python3 -B scripts/release/test_publish.py
+
+      - name: Read Cargo version for publication
+        id: version
+        if: github.event_name == 'push'
+        run: |
+          version=$(python3 -B scripts/release/package.py --print-version)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+        env:
+          RUSTUP_TOOLCHAIN: ${{ env.RUST_VERSION }}
 
       - name: Find verified packages for stable promotion
         id: preview
@@ -113,6 +124,11 @@ jobs:
           github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') }}
     needs: [checks, build]
     runs-on: ubuntu-24.04
+    # Serialize stable publication for the same version so the duplicate check
+    # and publication cannot race. Each preview has its own concurrency group.
+    concurrency:
+      group: publish-${{ github.ref_name }}-${{ github.ref_name == 'main' && needs.checks.outputs.release_version || github.run_id }}
+      cancel-in-progress: false
     permissions:
       contents: write
       actions: read
@@ -129,6 +145,7 @@ jobs:
           path: packages
       - run: bash scripts/release/publish.sh
         env:
+          RELEASE_VERSION: ${{ needs.checks.outputs.release_version }}
           PREVIEW_TAG: ${{ needs.checks.outputs.preview_tag }}
           GH_TOKEN: ${{ github.token }}
 
