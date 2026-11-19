@@ -1,6 +1,6 @@
 # Elmapa Atlas Icons · 1.0.0
 
-44 original, MIT-licensed SVG icons for a quiet cartographic instrument panel.
+46 original, MIT-licensed SVG icons for a quiet cartographic instrument panel.
 Individual SVGs in this directory are the editable source of truth; the native
 app embeds those exact files. Map terrain is still procedural geometry.
 
@@ -16,8 +16,10 @@ app embeds those exact files. Map terrain is still procedural geometry.
 - An open atlas book returns to the atlas shelf. Checkmarks indicate enabled
   settings; a cross closes settings; a right chevron opens a book.
 - Stacks are reserved for layers. A folded map means a world; a map with a plus
-  creates a world. A stack with a plus creates a layer. Fit artwork uses a small
-  frame within framing corners. SVG export uses vector nodes and an outward arrow.
+  creates a world. A stack with a plus creates a layer. Shared borders mark the
+  Regions tool, and a divided stack with a plus creates a Regions layer. Fit
+  artwork uses a small frame within framing corners. SVG export uses vector
+  nodes and an outward arrow.
 - Lettering actions have dedicated pictograms: a pencil edits, overlapping labels
   duplicate, an ellipsis opens More, and a letter with a fine adjustment slider
   opens Advanced typography. Tracking uses opposing arrows, opacity a half-filled
