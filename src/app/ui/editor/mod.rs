@@ -8,7 +8,10 @@ use super::{
     feedback::{Fade, Hover},
     widgets::{Builder, absolute, color, row},
 };
-use crate::app::state::{Action, Studio};
+use crate::app::{
+    branding,
+    state::{Action, Studio},
+};
 use bevy::prelude::*;
 
 pub use menu::{ChromeMotion, advance_motion, menu_animation};
@@ -32,7 +35,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, menu_progress: f3
 fn header(b: &mut Builder, root: Entity, s: &Studio) {
     let p = b.p;
     let back = b.panel(root, absolute(px(20.), px(20.)), 14., 0., 0.93, false);
-    b.button(back, "atlas", "Atlases", Action::Home, false);
+    b.button(back, branding::SYMBOL, "Atlases", Action::Home, false);
     let header = b.panel(
         root,
         Node {

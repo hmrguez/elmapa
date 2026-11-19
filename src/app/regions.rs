@@ -6,22 +6,26 @@ mod style;
 mod tests;
 pub use style::{StyleAction, StyleField};
 
-use super::state::{Studio, Tool};
+use super::state::{LayerBranch, Studio, Tool};
+use bevy::prelude::Vec2;
 use elmapa::{
-    document::{Point, RegionAddress, RegionLayer, RegionPolygon},
+    document::{Point, RegionAddress, RegionLayer, RegionParent, RegionPolygon},
     scene::territories::{self, RegionView, Shoreline},
 };
-use split::SplitDraft;
+use split::{ChildSplit, SplitDraft};
 use std::sync::Arc;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum RegionAction {
     Tool,
+    SelectRegion(RegionParent),
     Style(StyleAction),
     NewLayer,
     Make,
     Draw,
     Split,
+    ChildRegions,
+    ParentLayer,
     SplitCount(isize),
     ApplySplit,
     AddIslands,
@@ -85,6 +89,14 @@ enum Gesture {
     Assign { point: Point, owner: usize },
 }
 
+struct RecentRegion {
+    layer: u64,
+    revision: u64,
+    terrain: Arc<Shoreline>,
+    scope: Arc<Shoreline>,
+    view: RegionView,
+}
+
 #[derive(Default)]
 pub struct RegionTool {
     pub active: bool,
@@ -96,7 +108,7 @@ pub struct RegionTool {
     split: Option<SplitDraft>,
     artwork_layer: Option<u64>,
     pub overlay_revision: u64,
-    recent: Option<(Arc<RegionLayer>, Arc<Shoreline>, RegionView)>,
+    recent: Option<RecentRegion>,
 }
 
 impl RegionTool {
@@ -135,6 +147,11 @@ impl RegionTool {
         self.split
             .as_ref()
             .map(|draft| (draft.view(), draft.washes()))
+    }
+
+    pub fn draft_scope(&self) -> Option<&Shoreline> {
+        let recent = self.recent.as_ref()?;
+        (!Arc::ptr_eq(&recent.terrain, &recent.scope)).then_some(&recent.scope)
     }
 
     pub fn draft(&self) -> Option<&[Point]> {
@@ -180,6 +197,7 @@ impl Studio {
         self.advanced = false;
         self.cancel_text();
         self.cancel_landmark();
+        self.clear_path_selection();
         self.tool = Tool::Brush;
     }
 
@@ -243,6 +261,7 @@ impl Studio {
                     self.editor.select_layer(id);
                 }
             }
+            RegionAction::SelectRegion(region) => self.select_region(region),
             RegionAction::NewLayer => {
                 self.activate_regions();
                 let shore = self.scene.snapshot().shoreline().clone();
@@ -263,7 +282,14 @@ impl Studio {
             RegionAction::Draw if self.regions.selection.is_some() => {
                 self.regions.mode = Mode::Draw
             }
-            RegionAction::Split if self.regions.mode == Mode::Select => self.preview_split(2),
+            RegionAction::Split if self.regions.mode == Mode::Select => self.preview_split(2, None),
+            RegionAction::ChildRegions => self.open_child_regions(),
+            RegionAction::ParentLayer => {
+                if let Some(parent) = self.active_region_parent() {
+                    self.editor.select_layer(parent.layer);
+                    self.regions.clear();
+                }
+            }
             RegionAction::SplitCount(delta) => {
                 if let Some(count) = self
                     .regions
@@ -271,7 +297,8 @@ impl Studio {
                     .and_then(|count| count.checked_add_signed(delta))
                     && (2..=territories::MAX_SPLIT_COUNT).contains(&count)
                 {
-                    self.preview_split(count);
+                    let child = self.regions.split.as_ref().and_then(|draft| draft.child);
+                    self.preview_split(count, child);
                 }
             }
             RegionAction::ApplySplit => self.apply_split(),
@@ -294,14 +321,55 @@ impl Studio {
         }
     }
 
-    fn preview_split(&mut self, count: usize) {
+    pub fn active_region_parent(&self) -> Option<RegionParent> {
+        self.regions_layer()?.territories.as_ref()?.parent
+    }
+
+    pub fn split_parent_name(&self) -> Option<&str> {
+        let parent = self.regions.split.as_ref()?.child?.parent;
+        self.editor.document().region_name(parent)
+    }
+
+    fn open_child_regions(&mut self) {
+        let Some((layer, _, owner)) = self.region_style_target() else {
+            return;
+        };
+        let parent = RegionParent { layer, owner };
+        if let Some(child) = self.editor.document().child_regions(parent) {
+            self.editor.select_layer(child.id);
+            self.regions.clear();
+            self.reveal_child_layers(parent);
+        } else if let Some(anchor) = self.regions.style.anchor {
+            self.preview_split(2, Some(ChildSplit { parent, anchor }));
+        }
+    }
+
+    fn reveal_child_layers(&mut self, mut parent: RegionParent) {
+        loop {
+            self.layer_branches
+                .insert(LayerBranch::Region(parent), true);
+            let outer = self
+                .editor
+                .document()
+                .region_data(parent.layer)
+                .and_then(|data| data.parent);
+            let Some(outer) = outer else {
+                self.layer_branches
+                    .insert(LayerBranch::Layer(parent.layer), true);
+                return;
+            };
+            parent = outer;
+        }
+    }
+
+    fn preview_split(&mut self, count: usize, child: Option<ChildSplit>) {
         let Some(selection) = &self.regions.selection else {
             return;
         };
         let source = self
             .regions_layer()
             .and_then(|layer| layer.territories.as_deref());
-        match SplitDraft::new(selection, source, count) {
+        match SplitDraft::new(selection, source, count, child) {
             Ok(draft) => {
                 self.regions.split = Some(draft);
                 self.regions.mode = Mode::Split;
@@ -315,16 +383,26 @@ impl Studio {
         let (Some(draft), Some(selection)) = (&self.regions.split, &self.regions.selection) else {
             return;
         };
-        let (id, mut data) = self.region_data();
-        if draft.apply_to(&mut data, selection).is_none() {
-            self.regions.message = Some("Select the land again to start a new split.".into());
-            return;
-        }
+        let parent = draft.child.map(|child| child.parent);
+        let (id, data) = if parent.is_some() {
+            (None, draft.data.clone())
+        } else {
+            let (id, mut data) = self.region_data();
+            if draft.apply_to(&mut data, selection).is_none() {
+                self.regions.message = Some("Select the land again to start a new split.".into());
+                return;
+            }
+            (id, data)
+        };
         match self.editor.set_regions(id, data, &selection.shore) {
             Ok(()) => {
                 self.regions.clear();
-                self.regions.message =
-                    Some("Split applied. Select a region to add islands.".into());
+                self.regions.message = Some(if let Some(parent) = parent {
+                    self.reveal_child_layers(parent);
+                    "Child layer created. Click a region to edit it.".into()
+                } else {
+                    "Split applied. Select a region to add islands.".into()
+                });
             }
             Err(error) => self.regions.message = Some(error),
         }
@@ -370,31 +448,93 @@ impl Studio {
     }
 
     fn region_view(&mut self) -> Option<&RegionView> {
-        let (id, data) = self
+        let layer = self
             .regions_layer()
-            .filter(|layer| layer.visible && layer.opacity > 0.)
-            .map(|layer| (layer.id, layer.territories.clone().unwrap()))?;
+            .filter(|layer| layer.visible && layer.opacity > 0.)?;
+        let id = layer.id;
+        let data = layer.territories.clone()?;
+        let revision = self.editor.revision();
         let scene = self.scene.snapshot();
-        if let Some(view) = scene.current_region_view(id, &data) {
+        if data.parent.is_none()
+            && let Some(view) = scene.current_region_view(id, &data)
+        {
             return Some(view);
         }
-        let shore = scene.shoreline();
-        if self
+        let terrain = scene.shoreline();
+        if self.regions.recent.as_ref().is_none_or(|prior| {
+            prior.layer != id || prior.revision != revision || !Arc::ptr_eq(&prior.terrain, terrain)
+        }) {
+            let ancestors = data.ancestors(|layer| self.editor.document().region_data(layer))?;
+            let scope = Shoreline::scoped(terrain, &ancestors)?;
+            let view = RegionView::resolve(&data, &scope)?;
+            self.regions.recent = Some(RecentRegion {
+                layer: id,
+                revision,
+                terrain: terrain.clone(),
+                scope,
+                view,
+            });
+        }
+        self.regions.recent.as_ref().map(|recent| &recent.view)
+    }
+
+    fn region_shore(&mut self) -> Option<Arc<Shoreline>> {
+        if self.active_region_parent().is_none() {
+            return Some(self.scene.snapshot().shoreline().clone());
+        }
+        self.region_view()?;
+        Some(self.regions.recent.as_ref()?.scope.clone())
+    }
+
+    fn select_region(&mut self, region: RegionParent) {
+        if self.editor.document().region_name(region).is_none() {
+            return;
+        }
+        let recent = self
             .regions
             .recent
-            .as_ref()
-            .is_none_or(|(prior, terrain, _)| {
-                !Arc::ptr_eq(prior, &data) || !Arc::ptr_eq(terrain, shore)
-            })
+            .take()
+            .filter(|recent| recent.layer == region.layer);
+        self.activate_regions();
+        self.editor.select_layer(region.layer);
+        self.regions.recent = recent;
+        if self
+            .regions_layer()
+            .is_some_and(|layer| !layer.visible || layer.opacity <= 0.)
         {
-            let view = RegionView::resolve(&data, shore)?;
-            self.regions.recent = Some((data, shore.clone(), view));
+            self.regions.message = Some("Show this Regions layer to select its regions.".into());
+            return;
         }
-        self.regions.recent.as_ref().map(|(_, _, view)| view)
+        let selected = self.region_shore().and_then(|shore| {
+            let (face, anchor) = self.region_view()?.focus(region.owner, &shore)?;
+            let selection = Selection::new(
+                face.polygon.clone(),
+                Some((face.address, face.owner)),
+                shore,
+            );
+            Some((selection, anchor))
+        });
+        let Some((selection, anchor)) = selected else {
+            self.regions.message = Some("This region has no visible land.".into());
+            return;
+        };
+        self.regions.selection = Some(selection);
+        self.regions.style.anchor = Some(anchor);
+        self.regions.refresh_overlay();
+
+        let view = self.viewport.transform(self.bounds);
+        let screen = view.origin + Vec2::new(anchor.x, anchor.y) * view.scale;
+        let min = Vec2::new(96., 132.);
+        let max = self.bounds.size - Vec2::new(324., 146.);
+        if screen.cmplt(min).any() || screen.cmpgt(max).any() {
+            let delta = self.bounds.center() - screen;
+            self.viewport.pan.x += delta.x;
+            self.viewport.pan.y += delta.y;
+        }
     }
 
     fn select_land(&mut self, point: Point) -> Option<Selection> {
-        let shore = self.scene.snapshot().shoreline().clone();
+        let shore = self.region_shore()?;
         let island = shore.island_at(point)?;
         if let Some(view) = self.region_view()
             && let Some(face) = view

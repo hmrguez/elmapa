@@ -7,7 +7,7 @@ use crate::app::{
 };
 use bevy::{input::keyboard::KeyboardInput, prelude::KeyCode};
 use elmapa::{
-    document::{Point, RegionLayer, limits::MAX_LABEL_TEXT_BYTES},
+    document::{Point, RegionLayer, RegionParent, limits::MAX_LABEL_TEXT_BYTES},
     scene::territories::{WASHES, pigment},
 };
 
@@ -84,7 +84,7 @@ impl Studio {
     }
 
     pub fn region_style_actions(&self) -> Vec<Item<Action>> {
-        let Some((_, data, owner)) = self.region_style_target() else {
+        let Some((layer, data, owner)) = self.region_style_target() else {
             return Vec::new();
         };
         let current = pigment(data, owner);
@@ -120,6 +120,11 @@ impl Studio {
         );
         let mut palette = Item::branch("Region color", "", colors);
         palette.swatch = Some(current);
+        let has_child = self
+            .editor
+            .document()
+            .child_regions(RegionParent { layer, owner })
+            .is_some();
         vec![
             Item::action("Rename region", "text-edit", action(StyleAction::Rename)),
             palette,
@@ -131,6 +136,15 @@ impl Studio {
                 },
                 if shown { "eye-off" } else { "eye" },
                 action(StyleAction::ToggleLabel),
+            ),
+            Item::action(
+                if has_child {
+                    "Open child regions"
+                } else {
+                    "Split into child regions…"
+                },
+                if has_child { "layer" } else { "layer-add" },
+                Action::Regions(RegionAction::ChildRegions),
             ),
         ]
     }

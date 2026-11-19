@@ -10,12 +10,21 @@ use super::{
 };
 use bevy::prelude::*;
 use elmapa::{
-    document::{Brush, Document, Point, Stroke},
+    document::{Brush, Document, Point, RegionParent, Stroke},
     editor::Editor,
     library::Library,
     scene::{ForestAnimation, MountainAnimation, PathAnimation, RiverAnimation},
 };
-use std::{collections::HashSet, path::PathBuf};
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+};
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum LayerBranch {
+    Layer(u64),
+    Region(RegionParent),
+}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Action {
@@ -40,6 +49,8 @@ pub enum Action {
     LandmarkDuplicate,
     LandmarkDelete,
     SelectTool,
+    PathNodeDensity(i32),
+    DeselectPath,
     TextField(super::lettering::Field),
     TextFont(elmapa::document::LabelFont),
     TextInk(elmapa::document::LabelInk),
@@ -54,6 +65,7 @@ pub enum Action {
     Menu,
     ReplayView,
     LayerTools,
+    SetLayerBranch(LayerBranch, bool),
     Radius(f32),
     Strength(f32),
     AddLayer,
@@ -95,6 +107,7 @@ pub struct Studio {
     pub text: super::lettering::TextTool,
     pub landmarks: super::landmarks::LandmarkTool,
     pub regions: super::regions::RegionTool,
+    pub path_selection: Option<super::selection::PathSelection>,
     pub library: Option<Library>,
     pub path: Option<PathBuf>,
     pub atlas: Option<u64>,
@@ -111,6 +124,7 @@ pub struct Studio {
     pub menu: bool,
     pub replay_view: bool,
     pub layer_tools: bool,
+    pub layer_branches: HashMap<LayerBranch, bool>,
     pub radius: f32,
     pub strength: f32,
     pub bounds: Bounds,
@@ -143,6 +157,7 @@ impl Default for Studio {
             text: super::lettering::TextTool::default(),
             landmarks: super::landmarks::LandmarkTool::default(),
             regions: default(),
+            path_selection: None,
             viewport,
             library: None,
             path: None,
@@ -160,6 +175,7 @@ impl Default for Studio {
             menu: false,
             replay_view: false,
             layer_tools: false,
+            layer_branches: HashMap::new(),
             radius: Brush::DEFAULT_SIZE,
             strength: Brush::DEFAULT_STRENGTH,
             bounds: Bounds {
@@ -204,6 +220,7 @@ impl Studio {
     pub(super) fn cancel_canvas_interaction(&mut self) {
         self.cancel_text();
         self.cancel_landmark();
+        self.clear_path_selection();
         self.regions.clear();
         self.stroke = None;
         self.drag = None;
@@ -234,6 +251,10 @@ impl Studio {
         self.text = super::lettering::TextTool::default();
         self.landmarks = super::landmarks::LandmarkTool::default();
         self.regions = default();
+        self.path_selection = None;
+        if self.atlas != Some(id) {
+            self.layer_branches.clear();
+        }
         self.editor = Editor::new(document).expect("validated document");
         self.path = path;
         self.atlas = Some(id);

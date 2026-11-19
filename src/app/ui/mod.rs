@@ -17,8 +17,8 @@ pub use assets::{setup, snap_text_glyphs};
 pub use editor::{ChromeMotion, advance_motion, brush_icon, menu_animation};
 pub use feedback::{alpha, hover, hover_follow};
 pub use overlays::{
-    TextCard, landmark_cursor, landmark_selection_follow, radial_follow, region_selection_follow,
-    text_ime, text_selection_follow, tooltips,
+    TextCard, landmark_cursor, landmark_selection_follow, path_selection_follow, radial_follow,
+    region_selection_follow, text_ime, text_selection_follow, tooltips,
 };
 pub use shelf::{PreviewSlot, cover_rect};
 pub use widgets::color;
@@ -57,6 +57,7 @@ pub fn rebuild(
     offsets: Res<ScrollOffsets>,
     roots: Query<Entity, With<UiRoot>>,
 ) {
+    studio.refresh_path_nodes(0);
     if !studio.ui_dirty {
         return;
     }

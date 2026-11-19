@@ -6,7 +6,7 @@ mod model;
 mod validation;
 
 pub use bounds::ContentBounds;
-pub use model::{Brush, Document, Layer, Point, Stroke, TerrainReplay};
+pub use model::{Brush, Document, Layer, LinearStrokeId, Point, Stroke, TerrainReplay};
 pub const DOCUMENT_VERSION: u32 = 1;
 
 #[cfg(test)]
@@ -26,6 +26,6 @@ pub use landmark::{Landmark, LandmarkKind};
 
 mod regions;
 pub use regions::{
-    MAX_BORDER_POINTS, RegionAddress, RegionArea, RegionLayer, RegionNode, RegionPolygon,
-    RegionStyle,
+    MAX_BORDER_POINTS, RegionAddress, RegionArea, RegionLayer, RegionNode, RegionParent,
+    RegionPolygon, RegionStyle,
 };

@@ -286,6 +286,7 @@ pub fn dispatch(
                             if can_start_text
                                 && studio.text.selected.is_none()
                                 && studio.landmarks.selected.is_none()
+                                && studio.path_selection.is_none()
                             {
                                 empty_select = Some(point);
                             }
@@ -444,7 +445,7 @@ pub fn dispatch(
         || jobs.switching()
         || studio.brush_orbit.anchor.is_some();
     let map_point = studio.map_point(point);
-    let icon = if studio.drag.is_some() {
+    let icon = if studio.drag.is_some() || studio.path_dragging() {
         bevy::window::SystemCursorIcon::Grabbing
     } else if hit.is_some_and(|region| region.hit.action.is_some()) {
         bevy::window::SystemCursorIcon::Pointer
@@ -483,10 +484,11 @@ pub fn dispatch(
             }
         } else if studio.text.moving.is_some() {
             bevy::window::SystemCursorIcon::Grabbing
-        } else if studio
-            .editor
-            .label_at(map_point, 6. / studio.viewport.zoom)
-            .is_some()
+        } else if studio.path_node_at(map_point).is_some()
+            || studio
+                .editor
+                .label_at(map_point, 6. / studio.viewport.zoom)
+                .is_some()
             || studio
                 .editor
                 .landmark_at(map_point, 4. / studio.viewport.zoom)

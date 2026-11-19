@@ -59,12 +59,20 @@ pub fn region_overlay(mut graphics: Graphics, studio: Res<Studio>, mut overlay: 
             dashes(&mut shapes, span, scale, ink);
         }
     }
-    if let Some(path) = studio.regions.draft() {
-        dashes(&mut shapes, path, scale, ink);
+    let scope = studio.regions.draft_scope();
+    if let Some(path) = studio.regions.draft().filter(|path| path.len() >= 2) {
+        if let Some(scope) = scope {
+            for span in scope.visible_path(path) {
+                dashes(&mut shapes, &span, scale, ink);
+            }
+        } else {
+            dashes(&mut shapes, path, scale, ink);
+        }
     }
     if let Some(point) = studio
         .regions
         .handle(studio.pointer.map(|p| studio.map_point(p)))
+        .filter(|&point| scope.is_none_or(|shore| shore.island_at(point).is_some()))
     {
         for (radius, fill) in [(5., ink), (3., 0xf9ecd0)] {
             let points = (0..16)

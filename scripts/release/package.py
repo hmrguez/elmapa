@@ -39,11 +39,13 @@ def mac_bundle(binary, destination, version):
     resources = contents / "Resources"
     resources.mkdir(exist_ok=True)
     shutil.copy2(ROOT / "assets/icons/LICENSE", resources / "ELMAPA-ICONS-LICENSE")
+    shutil.copy2(ROOT / "assets/branding/elmapa.icns", resources / "Elmapa.icns")
     (resources / "LUCIDE-LICENSE").unlink(missing_ok=True)
     with (contents / "Info.plist").open("wb") as plist:
         plistlib.dump({
             "CFBundleExecutable": "Elmapa", "CFBundleIdentifier": "studio.elmapa.app",
             "CFBundleName": "Elmapa", "CFBundleDisplayName": "Elmapa",
+            "CFBundleIconFile": "Elmapa.icns",
             "CFBundleVersion": version, "CFBundleShortVersionString": version,
             "CFBundlePackageType": "APPL", "NSHighResolutionCapable": True,
             "LSMinimumSystemVersion": "12.0",
@@ -161,7 +163,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--offline", action="store_true", help="use cached crates and license data")
     parser.add_argument("--native", action="store_true", help="also launch and edit in a desktop session")
+    parser.add_argument("--print-version", action="store_true", help="print the Cargo package version and exit")
     args = parser.parse_args()
+    if args.print_version:
+        print(package_version())
+        return
     package(["--offline"] if args.offline else [], args.native)
 
 
