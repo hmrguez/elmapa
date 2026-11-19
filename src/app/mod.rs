@@ -129,6 +129,7 @@ pub fn run() {
                 presentation::resize,
                 render::camera,
                 render::region_overlay,
+                render::path_guide,
                 (
                     render::view_replay::play,
                     landmark_render::accents,
@@ -148,6 +149,7 @@ pub fn run() {
                     ui::landmark_selection_follow,
                     ui::text_selection_follow,
                     ui::region_selection_follow,
+                    ui::path_selection_follow,
                     ui::radial_follow,
                     ui::text_ime,
                 )

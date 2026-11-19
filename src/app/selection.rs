@@ -1,6 +1,8 @@
 //! Dispatch canvas presses using the same active tool shown in the toolbar.
+mod paths;
 use super::state::{Studio, Tool};
 use elmapa::document::Point;
+pub(super) use paths::PathSelection;
 
 impl Studio {
     pub(super) fn annotation_press(&mut self, point: Point) -> bool {
@@ -29,7 +31,7 @@ impl Studio {
     }
 
     fn select_annotation(&mut self, point: Point) {
-        if self.begin_text_transform(point) {
+        if self.begin_path_drag(point) || self.begin_text_transform(point) {
             return;
         }
         let landmark = self.editor.landmark_at(point, 4. / self.viewport.zoom);
@@ -38,6 +40,9 @@ impl Studio {
         } else {
             self.editor.label_at(point, 6. / self.viewport.zoom)
         };
+        if label.is_some() || landmark.is_some() {
+            self.clear_path_selection();
+        }
         if let Some((layer, id)) = label {
             self.landmarks.selected = None;
             self.select_label(point, layer, id);
@@ -50,6 +55,7 @@ impl Studio {
             self.text.radial.reset();
             self.text.control = None;
             self.text.error = None;
+            self.select_path(point);
         }
     }
 }

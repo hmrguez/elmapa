@@ -50,6 +50,48 @@ impl MaterialLayer {
     pub(super) fn matches(&self, source: &Layer) -> bool {
         self.source.id == source.id && self.source.strokes == source.strokes
     }
+    /// A course edit leaves the terrain, eraser index, and other lines usable.
+    pub(super) fn with_linear_edits(&self, source: &Layer) -> Option<Self> {
+        let previous = &self.source.strokes;
+        if previous.len() != source.strokes.len() {
+            return None;
+        }
+        let mut edits = Vec::new();
+        let mut offset = 0;
+        for ((old_id, _, old), (new_id, _, new)) in previous.chunks().zip(source.strokes.chunks()) {
+            if old_id != new_id {
+                for (index, (a, b)) in old.iter().zip(new).enumerate() {
+                    if a == b {
+                        continue;
+                    }
+                    if a.brush != b.brush || !matches!(a.brush, Brush::River | Brush::Path) {
+                        return None;
+                    }
+                    edits.push(offset + index);
+                }
+            }
+            offset += old.len();
+        }
+        if edits.is_empty() {
+            return None;
+        }
+        let mut result = self.clone();
+        result.source = source.clone();
+        result.memory = OnceLock::new();
+        let mut opaque = source.clone();
+        opaque.opacity = 1.;
+        for index in edits {
+            let slot = result
+                .lines
+                .binary_search_by_key(&index, |(i, _)| *i)
+                .ok()?;
+            let previous = &mut result.lines[slot].1;
+            *previous = stroke_batches(&opaque, index, previous, &result.field, &mut result.rivers);
+        }
+        result.valid &= !crate::scene::generation::is_stopped();
+        Some(result)
+    }
+
     pub(super) fn bytes(&self) -> usize {
         *self.memory.get_or_init(|| self.measure_bytes())
     }
@@ -249,7 +291,7 @@ fn stroke_batches(
         for batch in previous {
             rivers.remove(&(Arc::as_ptr(batch) as usize));
         }
-        return crate::scene::terrain::field::with_index(field.clone(), || {
+        return crate::scene::terrain::field::with_index(layer, field.clone(), || {
             crate::scene::terrain::rivers::river_batches(layer, index, stroke)
                 .into_iter()
                 .enumerate()
@@ -265,7 +307,7 @@ fn stroke_batches(
                 .collect()
         });
     }
-    let chunks = crate::scene::terrain::field::with_index(field.clone(), || {
+    let chunks = crate::scene::terrain::field::with_index(layer, field.clone(), || {
         if stroke.brush == Brush::Mountain {
             mountain_chunks(layer, index, stroke)
                 .into_iter()

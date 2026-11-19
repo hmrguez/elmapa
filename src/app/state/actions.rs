@@ -12,6 +12,7 @@ impl Studio {
         }
         self.cancel_text();
         self.cancel_landmark();
+        self.clear_path_selection();
         self.tool = tool;
         self.advanced = false;
     }
@@ -95,6 +96,8 @@ impl Studio {
             | Action::BrushOrbitPage(_)
             | Action::CloseBrushOrbit => {}
             Action::SelectTool => self.set_tool(Tool::Select),
+            Action::PathNodeDensity(step) => self.refresh_path_nodes(step),
+            Action::DeselectPath => self.clear_path_selection(),
             Action::TextTool => self.set_tool(Tool::Text),
             Action::LandmarkTool => self.set_tool(Tool::Landmarks),
             Action::LandmarkPicker
@@ -160,11 +163,13 @@ impl Studio {
             Action::Radius(v) => self.radius = (self.radius + v).clamp(12., 360.),
             Action::Strength(v) => self.strength = (self.strength + v).clamp(0.15, 1.),
             Action::AddLayer => {
+                self.clear_path_selection();
                 self.regions.active = false;
                 self.regions.clear();
                 self.editor.add_layer();
             }
             Action::SelectLayer(id) => {
+                self.clear_path_selection();
                 self.text.selected = None;
                 self.landmarks.selected = None;
                 self.editor.select_layer(id);
@@ -200,6 +205,7 @@ impl Studio {
                 }
             }
             Action::Undo => {
+                self.clear_path_selection();
                 self.regions.clear();
                 self.landmarks.arrivals.clear();
                 self.text.animate = None;
@@ -212,6 +218,7 @@ impl Studio {
                 self.animate_new = false;
             }
             Action::Redo => {
+                self.clear_path_selection();
                 self.regions.clear();
                 self.landmarks.arrivals.clear();
                 self.text.animate = None;
@@ -281,6 +288,11 @@ impl Studio {
                 .any(|l| l.visible && l.opacity > 0. && l.landmarks.iter().any(|p| p.id == id))
         {
             self.landmarks.selected = None;
+        }
+        if let Some(path) = &self.path_selection
+            && self.editor.linear_stroke(path.id).is_none()
+        {
+            self.clear_path_selection();
         }
         if self.editor.revision() != revision {
             self.changed();

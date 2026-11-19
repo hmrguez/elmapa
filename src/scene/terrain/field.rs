@@ -21,8 +21,8 @@ pub(super) fn erased(q: Point, layer: &Layer, after: usize) -> bool {
     if let Some(erased) = QUERY_INDEX.with(|slot| {
         slot.borrow()
             .as_ref()
-            .filter(|index| index.matches(layer))
-            .map(|index| index.erased(q, after))
+            .filter(|scope| scope.strokes == layer.strokes.storage_id())
+            .map(|scope| scope.index.erased(q, after))
     }) {
         return erased;
     }
@@ -63,18 +63,28 @@ pub(in crate::scene) fn roughness(stroke: &Stroke) -> f32 {
     }
 }
 
-thread_local! { static QUERY_INDEX: std::cell::RefCell<Option<std::sync::Arc<super::field_index::FieldIndex>>> = const { std::cell::RefCell::new(None) }; }
+struct EraserScope {
+    strokes: usize,
+    index: std::sync::Arc<super::field_index::FieldIndex>,
+}
+thread_local! { static QUERY_INDEX: std::cell::RefCell<Option<EraserScope>> = const { std::cell::RefCell::new(None) }; }
+/// The supplied field must index the same ordered erasers as the source layer.
 pub(in crate::scene) fn with_index<T>(
+    layer: &Layer,
     index: std::sync::Arc<super::field_index::FieldIndex>,
     f: impl FnOnce() -> T,
 ) -> T {
-    struct Guard(Option<std::sync::Arc<super::field_index::FieldIndex>>);
+    struct Guard(Option<EraserScope>);
     impl Drop for Guard {
         fn drop(&mut self) {
             QUERY_INDEX.with(|slot| *slot.borrow_mut() = self.0.take());
         }
     }
-    let guard = Guard(QUERY_INDEX.with(|slot| slot.replace(Some(index))));
+    let scope = EraserScope {
+        strokes: layer.strokes.storage_id(),
+        index,
+    };
+    let guard = Guard(QUERY_INDEX.with(|slot| slot.replace(Some(scope))));
     let output = f();
     drop(guard);
     output
