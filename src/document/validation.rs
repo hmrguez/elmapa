@@ -33,6 +33,7 @@ impl Document {
         let mut stroke_count = 0usize;
         let mut label_count = 0usize;
         let mut landmark_count = 0usize;
+        let mut region_parents = HashSet::new();
         for layer in &self.layers {
             if layer.id == 0 || !ids.insert(layer.id) || layer.id >= self.next_id {
                 return Err("Map layer identifiers are invalid or duplicated.".into());
@@ -54,6 +55,12 @@ impl Document {
             }
             if let Some(regions) = &layer.territories {
                 regions.validate()?;
+                if let Some(parent) = regions.parent
+                    && (!region_parents.insert(parent)
+                        || regions.ancestors(|id| self.region_data(id)).is_none())
+                {
+                    return Err("A child Regions layer has an invalid or duplicate parent.".into());
+                }
                 if !layer.strokes.is_empty()
                     || !layer.labels.is_empty()
                     || !layer.landmarks.is_empty()

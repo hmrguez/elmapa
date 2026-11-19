@@ -103,9 +103,20 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, scroll: f32) {
             b.commands.entity(icons).insert(Fade(0.35));
         }
         let brushes = layer.brushes();
-        if layer.territories.is_some() {
-            b.icon(icons, "land", p.accent, 19.);
-            b.text(icons, &layer.name, 12., p.text, false);
+        if let Some(regions) = &layer.territories {
+            let icon = if regions.parent.is_some() {
+                "layer"
+            } else {
+                "land"
+            };
+            b.icon(icons, icon, p.accent, 19.);
+            let name = b.text(icons, &layer.name, 12., p.text, false);
+            b.commands.entity(name).insert(Node {
+                flex_shrink: 1.,
+                min_width: px(0.),
+                overflow: Overflow::clip(),
+                ..default()
+            });
         } else if brushes.is_empty() && layer.labels.is_empty() {
             let icon = b.node(
                 icons,

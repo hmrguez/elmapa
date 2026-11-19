@@ -1,10 +1,10 @@
 //! An editable subdivision held outside the document until Apply.
 use super::Selection;
 use elmapa::{
-    document::{Point, RegionAddress, RegionLayer, RegionNode},
+    document::{Point, RegionAddress, RegionLayer, RegionNode, RegionParent},
     scene::{
         Shape,
-        territories::{RegionView, Shoreline, split_land},
+        territories::{RegionView, Shoreline, contains, split_land, visible_face},
     },
 };
 
@@ -22,8 +22,15 @@ impl Preview {
     }
 }
 
+#[derive(Clone, Copy)]
+pub(super) struct ChildSplit {
+    pub(super) parent: RegionParent,
+    pub(super) anchor: Point,
+}
+
 pub(super) struct SplitDraft {
     pub(super) count: usize,
+    pub(super) child: Option<ChildSplit>,
     pub(super) data: RegionLayer,
     pub(super) first_owner: usize,
     preview: Preview,
@@ -35,17 +42,31 @@ impl SplitDraft {
         selection: &Selection,
         source: Option<&RegionLayer>,
         count: usize,
+        child: Option<ChildSplit>,
     ) -> Result<Self, String> {
-        let names = source.map_or_else(Vec::new, |data| data.names.clone());
-        let first_owner = selection.owner.unwrap_or(names.len());
-        let mut data = split_land(&selection.polygon, names, selection.owner, count)?;
-        if let Some(source) = source {
-            data.styles.clone_from(&source.styles);
-        }
+        let (data, first_owner) = if let Some(child) = child {
+            let piece = visible_face(&selection.polygon, &selection.shore)
+                .into_iter()
+                .find(|piece| contains(piece, child.anchor))
+                .ok_or("Select visible land inside the parent region.")?;
+            let mut data = split_land(&piece, Vec::new(), None, count)?;
+            data.parent = Some(child.parent);
+            (data, 0)
+        } else {
+            let names = source.map_or_else(Vec::new, |data| data.names.clone());
+            let first_owner = selection.owner.unwrap_or(names.len());
+            let mut data = split_land(&selection.polygon, names, selection.owner, count)?;
+            if let Some(source) = source {
+                data.styles.clone_from(&source.styles);
+                data.parent = source.parent;
+            }
+            (data, first_owner)
+        };
         let preview = Preview::new(&data, &selection.shore)
             .ok_or("The split needs visible land in every region.")?;
         Ok(Self {
             count,
+            child,
             data,
             first_owner,
             preview,

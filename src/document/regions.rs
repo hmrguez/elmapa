@@ -1,7 +1,10 @@
 //! Named regions and their shared cuts in map coordinates.
-use super::{Point, limits::MAX_WORLD_COORDINATE};
+use super::{Document, Layer, Point, limits::MAX_WORLD_COORDINATE};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::{
+    collections::{BTreeMap, HashSet},
+    sync::Arc,
+};
 
 pub type RegionPolygon = Vec<Vec<[f64; 2]>>;
 
@@ -10,12 +13,20 @@ const MAX_REGIONS: usize = 256;
 const MAX_AREAS: usize = 2048;
 const MAX_REGION_POINTS: usize = 200_000;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct RegionParent {
+    pub layer: u64,
+    pub owner: usize,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct RegionLayer {
     pub names: Vec<String>,
     pub areas: Vec<RegionArea>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub styles: BTreeMap<usize, RegionStyle>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent: Option<RegionParent>,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -51,7 +62,47 @@ pub struct RegionAddress {
     pub node: usize,
 }
 
+impl Document {
+    pub fn region_data(&self, layer: u64) -> Option<&Arc<RegionLayer>> {
+        self.layer(layer)?.territories.as_ref()
+    }
+
+    pub fn region_name(&self, region: RegionParent) -> Option<&str> {
+        self.region_data(region.layer)?
+            .names
+            .get(region.owner)
+            .map(String::as_str)
+    }
+
+    pub fn child_regions(&self, parent: RegionParent) -> Option<&Layer> {
+        self.layers
+            .iter()
+            .find(|layer| layer.territories.as_ref().and_then(|data| data.parent) == Some(parent))
+    }
+}
+
 impl RegionLayer {
+    /// Return each enclosing region from the outermost boundary to the immediate parent.
+    pub fn ancestors<'a>(
+        &self,
+        lookup: impl Fn(u64) -> Option<&'a Arc<Self>>,
+    ) -> Option<Vec<(usize, &'a Arc<Self>)>> {
+        let mut result = Vec::new();
+        let mut seen = HashSet::new();
+        let mut current = self.parent;
+        while let Some(parent) = current {
+            if !seen.insert(parent.layer) {
+                return None;
+            }
+            let data = lookup(parent.layer)?;
+            data.names.get(parent.owner)?;
+            result.push((parent.owner, data));
+            current = data.parent;
+        }
+        result.reverse();
+        Some(result)
+    }
+
     pub fn new_region(&mut self) -> usize {
         let owner = self.names.len();
         self.names.push(format!("Region {}", owner + 1));

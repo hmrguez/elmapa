@@ -26,6 +26,6 @@ pub use landmark::{Landmark, LandmarkKind};
 
 mod regions;
 pub use regions::{
-    MAX_BORDER_POINTS, RegionAddress, RegionArea, RegionLayer, RegionNode, RegionPolygon,
-    RegionStyle,
+    MAX_BORDER_POINTS, RegionAddress, RegionArea, RegionLayer, RegionNode, RegionParent,
+    RegionPolygon, RegionStyle,
 };
