@@ -114,7 +114,7 @@ pub fn landmark_cursor(studio: Res<Studio>, mut nodes: Query<(&LandmarkCursor, &
         && !studio.home
         && !studio.installing
         && studio.opening.is_none()
-        && !studio.replay_view
+        && studio.replay_view.is_none()
         && studio.drag.is_none();
     for (ghost, mut node) in &mut nodes {
         if let Some(point) = studio.pointer.filter(|_| show) {

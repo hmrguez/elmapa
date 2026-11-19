@@ -1,5 +1,5 @@
 //! Embedded icons, brush textures and system fonts for the native UI.
-use crate::app::{branding, render};
+use crate::app::{branding, presentation::DisplayCamera, render};
 use bevy::{prelude::*, text::TextLayoutInfo};
 use elmapa::{
     brush_materials::{self, ForestStyle},
@@ -26,6 +26,7 @@ pub fn snap_text_glyphs(
 #[derive(Resource)]
 pub struct UiAssets {
     pub(super) camera: Entity,
+    pub(super) display_camera: Entity,
     pub(super) icons: HashMap<String, Handle<Image>>,
     pub(super) landmark_ghosts: Vec<(Handle<Image>, Vec2)>,
     pub(super) brush_swatches: HashMap<usize, Handle<Image>>,
@@ -39,6 +40,7 @@ pub fn setup(
     mut images: ResMut<Assets<Image>>,
     mut fonts: ResMut<Assets<Font>>,
     camera: Single<Entity, With<render::WorldCamera>>,
+    display_camera: Single<Entity, With<DisplayCamera>>,
     canvas: Res<render::Canvas>,
 ) {
     let mut icons = HashMap::new();
@@ -169,6 +171,7 @@ pub fn setup(
     }
     commands.insert_resource(UiAssets {
         camera: *camera,
+        display_camera: *display_camera,
         icons,
         landmark_ghosts,
         brush_swatches,

@@ -8,6 +8,7 @@ mod widgets;
 
 use super::{
     files::Jobs,
+    render::view_replay::video::VideoExport,
     state::{Action, Studio},
 };
 use bevy::prelude::*;
@@ -46,13 +47,25 @@ pub struct ScrollOffsets {
     pub packs: f32,
 }
 
+pub fn sync_scale(studio: Res<Studio>, window: Single<&Window>, mut scale: ResMut<UiScale>) {
+    // The window camera already accounts for DPI, unlike the map texture.
+    let desired = if studio.replay_view.is_some() {
+        1.
+    } else {
+        window.scale_factor()
+    };
+    if scale.0 != desired {
+        scale.0 = desired;
+    }
+}
+
 pub fn rebuild(
     mut commands: Commands,
     mut studio: ResMut<Studio>,
     assets: Res<assets::UiAssets>,
     jobs: Res<Jobs>,
-    motion: Res<ChromeMotion>,
-    offsets: Res<ScrollOffsets>,
+    video: Res<VideoExport>,
+    (motion, offsets): (Res<ChromeMotion>, Res<ScrollOffsets>),
     roots: Query<Entity, With<UiRoot>>,
 ) {
     studio.refresh_path_nodes(0);
@@ -66,7 +79,11 @@ pub fn rebuild(
     let root = commands
         .spawn((
             UiRoot,
-            UiTargetCamera(assets.camera),
+            UiTargetCamera(if studio.replay_view.is_some() {
+                assets.display_camera
+            } else {
+                assets.camera
+            }),
             Node {
                 width: percent(100.),
                 height: percent(100.),
@@ -77,13 +94,15 @@ pub fn rebuild(
         .id();
     let mut b = Builder::new(&mut commands, &assets, Palette::new(studio.dark));
     // Build in hit order so overlays take precedence over the editor chrome.
+    if let Some(replay) = studio.replay_view {
+        editor::replay_controls(&mut b, root, replay, video.busy(), &studio.status);
+        return;
+    }
     if studio.home {
         shelf::build(&mut b, root, &studio, &jobs, offsets.shelf, offsets.packs);
     } else if studio.opening.is_none() {
         editor::build(&mut b, root, &studio, motion.progress, offsets.layers);
-        if !studio.replay_view {
-            overlays::build_selection(&mut b, root, &studio);
-        }
+        overlays::build_selection(&mut b, root, &studio);
     }
     overlays::build_feedback(&mut b, root, &studio);
 }

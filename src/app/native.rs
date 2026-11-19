@@ -243,6 +243,9 @@ pub fn menu_actions(
         .drain(..)
         .collect();
     for (command, keyboard) in commands {
+        if studio.replay_view.is_some() && !matches!(command, 1 | 2 | 15) {
+            continue;
+        }
         if (10..=14).contains(&command) {
             use bevy::prelude::KeyCode;
             let key = match command {
@@ -261,7 +264,7 @@ pub fn menu_actions(
             }
             continue;
         }
-        if keyboard && studio.selected_label().is_some() {
+        if keyboard && studio.replay_view.is_none() && studio.selected_label().is_some() {
             continue;
         }
         let action = match command {

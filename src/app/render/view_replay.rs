@@ -3,14 +3,20 @@ mod paint_order;
 #[cfg(test)]
 mod tests;
 mod timeline;
+pub(in crate::app) mod video;
 
 use super::{
-    Canvas, WorldContent,
+    Canvas, WorldCamera, WorldContent,
     motion::{drop_transform, mountain_transform, path_transform, tree_transform},
 };
-use crate::app::{landmark_render, river_material::RiverMaterial, state::Studio};
+use crate::app::{
+    landmark_render,
+    river_material::RiverMaterial,
+    state::{Studio, ViewReplay},
+};
 use bevy::{
     asset::embedded_asset,
+    camera::RenderTarget,
     ecs::system::SystemParam,
     prelude::*,
     reflect::TypePath,
@@ -235,9 +241,11 @@ pub fn play(
     mut graphics: PlaybackGraphics,
     mut studio: ResMut<Studio>,
     mut canvas: ResMut<Canvas>,
+    mut video: ResMut<video::VideoExport>,
+    target: Single<&RenderTarget, With<WorldCamera>>,
     time: Res<Time<Real>>,
 ) {
-    if !studio.replay_view && canvas.view_replay.is_none() {
+    if studio.replay_view != Some(ViewReplay::Playing) && canvas.view_replay.is_none() {
         return;
     }
     let now = time.elapsed_secs_f64();
@@ -248,12 +256,12 @@ pub fn play(
     };
     let available =
         !studio.home && !studio.installing && studio.opening.is_none() && !studio.reduced;
+    let restart = video.take_restart();
     if let Some(mut replay) = canvas.view_replay.take() {
-        if !available
-            || !studio.replay_view
+        let invalid = !available
             || frame != replay.frame
-            || !studio.scene.snapshot().same_snapshot(&replay.scene)
-        {
+            || !studio.scene.snapshot().same_snapshot(&replay.scene);
+        if restart || invalid || studio.replay_view != Some(ViewReplay::Playing) {
             for cue in &mut replay.moving {
                 graphics.pose(cue, cue.entrance.duration(), now as f32, true);
             }
@@ -265,43 +273,50 @@ pub fn play(
                     Visibility::Inherited
                 },
             );
-            studio.stop_view_replay();
+            if !available || invalid && !restart {
+                studio.stop_view_replay();
+            }
+            if studio.replay_view != Some(ViewReplay::Playing) {
+                return;
+            }
+        } else {
+            let Some(elapsed) = video.elapsed((now - replay.started) as f32) else {
+                canvas.view_replay = Some(replay);
+                return;
+            };
+            while replay
+                .queued
+                .front()
+                .is_some_and(|cue| cue.start <= elapsed)
+            {
+                replay
+                    .moving
+                    .push(replay.queued.pop_front().expect("ready cue"));
+            }
+            replay.landmark_ages.clear();
+            replay.moving.retain_mut(|cue| {
+                let duration = cue.entrance.duration();
+                let age = elapsed - cue.start;
+                let settled = age >= duration;
+                graphics.pose(cue, age.min(duration), now as f32, settled);
+                if !settled && let Entrance::Landmark(part, ..) = &cue.entrance {
+                    replay
+                        .landmark_ages
+                        .insert((part.landmark.id, part.index), age);
+                }
+                !settled
+            });
+            let finished = replay.moving.is_empty() && replay.queued.is_empty();
+            if finished {
+                graphics.visibility(&canvas, Visibility::Inherited);
+                studio.replay_view = Some(ViewReplay::Finished);
+                studio.ui_dirty = true;
+            } else {
+                canvas.view_replay = Some(replay);
+            }
+            video.capture(&mut graphics.commands, &target, finished);
             return;
         }
-
-        let elapsed = (now - replay.started) as f32;
-        while replay
-            .queued
-            .front()
-            .is_some_and(|cue| cue.start <= elapsed)
-        {
-            replay
-                .moving
-                .push(replay.queued.pop_front().expect("ready cue"));
-        }
-        replay.landmark_ages.clear();
-        replay.moving.retain_mut(|cue| {
-            let duration = cue.entrance.duration();
-            let age = elapsed - cue.start;
-            let settled = age >= duration;
-            graphics.pose(cue, age.min(duration), now as f32, settled);
-            if !settled && let Entrance::Landmark(part, ..) = &cue.entrance {
-                replay
-                    .landmark_ages
-                    .insert((part.landmark.id, part.index), age);
-            }
-            !settled
-        });
-        if replay.moving.is_empty() && replay.queued.is_empty() {
-            graphics.visibility(&canvas, Visibility::Inherited);
-            studio.stop_view_replay();
-        } else {
-            canvas.view_replay = Some(replay);
-        }
-        return;
-    }
-    if !studio.replay_view {
-        return;
     }
     if !available {
         studio.stop_view_replay();

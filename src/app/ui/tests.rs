@@ -9,6 +9,7 @@ fn ui_app(studio: Studio) -> App {
     app.insert_resource(studio)
         .insert_resource(UiAssets {
             camera,
+            display_camera: camera,
             icons: HashMap::new(),
             landmark_ghosts: default(),
             brush_swatches: HashMap::new(),
@@ -17,6 +18,7 @@ fn ui_app(studio: Studio) -> App {
             didot: default(),
         })
         .init_resource::<Jobs>()
+        .init_resource::<VideoExport>()
         .init_resource::<ChromeMotion>()
         .init_resource::<ScrollOffsets>()
         .add_systems(Update, rebuild);

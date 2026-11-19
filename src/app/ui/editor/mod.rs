@@ -6,11 +6,11 @@ mod toolbar;
 
 use super::{
     feedback::{Fade, Hover},
-    widgets::{Builder, absolute, color, row},
+    widgets::{Builder, Palette, absolute, color, column, row},
 };
 use crate::app::{
     branding,
-    state::{Action, Studio},
+    state::{Action, Studio, ViewReplay},
 };
 use bevy::prelude::*;
 
@@ -28,7 +28,6 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, menu_progress: f3
     zoom(b, root, s);
     toolbar::build(b, root, s);
     menu::build(b, root, s, menu_progress);
-    replay_controls(b, root, s);
     status(b, root, s);
 }
 
@@ -125,26 +124,83 @@ fn zoom(b: &mut Builder, root: Entity, s: &Studio) {
     b.button(zoom, "fit-artwork", "", Action::Fit, false);
 }
 
-fn replay_controls(b: &mut Builder, root: Entity, s: &Studio) {
-    if s.replay_view {
-        let playback = b.panel(
-            root,
+pub(super) fn replay_controls(
+    b: &mut Builder,
+    root: Entity,
+    replay: ViewReplay,
+    saving: bool,
+    status: &str,
+) {
+    // This dock renders directly over the composed map on the window camera.
+    b.p = Palette {
+        surface: 0x0a0c08,
+        text: 0xf3e3bd,
+        muted: 0xaeaa93,
+        line: 0x312c1c,
+        accent: 0xf2d09a,
+        wash: 0x222418,
+    };
+    let group = b.node(
+        root,
+        Node {
+            position_type: PositionType::Absolute,
+            bottom: px(24.),
+            width: percent(100.),
+            align_items: AlignItems::Center,
+            ..column(8.)
+        },
+    );
+    if status.starts_with("Could not save replay video") || status == "Replay video saved." {
+        let message = b.panel(
+            group,
             Node {
-                position_type: PositionType::Absolute,
-                top: px(20.),
-                left: percent(50.),
-                width: px(116.),
-                margin: UiRect::left(px(-58.)),
-                justify_content: JustifyContent::Center,
+                max_width: px(500.),
+                ..default()
+            },
+            10.,
+            8.,
+            0.97,
+            false,
+        );
+        let text = b.text(message, status, 12., b.p.text, false);
+        b.commands.entity(text).insert((
+            TextLayout::default(),
+            Node {
+                max_width: percent(100.),
+                ..default()
+            },
+        ));
+    }
+    let dock = b.panel(group, row(4.), 14., 4., 0.98, true);
+    if saving {
+        let busy = b.node(
+            dock,
+            Node {
+                padding: UiRect::horizontal(px(11.)),
                 ..row(0.)
             },
-            14.,
-            4.,
-            0.93,
-            true,
         );
-        b.button(playback, "close", "Stop replay", Action::ReplayView, false);
+        b.text(busy, "Saving MP4…", 12., b.p.muted, false);
+    } else {
+        b.button(dock, "save", "Save video", Action::SaveReplayVideo, false);
     }
+    let divider = b.node(
+        dock,
+        Node {
+            width: px(1.),
+            height: px(16.),
+            ..default()
+        },
+    );
+    b.commands
+        .entity(divider)
+        .insert(BackgroundColor(color(b.p.line, 1.)));
+    let label = match (replay, saving) {
+        (_, true) => "Cancel · Esc",
+        (ViewReplay::Playing, false) => "Stop · Esc",
+        (ViewReplay::Finished, false) => "Exit · Esc",
+    };
+    b.button(dock, "close", label, Action::ReplayView, false);
 }
 
 fn status(b: &mut Builder, root: Entity, s: &Studio) {

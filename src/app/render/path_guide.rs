@@ -20,7 +20,7 @@ pub fn path_guide(mut graphics: Graphics, studio: Res<Studio>, mut guide: Local<
     let points = studio
         .path_selection
         .as_ref()
-        .filter(|_| !studio.home && !studio.installing && !studio.replay_view)
+        .filter(|_| !studio.home && !studio.installing && studio.replay_view.is_none())
         .map(|selection| selection.points())
         .filter(|points| points.len() >= 2);
     if let Some(points) = points {

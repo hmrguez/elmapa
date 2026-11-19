@@ -156,12 +156,12 @@ pub fn dispatch(
     for event in events.read() {
         match event {
             WindowEvent::Ime(bevy::window::Ime::Commit { window, value })
-                if *window == window_entity =>
+                if *window == window_entity && studio.replay_view.is_none() =>
             {
                 studio.text_insert(value);
             }
             WindowEvent::Ime(bevy::window::Ime::Preedit { window, value, .. })
-                if *window == window_entity =>
+                if *window == window_entity && studio.replay_view.is_none() =>
             {
                 studio.text_preedit(value);
             }
@@ -176,11 +176,15 @@ pub fn dispatch(
                     let shift = gesture
                         .keys
                         .any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
-                    if studio.text_key(event, command, shift) {
+                    if studio.replay_view.is_none() && studio.text_key(event, command, shift) {
                         continue;
                     }
                     if event.key_code == KeyCode::Escape {
                         gesture.brush_press = None;
+                        if studio.replay_view.is_some() {
+                            gesture.left = false;
+                            gesture.pressed = None;
+                        }
                     }
                     key_down(
                         event.key_code,
@@ -204,6 +208,9 @@ pub fn dispatch(
                     .keys
                     .any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
                 gesture.position = Some(point);
+                if studio.replay_view.is_some() {
+                    continue;
+                }
                 let blocked =
                     at(point).is_some() || studio.home || studio.installing || jobs.switching();
                 elmapa::performance::input();
@@ -230,7 +237,7 @@ pub fn dispatch(
                 let Some(point) = gesture.position.or_else(|| window.cursor_position()) else {
                     continue;
                 };
-                if at(point).is_none() && !jobs.switching() {
+                if at(point).is_none() && !jobs.switching() && studio.replay_view.is_none() {
                     elmapa::performance::input();
                     if let Some(press) = gesture.brush_press.take()
                         && press.valid(&studio)
@@ -258,6 +265,22 @@ pub fn dispatch(
                 };
                 let target = at(point);
                 let action = target.as_ref().and_then(|region| region.hit.action);
+                if studio.replay_view.is_some() {
+                    if event.state == ButtonState::Pressed {
+                        gesture.brush_press = None;
+                        gesture.pressed = action.filter(|action| {
+                            matches!(action, Action::ReplayView | Action::SaveReplayVideo)
+                        });
+                    } else {
+                        gesture.left = false;
+                        if let Some(pressed) = gesture.pressed.take()
+                            && Some(pressed) == action
+                        {
+                            studio.act(pressed, &mut jobs);
+                        }
+                    }
+                    continue;
+                }
                 let blocked =
                     target.is_some() || studio.home || studio.installing || jobs.switching();
                 elmapa::performance::input();
@@ -288,7 +311,7 @@ pub fn dispatch(
                         studio.commit_text_field();
                         studio.dismiss_text_control();
                     }
-                    if !blocked && !studio.stop_view_replay() && !studio.close_brush_orbit() {
+                    if !blocked && !studio.close_brush_orbit() {
                         if !studio.can_open_brush_orbit() {
                             let can_start_text = studio.tool == Tool::Select
                                 && studio.text.draft.is_none()
@@ -359,6 +382,9 @@ pub fn dispatch(
             }
             WindowEvent::MouseWheel(event) if event.window == window_entity => {
                 gesture.select_clicks = SelectClicks::default();
+                if studio.replay_view.is_some() {
+                    continue;
+                }
                 let Some(point) = gesture.position.or_else(|| window.cursor_position()) else {
                     continue;
                 };
@@ -404,7 +430,6 @@ pub fn dispatch(
                 }
                 elmapa::performance::input();
                 gesture.brush_press = None;
-                studio.stop_view_replay();
                 studio.close_brush_orbit();
                 let bounds = studio.bounds;
                 studio
@@ -438,7 +463,7 @@ pub fn dispatch(
     }
     gesture
         .brush_press
-        .take_if(|press| !press.valid(&studio) || jobs.switching());
+        .take_if(|press| !press.valid(&studio) || jobs.switching() || studio.replay_view.is_some());
     if gesture.position.is_none_or(|point| at(point).is_none())
         && let Some(press) = gesture.brush_press.take_if(|press| press.held(now))
     {
@@ -449,6 +474,7 @@ pub fn dispatch(
     };
     let hit = at(point);
     let blocked = hit.is_some()
+        || studio.replay_view.is_some()
         || studio.home
         || studio.installing
         || jobs.switching()

@@ -35,6 +35,7 @@ fn app() -> App {
     app.insert_resource(studio)
         .insert_resource(UiAssets {
             camera,
+            display_camera: camera,
             icons: HashMap::new(),
             landmark_ghosts: default(),
             brush_swatches: HashMap::new(),
@@ -44,6 +45,7 @@ fn app() -> App {
         })
         .init_resource::<Time<Real>>()
         .init_resource::<Jobs>()
+        .init_resource::<crate::app::render::view_replay::video::VideoExport>()
         .init_resource::<ChromeMotion>()
         .init_resource::<ScrollOffsets>()
         .add_systems(
