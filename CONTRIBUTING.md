@@ -52,6 +52,17 @@ ELMAPA_LIBRARY_DIR="$(mktemp -d)" cargo run --release --locked
 
 To create a local macOS app bundle, run `./scripts/bundle-macos.sh --release` and open `target/Elmapa.app`. This development bundle carries an ad-hoc signature.
 
+## Releases
+
+Open ordinary contribution PRs against `dev` and keep the existing Cargo
+version. CI publishes a dated preview for each successful push to `dev`.
+
+When preparing a stable release, maintainers open a release PR into `dev` with
+the next version in `Cargo.toml` and `Cargo.lock` and user-facing release notes.
+After the preview passes CI, a maintainer promotes the verified commit to
+`main`. Each Cargo version can ship as stable once. See the
+[release guide](docs/releases.md#prepare-and-promote-a-stable-release).
+
 ## Working with Codex
 
 The optional [iconpack skill](.agents/skills/iconpack/SKILL.md) covers artwork, manifests, placement and animation for landmark packs. The [brush-material skill](.agents/skills/brush-material/SKILL.md) covers texture and sprite finishes. For example, ask Codex to “use $brush-material to add a silty water finish.” Both workflows use the same asset guides, app and tests as a manual contribution. Repository agents also follow the [worktree instructions](AGENTS.md).
