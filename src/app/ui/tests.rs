@@ -24,6 +24,7 @@ fn dark_shelf_chrome_matches_neutral_canvas_panels() {
     })
     .insert_resource(UiAssets {
         camera,
+        display_camera: camera,
         icons: HashMap::new(),
         landmark_ghosts: default(),
         brush_swatches: HashMap::new(),
@@ -32,6 +33,7 @@ fn dark_shelf_chrome_matches_neutral_canvas_panels() {
         didot: default(),
     })
     .init_resource::<Jobs>()
+    .init_resource::<VideoExport>()
     .init_resource::<ChromeMotion>()
     .init_resource::<ScrollOffsets>()
     .add_systems(Update, rebuild);

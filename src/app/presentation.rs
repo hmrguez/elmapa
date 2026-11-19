@@ -8,7 +8,7 @@ use bevy::{
     image::ImageSampler,
     prelude::*,
     reflect::TypePath,
-    render::render_resource::{AsBindGroup, TextureFormat},
+    render::render_resource::{AsBindGroup, TextureFormat, TextureUsages},
     shader::ShaderRef,
     sprite_render::{Material2d, Material2dPlugin},
 };
@@ -33,6 +33,8 @@ impl Material2d for DisplayMaterial {
 }
 #[derive(Component)]
 pub struct DisplayQuad;
+#[derive(Component)]
+pub struct DisplayCamera;
 #[derive(Resource)]
 pub struct Presentation {
     physical: UVec2,
@@ -45,6 +47,7 @@ fn target(size: UVec2) -> Image {
         None,
     );
     image.sampler = ImageSampler::nearest();
+    image.texture_descriptor.usage |= TextureUsages::COPY_SRC;
     image
 }
 pub fn setup(
@@ -74,6 +77,7 @@ pub fn setup(
     ));
     commands.spawn((
         Camera2d,
+        DisplayCamera,
         Camera {
             order: 0,
             ..default()
@@ -97,7 +101,6 @@ pub fn resize(
     mut camera_target: Single<&mut RenderTarget, With<WorldCamera>>,
     mut quad: Single<(&mut Transform, &MeshMaterial2d<DisplayMaterial>), With<DisplayQuad>>,
     mut materials: ResMut<Assets<DisplayMaterial>>,
-    mut scale: ResMut<UiScale>,
 ) {
     let physical = UVec2::new(window.physical_width(), window.physical_height());
     if presentation.physical != physical {
@@ -114,8 +117,5 @@ pub fn resize(
     let desired = Vec3::new(window.width(), window.height(), 1.);
     if quad.0.scale != desired {
         quad.0.scale = desired;
-    }
-    if scale.0 != window.scale_factor() {
-        scale.0 = window.scale_factor();
     }
 }

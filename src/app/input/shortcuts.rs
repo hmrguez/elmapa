@@ -15,6 +15,17 @@ pub(super) fn key_down(
     jobs: &mut Jobs,
     replay: &mut Replay,
 ) {
+    if studio.replay_view.is_some() && !(command && key == KeyCode::KeyQ) {
+        match key {
+            KeyCode::Escape => {
+                studio.stop_view_replay();
+            }
+            KeyCode::KeyS if command => studio.act(Action::SaveReplayVideo, jobs),
+            KeyCode::KeyR if command && shift => studio.act(Action::ReplayView, jobs),
+            _ => {}
+        }
+        return;
+    }
     if key == KeyCode::KeyP && !matches!(studio.tool, Tool::Text | Tool::Select) {
         replay.start();
     }
@@ -52,9 +63,6 @@ pub(super) fn key_down(
         return;
     }
     if key == KeyCode::Escape {
-        if studio.stop_view_replay() {
-            return;
-        }
         if studio.close_brush_orbit() {
             return;
         }

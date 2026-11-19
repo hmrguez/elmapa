@@ -53,6 +53,7 @@ pub enum Action {
     Advanced,
     Menu,
     ReplayView,
+    SaveReplayVideo,
     LayerTools,
     Radius(f32),
     Strength(f32),
@@ -109,7 +110,8 @@ pub struct Studio {
     pub settings_on_home: bool,
     pub advanced: bool,
     pub menu: bool,
-    pub replay_view: bool,
+    pub replay_view: Option<ViewReplay>,
+    pub replay_video_requested: bool,
     pub layer_tools: bool,
     pub radius: f32,
     pub strength: f32,
@@ -158,7 +160,8 @@ impl Default for Studio {
             settings_on_home: false,
             advanced: false,
             menu: false,
-            replay_view: false,
+            replay_view: None,
+            replay_video_requested: false,
             layer_tools: false,
             radius: Brush::DEFAULT_SIZE,
             strength: Brush::DEFAULT_STRENGTH,
@@ -196,7 +199,7 @@ impl Studio {
         self.scene.invalidate_preview();
     }
     pub fn changed(&mut self) {
-        self.replay_view = false;
+        self.stop_view_replay();
         self.dirty = true;
         self.ui_dirty = true;
         self.invalidate_preview();
@@ -260,8 +263,15 @@ impl Studio {
     }
 
     pub fn stop_view_replay(&mut self) -> bool {
-        let was_playing = std::mem::take(&mut self.replay_view);
-        self.ui_dirty |= was_playing;
-        was_playing
+        let was_open = self.replay_view.take().is_some();
+        self.replay_video_requested = false;
+        self.ui_dirty |= was_open;
+        was_open
     }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ViewReplay {
+    Playing,
+    Finished,
 }

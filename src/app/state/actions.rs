@@ -1,5 +1,5 @@
 //! Toolbar and menu actions dispatched by the studio.
-use super::{Action, Studio, Tool};
+use super::{Action, Studio, Tool, ViewReplay};
 use crate::app::files;
 
 impl Studio {
@@ -20,8 +20,22 @@ impl Studio {
         if self.quit_requested || jobs.switching() && !matches!(action, Action::Quit) {
             return;
         }
-        if !matches!(action, Action::Menu | Action::ReplayView) {
-            self.stop_view_replay();
+        if action == Action::SaveReplayVideo || action == Action::Save && self.replay_view.is_some()
+        {
+            self.replay_video_requested |= self.replay_view.is_some();
+            return;
+        }
+        if self.replay_view.is_some() {
+            match action {
+                Action::ReplayView => {
+                    self.stop_view_replay();
+                    return;
+                }
+                Action::Quit => {
+                    self.stop_view_replay();
+                }
+                _ => return,
+            }
         }
         let orbit_open = self.brush_orbit.anchor.is_some();
         if !matches!(action, Action::BrushOrbitPage(_)) {
@@ -141,15 +155,17 @@ impl Studio {
             Action::Menu => self.menu = !self.menu,
             Action::ReplayView => {
                 self.menu = false;
-                if !self.stop_view_replay() && !self.home {
+                if !self.home {
                     if self.reduced {
                         self.status = "Replay follows Reduced Motion.".into();
                     } else {
-                        self.status = "Replaying this view.".into();
-                        self.replay_view = true;
+                        self.status.clear();
+                        self.pointer = None;
+                        self.replay_view = Some(ViewReplay::Playing);
                     }
                 }
             }
+            Action::SaveReplayVideo => unreachable!("handled before editing the canvas"),
             Action::LayerTools => self.layer_tools = !self.layer_tools,
             Action::Radius(v) => self.radius = (self.radius + v).clamp(12., 360.),
             Action::Strength(v) => self.strength = (self.strength + v).clamp(0.15, 1.),

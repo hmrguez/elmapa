@@ -72,7 +72,9 @@ When a claimed region is selected, its orbit lets you rename it, change its fill
 
 ## Documents and terrain
 
-Choose **Replay this view** from the map actions menu to animate the finished artwork in the current canvas view. Surviving terrain animates in brush order, and names and landmarks arrive at their saved positions. Land and water use a feathered ink wash with approximate timing for strokes that merge into one region. Atlases saved before this feature use the stored order within each layer for older strokes. **Stop replay** or Escape restores the canvas immediately. Replay follows Reduced Motion.
+Choose **Replay this view** from the map actions menu to animate the finished artwork in the current canvas view. The editor controls disappear while you watch. Surviving terrain animates in brush order, and names and landmarks arrive at their saved positions. Land and water use a feathered ink wash with approximate timing for strokes that merge into one region. Atlases saved before this feature use the stored order within each layer for older strokes. Press Escape to stop and return to editing. Replay follows Reduced Motion.
+
+Choose **Save video** at the bottom of the replay during or after playback. Once you choose a destination, Elmapa renders the full view from the beginning and saves a silent `.mp4` with just the map artwork. Watching a replay creates no video files. Press Escape during export to cancel and return to editing.
 
 Maps save locally as versioned `.elmapa` JSON documents containing editable brush paths, landmarks and labels, layer settings, and stable variation seeds. Saving replaces the destination atomically. Switching atlases starts a separate editing session; Undo stays within the current atlas. Undo history is not stored in the file. Shelf snapshots, camera settings and appearance preferences share a local library directory:
 

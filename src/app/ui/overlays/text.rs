@@ -489,7 +489,8 @@ pub fn text_ime(studio: Res<Studio>, mut window: Single<&mut Window>) {
         .edit
         .as_ref()
         .and(studio.regions.style.anchor);
-    let enabled = region.is_some() || draft.is_some() || studio.selected_label().is_some();
+    let enabled = studio.replay_view.is_none()
+        && (region.is_some() || draft.is_some() || studio.selected_label().is_some());
     if window.ime_enabled != enabled {
         window.ime_enabled = enabled;
     }

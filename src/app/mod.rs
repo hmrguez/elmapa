@@ -96,6 +96,7 @@ pub fn run() {
         .init_resource::<render::Canvas>()
         .init_resource::<files::Jobs>()
         .init_resource::<replay::Replay>()
+        .init_resource::<render::view_replay::video::VideoExport>()
         .init_resource::<benchmark::Benchmark>()
         .init_resource::<ui::ChromeMotion>()
         .init_resource::<brush_motion::BrushMotion>()
@@ -130,6 +131,7 @@ pub fn run() {
                 render::camera,
                 render::region_overlay,
                 (
+                    render::view_replay::video::prepare,
                     render::view_replay::play,
                     landmark_render::accents,
                     render::tree_leaves::fall,
@@ -137,6 +139,7 @@ pub fn run() {
                     .chain(),
                 render::opening,
                 ui::advance_motion,
+                ui::sync_scale,
                 ui::rebuild,
                 ui::alpha,
                 ui::hover,

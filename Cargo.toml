@@ -13,6 +13,7 @@ app = [
     "dep:bevy", "dep:winit", "dep:rfd", "dep:arboard",
     "dep:objc2", "dep:objc2-app-kit", "dep:objc2-foundation", "dep:objc2-metal", "dep:block2",
     "dep:rmcp", "dep:tokio", "dep:blake3",
+    "dep:crossbeam-channel", "dep:mp4", "dep:openh264", "dep:tempfile",
 ]
 
 [[bin]]
@@ -45,6 +46,10 @@ resvg = { version = "0.45", default-features = false, features = ["raster-images
 usvg = { version = "0.45", default-features = false, features = ["text", "system-fonts"] }
 rmcp = { optional = true, version = "3.11", default-features = false, features = ["server", "macros", "schemars", "transport-io"] }
 blake3 = { optional = true, version = "1" }
+crossbeam-channel = { optional = true, version = "0.5" }
+mp4 = { optional = true, version = "0.14" }
+openh264 = { optional = true, version = "0.9.10" }
+tempfile = { optional = true, version = "3" }
 tokio = { optional = true, version = "1", default-features = false, features = ["rt", "sync"] }
 
 [target.'cfg(not(target_os = "macos"))'.dependencies]

@@ -17,7 +17,7 @@ pub fn region_overlay(mut graphics: Graphics, studio: Res<Studio>, mut overlay: 
         && !studio.home
         && !studio.installing
         && studio.opening.is_none()
-        && !studio.replay_view;
+        && studio.replay_view.is_none();
     let scale = studio.viewport.zoom.max(0.0001);
     let key = show.then_some((
         studio.regions.overlay_revision,
