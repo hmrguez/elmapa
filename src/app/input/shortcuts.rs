@@ -58,8 +58,8 @@ pub(super) fn key_down(
         if studio.close_brush_orbit() {
             return;
         }
-        if studio.landmarks.picker.is_some() {
-            studio.act(Action::CloseLandmarkPicker, jobs);
+        if studio.landmarks.selected.is_some() && !studio.landmarks.radial.path.is_empty() {
+            studio.act(Action::LandmarkBack, jobs);
             return;
         }
         if studio.text.style_open {

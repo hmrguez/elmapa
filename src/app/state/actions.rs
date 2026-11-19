@@ -64,12 +64,6 @@ impl Studio {
         } else {
             self.commit_text_field();
         }
-        if !matches!(
-            action,
-            Action::LandmarkPicker | Action::LandmarkKind(_) | Action::Zoom(_) | Action::Fit
-        ) {
-            self.landmarks.picker = None;
-        }
         if !matches!(action, Action::TextField(field) | Action::TextStep(field, _)
             if Some(field) == self.text.control)
         {
@@ -100,8 +94,8 @@ impl Studio {
             Action::DeselectPath => self.clear_path_selection(),
             Action::TextTool => self.set_tool(Tool::Text),
             Action::LandmarkTool => self.set_tool(Tool::Landmarks),
-            Action::LandmarkPicker
-            | Action::CloseLandmarkPicker
+            Action::LandmarkEnter(_, _)
+            | Action::LandmarkBack
             | Action::LandmarkKind(_)
             | Action::LandmarkSize(_)
             | Action::LandmarkDuplicate
@@ -125,7 +119,7 @@ impl Studio {
                     if !self.disabled_landmark_packs.remove(&pack.id) {
                         self.disabled_landmark_packs.insert(pack.id.clone());
                     }
-                    self.landmarks.picker = None;
+                    self.landmarks.radial.reset();
                     jobs.preferences = true;
                 }
             }
@@ -288,6 +282,13 @@ impl Studio {
                 .any(|l| l.visible && l.opacity > 0. && l.landmarks.iter().any(|p| p.id == id))
         {
             self.landmarks.selected = None;
+        }
+        if self
+            .landmarks
+            .last_placed
+            .is_some_and(|id| self.editor.landmark(id).is_none())
+        {
+            self.landmarks.last_placed = None;
         }
         if let Some(path) = &self.path_selection
             && self.editor.linear_stroke(path.id).is_none()

@@ -19,17 +19,11 @@ pub use text::{TextCard, text_ime, text_selection_follow};
 
 pub(super) use pointer::{Cursor, build_feedback, update_brush_cursor};
 
-pub(super) fn build_selection(
-    b: &mut Builder,
-    root: Entity,
-    studio: &Studio,
-    landmark_scroll: f32,
-) {
+pub(super) fn build_selection(b: &mut Builder, root: Entity, studio: &Studio) {
     path::build(b, root, studio);
     text::build(b, root, studio);
     landmark::build(b, root, studio);
     regions::build(b, root, studio);
     pointer::brush_orbit(b, root, studio);
-    landmark::picker(b, root, studio, landmark_scroll);
     text::placement_style(b, root, studio);
 }

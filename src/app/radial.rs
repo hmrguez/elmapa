@@ -109,6 +109,11 @@ pub fn offset(index: usize, radius: Vec2, progress: f32) -> Vec2 {
     Vec2::new(angle.cos(), angle.sin()) * radius * (0.86 + 0.14 * progress)
 }
 
+/// A circle of this radius fits the last bubble before the wrap point.
+pub fn single_ring_radius(bubbles: usize) -> f32 {
+    (bubbles.saturating_sub(1) as f32 * BUBBLE_STEP / RING_SWEEP).ceil()
+}
+
 pub fn reveal(elapsed: f32, index: usize, reduced: bool) -> f32 {
     if reduced {
         return 1.;

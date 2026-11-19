@@ -38,7 +38,7 @@ fn ten_label_drafts_reuse_style_and_commit_once_each() {
     s.act(Action::TextStep(Field::Size, 4.), &mut jobs);
     let revision = s.editor.revision();
     for index in 0..10 {
-        s.annotation_press(Point::new(15. + 100. * index as f32, 200.));
+        s.annotation_press(Point::new(15. + 100. * index as f32, 200.), false);
         assert!(s.text.edit.as_ref().unwrap().value.is_empty());
         assert_eq!(s.editor.document().layers[0].labels.len(), index);
         s.text_insert(&format!("Island {index}"));
@@ -54,7 +54,7 @@ fn ten_label_drafts_reuse_style_and_commit_once_each() {
         && label.size == 36.));
     assert_eq!(labels[9].text, "Island 9");
 
-    s.annotation_press(Point::new(20., 30.));
+    s.annotation_press(Point::new(20., 30.), false);
     s.text_insert("Cancelled");
     s.cancel_label_draft();
     assert_eq!(s.editor.revision(), revision + 10);
@@ -99,10 +99,10 @@ fn rejected_draft_preserves_its_name_and_original_layer() {
     s.editor.select_layer(layer);
     s.act(Action::TextTool, &mut jobs);
     let position = Point::new(40., 80.);
-    s.annotation_press(position);
+    s.annotation_press(position, false);
     s.text_insert("Salt Marsh");
     s.act(Action::Visibility(layer), &mut jobs);
-    s.annotation_press(Point::new(70., 20.));
+    s.annotation_press(Point::new(70., 20.), false);
     assert_eq!(s.draft_label().unwrap().position, position);
     assert_eq!(s.draft_label().unwrap().text, "Salt Marsh");
     assert!(s.text.error.is_some());
@@ -145,14 +145,14 @@ fn select_only_picks_visible_labels_and_empty_canvas_deselects_without_editing()
     let revision = s.editor.revision();
     s.act(Action::SelectTool, &mut jobs);
     assert!(s.selected_label().is_none());
-    s.annotation_press(point);
+    s.annotation_press(point, false);
     s.finish_text_move();
     assert_eq!(s.text.selected, Some(upper));
     assert!(s.selected_label().is_some());
     assert_eq!(s.editor.revision(), revision);
     s.act(Action::Visibility(upper_layer), &mut jobs);
     assert!(s.selected_label().is_none());
-    s.annotation_press(point);
+    s.annotation_press(point, false);
     s.finish_text_move();
     assert_eq!(s.text.selected, Some(lower));
     assert_eq!(s.editor.active_layer(), lower_layer);
@@ -249,7 +249,7 @@ fn corner_drag_preserves_opposite_anchor_at_rotation_and_zoom_and_commits_once()
         let diagonal = rotation * extent;
         let anchor = vector(label.position) - diagonal / 2.;
         let revision = s.editor.revision();
-        s.annotation_press(map_point(handle));
+        s.annotation_press(map_point(handle), false);
         s.text_move(map_point(handle + diagonal * 0.5));
         let preview = s.current_label();
         assert!((preview.size - label.size * 1.5).abs() < 0.001);
@@ -278,7 +278,7 @@ fn rotation_drag_snaps_wraps_and_escape_reverts_without_history() {
     let handle = vector(label.position) + Rot2::degrees(label.rotation) * local;
     assert_eq!(s.text_handle(map_point(handle)), Some(Handle::Rotate));
     let revision = s.editor.revision();
-    s.annotation_press(map_point(handle));
+    s.annotation_press(map_point(handle), false);
     s.text.snap = true;
     let end = vector(label.position) + Rot2::degrees(30.) * (handle - vector(label.position));
     s.text_move(map_point(end));

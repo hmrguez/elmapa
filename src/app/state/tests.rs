@@ -23,7 +23,7 @@ fn annotations_leave_regions_and_resume_on_the_artwork_layer() {
     assert_eq!(studio.tool, Tool::Text);
     assert_eq!(studio.editor.active_layer(), artwork);
     assert!(!studio.regions.active);
-    studio.annotation_press(Point::new(400., 400.));
+    studio.annotation_press(Point::new(400., 400.), false);
     studio.text_insert("Returning to artwork");
     studio.act(Action::PlaceLabel, &mut jobs);
     assert_eq!(

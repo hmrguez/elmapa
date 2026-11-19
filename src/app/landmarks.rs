@@ -1,6 +1,6 @@
 //! Landmark placement, selection and one-checkpoint drag previews.
 use super::{
-    radial::Item,
+    radial::{Item, Navigation},
     state::{Action, Studio, Tool},
 };
 use elmapa::{
@@ -8,35 +8,68 @@ use elmapa::{
         Landmark, LandmarkKind, Point,
         limits::{MAX_LANDMARK_SIZE, MIN_LANDMARK_SIZE},
     },
-    scene::landmark_catalog,
+    scene::{LandmarkCatalog, landmark_catalog},
 };
-use std::collections::HashMap;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PickerTarget {
-    Placement,
-    Replacement(u64),
-}
+use std::collections::{HashMap, HashSet};
 
 #[derive(Default)]
 pub struct LandmarkTool {
     pub selected: Option<u64>,
     pub placement: Landmark,
-    pub picker: Option<PickerTarget>,
+    pub radial: Navigation,
+    pub last_placed: Option<u64>,
     pub moving: Option<(Point, Landmark)>,
     pub preview: Option<Landmark>,
     /// Only explicit placement or changing a specimen requests motion.
     pub arrivals: HashMap<u64, Option<f32>>,
 }
 
-impl Studio {
-    pub fn available_landmark(&self, kind: &LandmarkKind) -> Option<usize> {
-        let catalog = landmark_catalog();
-        catalog.find(kind).filter(|&index| {
-            !self
-                .disabled_landmark_packs
-                .contains(&catalog.packs[catalog.items[index].pack].id)
+/// The same picker rule serves every pack, including packs installed after release.
+fn landmark_picker(
+    catalog: &LandmarkCatalog,
+    disabled: &HashSet<String>,
+    current: Option<&LandmarkKind>,
+) -> Vec<Item<Action>> {
+    let packs: Vec<_> = catalog
+        .packs
+        .iter()
+        .enumerate()
+        .filter(|(_, p)| !disabled.contains(&p.id))
+        .collect();
+    let children = |pack: usize| {
+        catalog
+            .items
+            .iter()
+            .enumerate()
+            .filter(|(_, d)| d.pack == pack)
+            .map(|(i, d)| {
+                let mut item = Item::action(d.name.clone(), d.kind.key(), Action::LandmarkKind(i));
+                item.active = current == Some(&d.kind);
+                item
+            })
+            .collect::<Vec<_>>()
+    };
+    if packs.len() == 1 {
+        return children(packs[0].0);
+    }
+    packs
+        .into_iter()
+        .map(|(i, p)| {
+            let mut item = Item::branch(p.name.clone(), p.icon_key.clone(), children(i));
+            item.active = item.children.iter().any(|c| c.active);
+            item
         })
+        .collect()
+}
+
+impl Studio {
+    pub fn placement_landmark(&self) -> Option<usize> {
+        let catalog = landmark_catalog();
+        let enabled = catalog.enabled_items(&self.disabled_landmark_packs);
+        catalog
+            .find(&self.landmarks.placement.kind)
+            .filter(|index| enabled.contains(index))
+            .or_else(|| enabled.first().copied())
     }
 
     pub fn current_landmark(&self) -> Option<Landmark> {
@@ -48,10 +81,13 @@ impl Studio {
     }
 
     pub fn landmark_actions(&self) -> Vec<Item<Action>> {
-        let mut change = Item::action("Change icon", "landmark", Action::LandmarkPicker);
-        change.active = self.landmarks.picker.is_some();
-        vec![
-            change,
+        let current = self.current_landmark().map(|mark| mark.kind);
+        let mut items = landmark_picker(
+            landmark_catalog(),
+            &self.disabled_landmark_packs,
+            current.as_ref(),
+        );
+        items.extend([
             Item::action("Smaller · [", "minus", Action::LandmarkSize(-16.)),
             Item::action("Larger · ]", "plus", Action::LandmarkSize(16.)),
             Item::action(
@@ -64,41 +100,42 @@ impl Studio {
                 "delete",
                 Action::LandmarkDelete,
             ),
-        ]
+        ]);
+        items
     }
 
     pub fn landmark_action(&mut self, action: Action) {
         match action {
-            Action::LandmarkPicker => {
-                self.landmarks.picker = match self.tool {
-                    Tool::Landmarks => Some(PickerTarget::Placement),
-                    Tool::Select => self.landmarks.selected.map(PickerTarget::Replacement),
-                    _ => None,
-                };
+            Action::LandmarkEnter(depth, index) if self.current_landmark().is_some() => {
+                let items = self.landmark_actions();
+                self.landmarks.radial.enter_at(&items, depth, index);
             }
-            Action::CloseLandmarkPicker => self.landmarks.picker = None,
+            Action::LandmarkBack => self.landmarks.radial.back(),
             Action::LandmarkKind(index) => {
-                let Some(def) = landmark_catalog().items.get(index) else {
+                let catalog = landmark_catalog();
+                let Some(def) = catalog.items.get(index) else {
                     return;
                 };
-                if self.available_landmark(&def.kind).is_none() {
+                if self
+                    .disabled_landmark_packs
+                    .contains(&catalog.packs[def.pack].id)
+                {
                     return;
                 }
-                match self.landmarks.picker.take() {
-                    Some(PickerTarget::Placement) if self.tool == Tool::Landmarks => {
-                        self.landmarks.placement.kind = def.kind.clone();
-                    }
-                    Some(PickerTarget::Replacement(id))
-                        if self.tool == Tool::Select && self.landmarks.selected == Some(id) =>
-                    {
-                        if let Some(mut landmark) = self.editor.landmark(id).cloned() {
-                            landmark.kind = def.kind.clone();
-                            if self.editor.update_landmark(landmark) {
-                                self.landmarks.arrivals.insert(id, None);
-                            }
+                if self.tool == Tool::Landmarks {
+                    // Native replay scripts can set the placement icon before clicking.
+                    self.landmarks.placement.kind = def.kind.clone();
+                } else if self.tool == Tool::Select
+                    && let Some(mut landmark) = self.current_landmark()
+                {
+                    let id = landmark.id;
+                    landmark.kind = def.kind.clone();
+                    if self.editor.update_landmark(landmark) {
+                        self.landmarks.arrivals.insert(id, None);
+                        if self.landmarks.last_placed == Some(id) {
+                            self.landmarks.placement.kind = def.kind.clone();
                         }
                     }
-                    _ => {}
                 }
             }
             Action::LandmarkSize(delta) => {
@@ -116,6 +153,7 @@ impl Studio {
                     landmark.position.y += 24.;
                     if let Some(id) = self.editor.add_landmark(landmark) {
                         self.landmarks.selected = Some(id);
+                        self.landmarks.radial.reset();
                         self.landmarks.arrivals.insert(id, None);
                     }
                 }
@@ -130,20 +168,26 @@ impl Studio {
         }
     }
 
-    pub(super) fn place_landmark(&mut self, point: Point) {
-        if self
-            .available_landmark(&self.landmarks.placement.kind)
-            .is_none()
-        {
-            self.landmark_action(Action::LandmarkPicker);
+    pub(super) fn place_landmark(&mut self, point: Point, repeat: bool) {
+        let Some(index) = self.placement_landmark() else {
+            self.status = "Enable a landmark pack in Settings to place landmarks.".into();
             return;
-        }
+        };
+        let kind = &landmark_catalog().items[index].kind;
         let landmark = Landmark {
             position: point,
+            kind: kind.clone(),
             ..self.landmarks.placement.clone()
         };
         if let Some(id) = self.editor.add_landmark(landmark) {
+            self.landmarks.last_placed = Some(id);
+            self.landmarks.placement.kind = kind.clone();
             self.landmarks.arrivals.insert(id, None);
+            if !repeat {
+                self.tool = Tool::Select;
+                self.landmarks.selected = Some(id);
+                self.landmarks.radial.reset();
+            }
             self.changed();
             self.status.clear();
         } else {
@@ -154,6 +198,9 @@ impl Studio {
 
     pub(super) fn select_landmark(&mut self, point: Point, layer: u64, id: u64) {
         self.editor.select_layer(layer);
+        if self.landmarks.selected != Some(id) {
+            self.landmarks.radial.reset();
+        }
         self.landmarks.selected = Some(id);
         let landmark = self.editor.landmark(id).unwrap().clone();
         self.landmarks.moving = Some((point, landmark));
@@ -184,7 +231,7 @@ impl Studio {
         }
     }
     pub fn cancel_landmark(&mut self) {
-        self.landmarks.picker = None;
+        self.landmarks.radial.reset();
         self.landmarks.preview = None;
         self.landmarks.moving = None;
         self.landmarks.selected = None;
@@ -207,22 +254,28 @@ mod tests {
     }
 
     fn choose(studio: &mut Studio, jobs: &mut Jobs, kind: &str) {
-        studio.act(Action::LandmarkPicker, jobs);
         let index = landmark_catalog().find(&LandmarkKind::from(kind)).unwrap();
         studio.act(Action::LandmarkKind(index), jobs);
     }
 
     #[test]
-    fn ten_landmarks_reuse_placement_and_individually_undo() {
+    fn shift_repeats_the_last_placed_icon_and_preserves_individual_undo() {
         let mut studio = studio();
         let mut jobs = Jobs::default();
         studio.act(Action::LandmarkTool, &mut jobs);
-        choose(&mut studio, &mut jobs, "town");
         studio.act(Action::LandmarkSize(-16.), &mut jobs);
+        let point = Vec2::new(305., 390.);
+        studio.down(point);
+        studio.up(point, false);
+        let first_id = studio.landmarks.selected.unwrap();
+        assert_eq!(studio.tool, Tool::Select);
+        choose(&mut studio, &mut jobs, "town");
+
+        studio.act(Action::LandmarkTool, &mut jobs);
         let revision = studio.editor.revision();
-        for i in 0..10 {
+        for i in 1..10 {
             let point = Vec2::new(305. + i as f32 * 80., 390.);
-            studio.down(point);
+            studio.down_with_shift(point, true);
             studio.up(point, false);
         }
         let landmarks = &studio.editor.document().layers[0].landmarks;
@@ -232,25 +285,26 @@ mod tests {
                 .iter()
                 .all(|mark| mark.kind == LandmarkKind::from("town") && mark.size == 128.)
         );
-        assert_eq!(studio.editor.revision(), revision + 10);
+        assert_eq!(studio.editor.revision(), revision + 9);
         assert_eq!(studio.tool, Tool::Landmarks);
         assert!(studio.landmarks.selected.is_none());
 
         studio.act(Action::Undo, &mut jobs);
         assert_eq!(studio.editor.document().layers[0].landmarks.len(), 9);
         studio.act(Action::Redo, &mut jobs);
-        let first = studio.editor.document().layers[0].landmarks[0].clone();
+        assert_eq!(studio.editor.document().layers[0].landmarks.len(), 10);
+
         studio.act(Action::SelectTool, &mut jobs);
-        studio.annotation_press(first.position);
-        assert_eq!(studio.landmarks.selected, Some(first.id));
-        assert_eq!(studio.landmark_actions().len(), 5);
+        let first = studio.editor.landmark(first_id).unwrap().clone();
+        studio.annotation_press(first.position, false);
+        assert_eq!(studio.landmarks.selected, Some(first_id));
         choose(&mut studio, &mut jobs, "castle");
-        let castle = studio.editor.landmark(first.id).unwrap();
+        let castle = studio.editor.landmark(first_id).unwrap();
         assert_eq!(castle.position, first.position);
         assert_eq!(castle.size, 128.);
         assert_eq!(castle.kind, LandmarkKind::from("castle"));
         studio.act(Action::LandmarkSize(16.), &mut jobs);
-        assert_eq!(studio.editor.landmark(first.id).unwrap().size, 144.);
+        assert_eq!(studio.editor.landmark(first_id).unwrap().size, 144.);
         studio.act(Action::LandmarkTool, &mut jobs);
         assert_eq!(studio.landmarks.placement.kind, LandmarkKind::from("town"));
         assert_eq!(studio.landmarks.placement.size, 128.);
@@ -291,10 +345,10 @@ mod tests {
         let mut jobs = Jobs::default();
         studio.act(Action::LandmarkTool, &mut jobs);
         let point = Point::new(500., 400.);
-        studio.annotation_press(point);
+        studio.annotation_press(point, false);
         let id = studio.editor.document().layers[0].landmarks[0].id;
         studio.act(Action::SelectTool, &mut jobs);
-        studio.annotation_press(point);
+        studio.annotation_press(point, false);
         for (index, pack) in landmark_catalog().packs.iter().enumerate() {
             if !studio.disabled_landmark_packs.contains(&pack.id) {
                 studio.act(Action::LandmarkPack(index), &mut jobs);
@@ -304,11 +358,23 @@ mod tests {
         studio.act(Action::LandmarkSize(16.), &mut jobs);
         assert_eq!(studio.editor.landmark(id).unwrap().size, 160.);
         studio.act(Action::LandmarkTool, &mut jobs);
-        studio.annotation_press(point);
-        assert_eq!(studio.landmarks.picker, Some(PickerTarget::Placement));
+        studio.annotation_press(point, false);
+        assert!(studio.placement_landmark().is_none());
         assert_eq!(studio.editor.document().layers[0].landmarks.len(), 1);
-        studio.annotation_press(point);
-        assert!(studio.landmarks.picker.is_none());
-        assert_eq!(studio.editor.document().layers[0].landmarks.len(), 1);
+        assert!(studio.status.contains("Enable a landmark pack"));
+
+        let catalog = landmark_catalog();
+        let pin = catalog.find(&LandmarkKind::default()).unwrap();
+        let other_pack = (0..catalog.packs.len())
+            .find(|&pack| pack != catalog.items[pin].pack)
+            .unwrap();
+        studio.act(Action::LandmarkPack(other_pack), &mut jobs);
+        studio.annotation_press(point, false);
+        let placed = studio.current_landmark().unwrap();
+        assert_eq!(
+            catalog.items[catalog.find(&placed.kind).unwrap()].pack,
+            other_pack
+        );
+        assert_eq!(studio.landmarks.placement.kind, placed.kind);
     }
 }
