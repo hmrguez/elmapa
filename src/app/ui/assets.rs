@@ -44,7 +44,11 @@ pub fn setup(
     let mut icons = HashMap::new();
     icons.insert(
         branding::SYMBOL.into(),
-        images.add(render::rgba_image(128, 128, branding::icon_pixels(128))),
+        images.add(render::rgba_image(
+            128,
+            128,
+            branding::icon_pixels(branding::MARK, 128),
+        )),
     );
     let manifest: serde_json::Value =
         serde_json::from_str(include_str!("../../../assets/icons/manifest.json")).expect("icons");

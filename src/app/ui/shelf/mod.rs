@@ -11,7 +11,10 @@ use crate::app::{
     files::Jobs,
     state::{Action, Studio},
 };
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    text::{LetterSpacing, LineHeight},
+};
 
 #[derive(Component)]
 pub struct PreviewSlot(pub u64);
@@ -90,23 +93,38 @@ pub(super) fn build(
             ..row(24.)
         },
     );
-    let identity = b.node(header, row(12.));
+    let identity = b.node(header, row(14.));
     b.icon(
         identity,
         branding::SYMBOL,
         ink,
-        if compact { 48. } else { 60. },
+        if compact { 52. } else { 64. },
     );
-    let title = b.text(
-        identity,
-        "Your atlases",
-        if compact { 48. } else { 56. },
+    let masthead = b.node(identity, column(2.));
+    let wordmark = b.text(
+        masthead,
+        "ELMAPA",
+        if compact { 36. } else { 44. },
         ink,
         true,
     );
+    b.commands.entity(wordmark).insert((
+        LetterSpacing::Px(if compact { 3.5 } else { 4.5 }),
+        LineHeight::RelativeToFont(0.95),
+    ));
+    let caption = b.node(masthead, row(10.));
+    b.text(caption, "Your atlases", 16., p.muted, false);
+    let rule = b.node(
+        caption,
+        Node {
+            height: px(1.),
+            flex_grow: 1.,
+            ..default()
+        },
+    );
     b.commands
-        .entity(title)
-        .insert(bevy::text::LineHeight::RelativeToFont(1.12));
+        .entity(rule)
+        .insert(BackgroundColor(color(p.muted, 0.35)));
     let actions = b.node(header, row(10.));
     b.shelf_button(actions, "folder-open", "Open atlas…", Action::Open, dark);
     b.shelf_button(actions, "settings", "Settings", Action::Settings, dark);

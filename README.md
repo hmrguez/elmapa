@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/branding/elmapa.png" width="224" height="224" alt="Elmapa's folded map icon">
+  <img src="assets/branding/elmapa.png" width="224" height="224" alt="Elmapa's folded map on a sea-glass tile">
 </p>
 
 <h1 align="center">Elmapa</h1>
