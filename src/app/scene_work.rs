@@ -275,6 +275,7 @@ pub fn schedule_scene(mut studio: ResMut<Studio>, canvas: Res<render::Canvas>) {
 
 fn preview_document(studio: &Studio) -> Document {
     let mut document = studio.editor.document().clone();
+    studio.preview_path(&mut document);
     if let Some(label) = &studio.text.preview {
         for layer in &mut document.layers {
             if let Some(target) = layer.labels.iter_mut().find(|l| l.id == label.id) {

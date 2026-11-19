@@ -165,7 +165,19 @@ impl SceneCache {
                 }
                 self.layers.push(material);
             } else if layer.visible && layer.opacity > 0. {
-                self.layers.push(MaterialLayer::new(layer));
+                let edited = old
+                    .iter()
+                    .enumerate()
+                    .find(|(_, cached)| cached.source.id == layer.id)
+                    .and_then(|(index, cached)| Some((index, cached.with_linear_edits(layer)?)));
+                if let Some((index, material)) = edited {
+                    if material.valid {
+                        old.swap_remove(index);
+                    }
+                    self.layers.push(material);
+                } else {
+                    self.layers.push(MaterialLayer::new(layer));
+                }
                 changed = true;
             }
         }

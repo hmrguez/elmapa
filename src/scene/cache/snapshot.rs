@@ -1,6 +1,6 @@
 //! Ordered scene geometry and metadata shared by the renderer and exporters.
 use crate::{
-    document::{Brush, Label, RegionLayer},
+    document::{Brush, ContentBounds, Label, LinearStrokeId, Point, RegionLayer},
     scene::{
         LandmarkPart, MountainPart, PathPart, RiverReach, Shape,
         terrain::forest::{self, ForestTree},
@@ -153,6 +153,54 @@ impl Scene {
     }
     pub fn path_parts(&self) -> impl Iterator<Item = &PathPart> {
         self.paths.values()
+    }
+
+    /// Pick from the finished artwork in draw order, including clipped river reaches
+    /// and erased gaps. Within the pick tolerance, prefer a direct hit.
+    pub fn linear_stroke_at(&self, point: Point, tolerance: f32) -> Option<LinearStrokeId> {
+        use crate::scene::geometry::{contains, segment_distance};
+        if self.paths.is_empty() && self.rivers.is_empty() {
+            return None;
+        }
+        let pick_bounds = ContentBounds {
+            min: point,
+            max: point,
+        }
+        .padded(tolerance);
+        let mut nearest = None;
+        let mut distance = tolerance;
+        for batch in self.batches.iter().rev() {
+            let Some((layer, index, seed, _)) = self
+                .path_part(batch)
+                .map(|path| path.id)
+                .or_else(|| self.river_reach(batch).map(|reach| reach.id))
+            else {
+                continue;
+            };
+            let id = LinearStrokeId { layer, index, seed };
+            for shape in batch.iter() {
+                let Shape::Polygon { points, .. } = shape else {
+                    continue;
+                };
+                if !shape
+                    .bounds()
+                    .is_some_and(|bounds| bounds.intersects(pick_bounds))
+                {
+                    continue;
+                }
+                if contains(points, point) {
+                    return Some(id);
+                }
+                for (&a, &b) in points.iter().zip(points.iter().cycle().skip(1)) {
+                    let edge = segment_distance(point, a, b);
+                    if edge < distance {
+                        distance = edge;
+                        nearest = Some(id);
+                    }
+                }
+            }
+        }
+        nearest
     }
 
     pub fn forest_trees(&self) -> impl Iterator<Item = &ForestTree> {

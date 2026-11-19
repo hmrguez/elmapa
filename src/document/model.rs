@@ -68,6 +68,14 @@ impl Brush {
     }
 }
 
+/// Layer, stroke position, and variation seed identify a rendered river or trail.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LinearStrokeId {
+    pub layer: u64,
+    pub index: usize,
+    pub seed: u64,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Stroke {
     /// Shares the document's creation order with labels and landmarks.

@@ -8,6 +8,7 @@ use elmapa::document::{
 
 impl Studio {
     pub fn finish(&mut self) {
+        self.finish_path_drag();
         self.finish_text_move();
         self.finish_landmark_move();
         self.drag = None;
@@ -122,6 +123,10 @@ impl Studio {
             }
             return;
         }
+        if self.path_dragging() {
+            self.move_path_node(self.map_point(point));
+            return;
+        }
         if blocked && self.text.transforming.is_none() {
             return;
         }
@@ -142,6 +147,11 @@ impl Studio {
             if self.editor.revision() != revision {
                 self.changed();
             }
+            return;
+        }
+        if self.path_dragging() {
+            self.move_path_node(self.map_point(point));
+            self.finish();
             return;
         }
         if self.landmarks.selected.is_some() {
