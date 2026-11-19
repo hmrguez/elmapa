@@ -73,6 +73,8 @@ jobs:
         os: [ubuntu-24.04, macos-15, windows-2025]
         task: ${{ fromJSON(github.event_name == 'pull_request' && '["Test"]' || '["Test","Package"]') }}
     runs-on: ${{ matrix.os }}
+    env:
+      FULL_TEST_SUITE: ${{ matrix.task == 'Test' && (github.event_name == 'push' || matrix.os == 'ubuntu-24.04') }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -91,15 +93,17 @@ jobs:
           # rust-cache fingerprints every installed toolchain. Keep its environment stable.
           RUSTUP_HOME: ${{ runner.temp }}/elmapa-rustup
         run: |
-          rustup toolchain install "$RUSTUP_TOOLCHAIN" --no-self-update --profile minimal ${{ matrix.task == 'Test' && '--component clippy' || '' }}
+          rustup toolchain install "$RUSTUP_TOOLCHAIN" --no-self-update --profile minimal ${{ env.FULL_TEST_SUITE == 'true' && '--component clippy' || '' }}
           echo "RUSTUP_HOME=$RUSTUP_HOME" >> "$GITHUB_ENV"
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           key: ${{ matrix.task }}
           save-if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
-      - if: matrix.task == 'Test'
+      - if: env.FULL_TEST_SUITE == 'true'
         run: cargo test --locked
-      - if: matrix.task == 'Test'
+      - if: matrix.task == 'Test' && env.FULL_TEST_SUITE != 'true'
+        run: cargo test --locked --test mcp_stdio
+      - if: env.FULL_TEST_SUITE == 'true'
         run: cargo clippy --locked --all-targets -- -D warnings
       - uses: taiki-e/install-action@75a7c0f87bd666af3cdb75c5b9e9d03ab6044e6f # v2
         if: github.event_name == 'pull_request' || matrix.task == 'Package'
