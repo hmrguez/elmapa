@@ -5,6 +5,7 @@ mod forest_wind;
 mod mesh;
 mod motion;
 mod opening;
+mod path_guide;
 mod regions;
 mod retained;
 pub(super) mod tile_upload;
@@ -34,6 +35,7 @@ pub use forest_wind::ForestWindPlugin;
 pub use mesh::{CpuMesh, tessellate_material};
 pub use motion::{drop_text, flow, grow, open_path, rise};
 pub use opening::opening;
+pub use path_guide::path_guide;
 pub use regions::region_overlay;
 pub use retained::sync;
 

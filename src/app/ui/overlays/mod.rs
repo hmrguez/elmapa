@@ -1,6 +1,7 @@
 //! Canvas overlays and their frame-by-frame positioning.
 mod landmark;
 mod orbit;
+mod path;
 mod pointer;
 mod regions;
 mod text;
@@ -11,6 +12,7 @@ use bevy::prelude::*;
 
 pub use landmark::landmark_selection_follow;
 pub use orbit::radial_follow;
+pub use path::path_selection_follow;
 pub use pointer::{landmark_cursor, tooltips};
 pub use regions::region_selection_follow;
 pub use text::{TextCard, text_ime, text_selection_follow};
@@ -23,6 +25,7 @@ pub(super) fn build_selection(
     studio: &Studio,
     landmark_scroll: f32,
 ) {
+    path::build(b, root, studio);
     text::build(b, root, studio);
     landmark::build(b, root, studio);
     regions::build(b, root, studio);

@@ -163,9 +163,6 @@ impl FieldIndex {
                 .collect(),
         }
     }
-    pub fn matches(&self, layer: &Layer) -> bool {
-        self.layer.id == layer.id && self.layer.strokes == layer.strokes
-    }
     pub fn erased(&self, q: Point, after: usize) -> bool {
         self.erasers
             .candidates(q)

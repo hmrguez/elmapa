@@ -32,7 +32,6 @@ pub(super) fn area(points: &[Point]) -> f32 {
         .sum::<f32>()
         * 0.5
 }
-#[cfg(test)]
 pub(super) fn contains(points: &[Point], q: Point) -> bool {
     let mut inside = false;
     for (a, b) in points
