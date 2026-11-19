@@ -13,7 +13,7 @@ use bevy::{
     sprite_render::{AlphaMode2d, Material2d, Material2dPlugin},
 };
 use elmapa::{
-    document::ContentBounds,
+    document::{ContentBounds, Landmark, Point},
     scene::{
         LandmarkMotion, LandmarkPart, LandmarkStep, Shape, landmark_definition, landmark_pose,
     },
@@ -63,6 +63,61 @@ pub struct Assembling {
     pub opacity: f32,
     pub started: f32,
 }
+
+#[derive(Component)]
+pub(super) struct PartPosition {
+    id: u64,
+    baked: Point,
+    translated: bool,
+}
+
+impl PartPosition {
+    pub(super) fn new(landmark: &Landmark) -> Self {
+        Self {
+            id: landmark.id,
+            baked: landmark.position,
+            translated: false,
+        }
+    }
+}
+
+pub(super) fn follow_drag(
+    studio: Res<Studio>,
+    mut offset_parts: Local<bool>,
+    mut parts: Query<(&mut PartPosition, &mut Transform), Without<Assembling>>,
+) {
+    let preview = studio.landmarks.preview.as_ref();
+    if preview.is_none() && !*offset_parts {
+        return;
+    }
+    *offset_parts = false;
+    for (mut part, mut pose) in &mut parts {
+        let position = preview
+            .filter(|landmark| landmark.id == part.id)
+            .or_else(|| {
+                // Keep the last visible mesh aligned with the document until
+                // the replacement scene publishes. Cancel restores its anchor.
+                part.translated
+                    .then(|| studio.editor.landmark(part.id))
+                    .flatten()
+            });
+        let Some(landmark) = position else { continue };
+        let offset = Vec2::new(
+            landmark.position.x - part.baked.x,
+            part.baked.y - landmark.position.y,
+        );
+        let translated = offset != Vec2::ZERO;
+        if part.translated != translated {
+            part.translated = translated;
+        }
+        if pose.translation.truncate() != offset {
+            pose.translation.x = offset.x;
+            pose.translation.y = offset.y;
+        }
+        *offset_parts |= translated;
+    }
+}
+
 pub fn transform(part: &LandmarkPart, elapsed: f32, reduced: bool, z: f32) -> Transform {
     let step = &landmark_definition(&part.landmark.kind).parts[part.index];
     let [sx, sy, y, angle, _] = landmark_pose(step, elapsed, reduced);
@@ -327,10 +382,88 @@ fn accent_depth(order: usize) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use elmapa::{
-        document::{Landmark, LandmarkKind},
-        scene::landmark_batches,
-    };
+    use elmapa::{document::LandmarkKind, scene::landmark_batches};
+
+    #[test]
+    fn dragged_parts_follow_each_move_and_hold_the_commit_until_the_scene_catches_up() {
+        let mut studio = Studio::default();
+        let start = Point::new(210., 340.);
+        let id = studio
+            .editor
+            .add_landmark(Landmark {
+                position: start,
+                ..default()
+            })
+            .unwrap();
+        let layer = studio.editor.active_layer();
+        let original = studio.editor.landmark(id).unwrap();
+        let mut app = App::new();
+        let entity = app
+            .world_mut()
+            .spawn((PartPosition::new(original), Transform::from_xyz(0., 0., 2.)))
+            .id();
+        let other = app
+            .world_mut()
+            .spawn((
+                PartPosition::new(&Landmark {
+                    id: id + 1,
+                    ..original.clone()
+                }),
+                Transform::from_xyz(0., 0., 3.),
+            ))
+            .id();
+        studio.select_landmark(start, layer, id);
+        app.insert_resource(studio).add_systems(Update, follow_drag);
+
+        for offset in [Vec2::new(10., 4.), Vec2::new(35., -16.)] {
+            app.world_mut()
+                .resource_mut::<Studio>()
+                .landmark_move(Point::new(start.x + offset.x, start.y + offset.y));
+            app.update();
+            assert_eq!(
+                app.world().get::<Transform>(entity).unwrap().translation,
+                Vec3::new(offset.x, -offset.y, 2.),
+            );
+            assert_eq!(
+                app.world().get::<Transform>(other).unwrap().translation,
+                Vec3::new(0., 0., 3.),
+            );
+        }
+        let mut studio = app.world_mut().resource_mut::<Studio>();
+        studio.finish_landmark_move();
+        let committed = studio.editor.landmark(id).unwrap().clone();
+        assert_eq!(committed.position, Point::new(245., 324.));
+        app.update();
+        assert_eq!(
+            app.world().get::<Transform>(entity).unwrap().translation,
+            Vec3::new(35., 16., 2.),
+        );
+
+        // Switch to mesh geometry baked at the committed position.
+        app.world_mut().despawn(entity);
+        let entity = app
+            .world_mut()
+            .spawn((
+                PartPosition::new(&committed),
+                Transform::from_xyz(0., 0., 2.),
+            ))
+            .id();
+        let mut studio = app.world_mut().resource_mut::<Studio>();
+        studio.select_landmark(committed.position, layer, id);
+        studio.landmark_move(Point::new(200., 300.));
+        app.update();
+        assert_eq!(
+            app.world().get::<Transform>(entity).unwrap().translation,
+            Vec3::new(-45., 24., 2.),
+        );
+        app.world_mut().resource_mut::<Studio>().cancel_landmark();
+        app.update();
+        assert_eq!(
+            app.world().get::<Transform>(entity).unwrap().translation,
+            Vec3::new(0., 0., 2.),
+        );
+    }
+
     #[test]
     fn every_part_gets_a_timed_accent_and_replay_waits_for_its_tail() {
         let mut motions = [false; 6];
