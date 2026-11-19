@@ -5,18 +5,14 @@ use elmapa::document::Point;
 pub(super) use paths::PathSelection;
 
 impl Studio {
-    pub(super) fn annotation_press(&mut self, point: Point) -> bool {
-        if self.landmarks.picker.take().is_some() {
-            self.ui_dirty = true;
-            return true;
-        }
+    pub(super) fn annotation_press(&mut self, point: Point, shift: bool) -> bool {
         if std::mem::take(&mut self.text.style_open) {
             self.ui_dirty = true;
             return true;
         }
         match self.tool {
             Tool::Brush => return false,
-            Tool::Landmarks => self.place_landmark(point),
+            Tool::Landmarks => self.place_landmark(point, shift),
             Tool::Text => self.place_text(point),
             Tool::Select => {
                 if self.finish_label_draft() {
@@ -73,13 +69,13 @@ mod tests {
         let landmark = studio.editor.add_landmark(Landmark::default()).unwrap();
 
         studio.tool = Tool::Select;
-        assert!(studio.annotation_press(point));
+        assert!(studio.annotation_press(point, false));
         assert_eq!(studio.text.selected, Some(label));
         assert_eq!(studio.tool, Tool::Select);
         studio.finish();
 
         studio.editor.delete_label(label);
-        assert!(studio.annotation_press(point));
+        assert!(studio.annotation_press(point, false));
         assert_eq!(studio.landmarks.selected, Some(landmark));
         assert_eq!(studio.text.selected, None);
         assert_eq!(studio.tool, Tool::Select);

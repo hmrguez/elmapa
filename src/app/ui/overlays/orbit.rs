@@ -15,6 +15,7 @@ use std::collections::HashMap;
 #[derive(Component, Default)]
 pub struct Orbit {
     keys: Vec<String>,
+    single_ring_radius: f32,
     pub(super) center: Vec2,
     pub(super) radius: Vec2,
     pub(super) hidden: bool,
@@ -28,6 +29,12 @@ impl Orbit {
 
     fn radius_limit(&self, viewport: Vec2) -> Vec2 {
         ((viewport - Vec2::new(100., 270.)) / 2. - self.outer_offset()).max(Vec2::splat(40.))
+    }
+
+    pub(super) fn fit_single_ring(&mut self, viewport: Vec2) {
+        if self.single_ring_radius <= self.radius_limit(viewport).min_element() {
+            self.radius = self.radius.max(Vec2::splat(self.single_ring_radius));
+        }
     }
 }
 
@@ -126,7 +133,16 @@ fn glass_bubble(
     } else if item.icon == "typeface" {
         b.text(id, "Aa", 17., hex, true);
     } else {
-        b.icon(id, &item.icon, hex, 16.);
+        b.icon(
+            id,
+            &item.icon,
+            hex,
+            if matches!(action, Action::LandmarkKind(_)) {
+                30.
+            } else {
+                16.
+            },
+        );
     }
     if !item.children.is_empty() {
         let dot = b.node(
@@ -182,10 +198,14 @@ pub(super) fn action_orbit(
         },
     );
     let mut keys = Vec::new();
+    let mut single_ring_radius: f32 = 0.;
     let mut items = tree;
     for depth in 0..=navigation.path.len() {
         keys.push(format!("{identity}/{:?}", &navigation.path[..depth]));
         let show_back = depth > 0 && depth == navigation.path.len();
+        let bubbles = items.len() + usize::from(show_back);
+        single_ring_radius = single_ring_radius
+            .max(radial::single_ring_radius(bubbles) - depth as f32 * radial::RING_GAP);
         for (index, item) in items.iter().enumerate() {
             let action = item.action.unwrap_or_else(|| enter(depth, index));
             let bubble = glass_bubble(
@@ -225,7 +245,11 @@ pub(super) fn action_orbit(
         items = &item.children;
     }
     b.commands.entity(orbit).insert((
-        Orbit { keys, ..default() },
+        Orbit {
+            keys,
+            single_ring_radius,
+            ..default()
+        },
         RadialElement {
             orbit,
             kind: Element::Root,

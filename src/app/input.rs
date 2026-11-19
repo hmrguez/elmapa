@@ -42,7 +42,7 @@ pub struct Gesture {
     pressed: Option<Action>,
     select_clicks: SelectClicks,
     brush_press: Option<BrushPress>,
-    native_alt: bool,
+    native_modifiers: winit::keyboard::ModifiersState,
     keys: ButtonInput<KeyCode>,
 }
 #[derive(Default)]
@@ -151,8 +151,8 @@ pub fn dispatch(
     };
     // Bevy forwards the click but drops Winit's modifier snapshots. Modifier
     // changes can arrive on the click itself, and both edges can share a frame.
-    let mut alt_clicks =
-        alt_at_left_presses(native_events.read(), &mut gesture.native_alt).into_iter();
+    let mut click_modifiers =
+        modifiers_at_left_presses(native_events.read(), &mut gesture.native_modifiers).into_iter();
     for event in events.read() {
         match event {
             WindowEvent::Ime(bevy::window::Ime::Commit { window, value })
@@ -247,12 +247,9 @@ pub fn dispatch(
             WindowEvent::MouseButtonInput(event)
                 if event.window == window_entity && event.button == MouseButton::Left =>
             {
-                let alt = event.state == ButtonState::Pressed
-                    && alt_clicks.next().unwrap_or_else(|| {
-                        gesture
-                            .keys
-                            .any_pressed([KeyCode::AltLeft, KeyCode::AltRight])
-                    });
+                let modifiers = (event.state == ButtonState::Pressed)
+                    .then(|| click_modifiers.next())
+                    .flatten();
                 if studio.drag.is_some() {
                     continue;
                 }
@@ -265,6 +262,22 @@ pub fn dispatch(
                     target.is_some() || studio.home || studio.installing || jobs.switching();
                 elmapa::performance::input();
                 if event.state == ButtonState::Pressed {
+                    let alt = modifiers.map_or_else(
+                        || {
+                            gesture
+                                .keys
+                                .any_pressed([KeyCode::AltLeft, KeyCode::AltRight])
+                        },
+                        |keys| keys.alt_key(),
+                    );
+                    let shift = modifiers.map_or_else(
+                        || {
+                            gesture
+                                .keys
+                                .any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight])
+                        },
+                        |keys| keys.shift_key(),
+                    );
                     gesture.left = true;
                     gesture.pressed = action;
                     let mut empty_select = None;
@@ -279,10 +292,9 @@ pub fn dispatch(
                         if !studio.can_open_brush_orbit() {
                             let can_start_text = studio.tool == Tool::Select
                                 && studio.text.draft.is_none()
-                                && studio.landmarks.picker.is_none()
                                 && studio.opening.is_none()
                                 && !studio.menu;
-                            studio.down(point);
+                            studio.down_with_shift(point, shift);
                             if can_start_text
                                 && studio.text.selected.is_none()
                                 && studio.landmarks.selected.is_none()
@@ -366,8 +378,6 @@ pub fn dispatch(
                         kind,
                     } = item;
                     if studio.text.style_open
-                        || studio.landmarks.picker.is_some()
-                            && !matches!(kind, ScrollArea::Landmarks)
                         || studio.settings && !matches!(kind, ScrollArea::Packs)
                     {
                         continue;
@@ -380,7 +390,6 @@ pub fn dispatch(
                             ScrollArea::Shelf => offsets.shelf = offset.y,
                             ScrollArea::Layers => offsets.layers = offset.y,
                             ScrollArea::Packs => offsets.packs = offset.y,
-                            ScrollArea::Landmarks => offsets.landmarks = offset.y,
                         }
                         scrolled = true;
                     }
@@ -510,26 +519,26 @@ pub fn dispatch(
         *cursor = Some(icon);
     }
 }
-fn alt_at_left_presses<'a>(
+fn modifiers_at_left_presses<'a>(
     events: impl Iterator<Item = &'a RawWinitWindowEvent>,
-    alt: &mut bool,
-) -> Vec<bool> {
+    held: &mut winit::keyboard::ModifiersState,
+) -> Vec<winit::keyboard::ModifiersState> {
     use winit::event::{ElementState, MouseButton, WindowEvent};
     events
         .filter_map(|event| match &event.event {
             WindowEvent::ModifiersChanged(modifiers) => {
-                *alt = modifiers.state().alt_key();
+                *held = modifiers.state();
                 None
             }
             WindowEvent::Focused(false) => {
-                *alt = false;
+                *held = winit::keyboard::ModifiersState::empty();
                 None
             }
             WindowEvent::MouseInput {
                 state: ElementState::Pressed,
                 button: MouseButton::Left,
                 ..
-            } => Some(*alt),
+            } => Some(*held),
             _ => None,
         })
         .collect()

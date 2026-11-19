@@ -359,7 +359,6 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             Action::Advanced => "Advanced brush settings".into(),
             Action::LandmarkTool => "Landmarks · L / 0".into(),
             Action::SelectTool => "Select labels and landmarks · V / 9".into(),
-            Action::LandmarkPicker => "Choose a symbol to place".into(),
             Action::TextStyle => "New label style".into(),
             Action::PlaceLabel => "Place label · Return".into(),
             Action::TextTool => "Text · T / 8".into(),

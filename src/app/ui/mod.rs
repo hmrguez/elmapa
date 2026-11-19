@@ -38,14 +38,12 @@ pub enum ScrollArea {
     Shelf,
     Layers,
     Packs,
-    Landmarks,
 }
 #[derive(Resource, Default)]
 pub struct ScrollOffsets {
     pub shelf: f32,
     pub layers: f32,
     pub packs: f32,
-    pub landmarks: f32,
 }
 
 pub fn rebuild(
@@ -84,7 +82,7 @@ pub fn rebuild(
     } else if studio.opening.is_none() {
         editor::build(&mut b, root, &studio, motion.progress, offsets.layers);
         if !studio.replay_view {
-            overlays::build_selection(&mut b, root, &studio, offsets.landmarks);
+            overlays::build_selection(&mut b, root, &studio);
         }
     }
     overlays::build_feedback(&mut b, root, &studio);

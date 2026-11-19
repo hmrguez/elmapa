@@ -81,48 +81,100 @@ fn act(app: &mut App, action: Action) {
     app.update();
 }
 #[test]
-fn landmark_catalog_is_shared_without_showing_pack_actions_in_the_orbit() {
+fn landmark_orbit_flattens_one_pack_and_nests_multiple_packs() {
     let mut app = app();
     act(&mut app, Action::LandmarkTool);
     assert!(bubbles(&mut app).is_empty());
-    act(&mut app, Action::LandmarkPicker);
-    let choices = |app: &mut App| {
-        let world = app.world_mut();
-        world
-            .query::<&Hit>()
-            .iter(world)
-            .filter(|hit| matches!(hit.action, Some(Action::LandmarkKind(_))))
-            .count()
-    };
-    let single_pack_count = choices(&mut app);
-    assert!(single_pack_count > 1);
-    assert!(bubbles(&mut app).is_empty());
-    act(&mut app, Action::CloseLandmarkPicker);
-    let point = Vec2::new(700., 510.);
-    let click = |app: &mut App| {
+    {
         let mut studio = app.world_mut().resource_mut::<Studio>();
+        let point = Vec2::new(700., 510.);
         studio.down(point);
         studio.up(point, false);
+    }
+    app.update();
+
+    let landmark_bubbles = |app: &mut App| {
+        let world = app.world_mut();
+        world
+            .query::<(&RadialElement, &Hit)>()
+            .iter(world)
+            .filter_map(|(element, hit)| match element.kind {
+                Element::Bubble { depth, .. } => Some((depth, hit.action.unwrap())),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
     };
-    click(&mut app);
-    app.update();
-    assert!(bubbles(&mut app).is_empty());
-    assert_eq!(choices(&mut app), 0);
-    act(&mut app, Action::SelectTool);
-    click(&mut app);
-    app.update();
-    assert_eq!(bubbles(&mut app).len(), 5);
-    assert_eq!(choices(&mut app), 0);
-    act(&mut app, Action::LandmarkPicker);
-    assert_eq!(bubbles(&mut app).len(), 5);
-    assert_eq!(choices(&mut app), single_pack_count);
-    app.world_mut()
-        .resource_mut::<Studio>()
-        .disabled_landmark_packs
-        .clear();
-    act(&mut app, Action::LandmarkPicker);
-    assert_eq!(bubbles(&mut app).len(), 5);
-    assert!(choices(&mut app) > single_pack_count);
+    let catalog = elmapa::scene::landmark_catalog();
+    let basic_pack = catalog
+        .packs
+        .iter()
+        .position(|p| p.id == "elmapa.basic")
+        .unwrap();
+    let basic_count = catalog
+        .items
+        .iter()
+        .filter(|item| item.pack == basic_pack)
+        .count();
+    let visible = landmark_bubbles(&mut app);
+    assert_eq!(visible.len(), basic_count + 4);
+    assert_eq!(
+        visible
+            .iter()
+            .filter(|(depth, action)| { *depth == 0 && matches!(action, Action::LandmarkKind(_)) })
+            .count(),
+        basic_count,
+    );
+
+    let other_pack = (0..catalog.packs.len())
+        .find(|&pack| pack != basic_pack)
+        .unwrap();
+    act(&mut app, Action::LandmarkPack(other_pack));
+    let visible = landmark_bubbles(&mut app);
+    assert_eq!(visible.len(), 6);
+    assert!(
+        !visible
+            .iter()
+            .any(|(_, action)| matches!(action, Action::LandmarkKind(_)))
+    );
+    let branch = usize::from(basic_pack < other_pack);
+    act(&mut app, Action::LandmarkEnter(0, branch));
+    let visible = landmark_bubbles(&mut app);
+    let options: Vec<_> = visible
+        .iter()
+        .filter_map(|(depth, action)| match action {
+            Action::LandmarkKind(index) => {
+                assert_eq!(*depth, 1);
+                Some(*index)
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        options.len(),
+        catalog
+            .items
+            .iter()
+            .filter(|item| item.pack == other_pack)
+            .count()
+    );
+    assert!(
+        options
+            .iter()
+            .all(|&index| catalog.items[index].pack == other_pack)
+    );
+    assert!(visible.contains(&(1, Action::LandmarkBack)));
+
+    act(&mut app, Action::LandmarkKind(options[0]));
+    assert_eq!(
+        app.world()
+            .resource::<Studio>()
+            .current_landmark()
+            .unwrap()
+            .kind,
+        catalog.items[options[0]].kind,
+    );
+    act(&mut app, Action::LandmarkBack);
+    assert_eq!(landmark_bubbles(&mut app).len(), 6);
 }
 
 #[test]

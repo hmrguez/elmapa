@@ -37,6 +37,10 @@ impl Studio {
         }
     }
     pub fn down(&mut self, point: Vec2) {
+        self.down_with_shift(point, false);
+    }
+
+    pub fn down_with_shift(&mut self, point: Vec2, shift: bool) {
         self.pointer = Some(point);
         if self.home || self.installing || self.opening.is_some() {
             return;
@@ -55,7 +59,7 @@ impl Studio {
             self.region_down(point);
             return;
         }
-        if self.annotation_press(point) {
+        if self.annotation_press(point, shift) {
             return;
         }
         if !self
