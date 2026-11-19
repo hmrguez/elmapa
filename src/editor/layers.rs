@@ -27,7 +27,7 @@ impl Editor {
         let Some(index) = self.document.layers.iter().position(|layer| layer.id == id) else {
             return false;
         };
-        if self.document.layers.len() == 1 {
+        if self.document.layers.len() == 1 || self.layer_has_children(id) {
             return false;
         }
         self.checkpoint();
@@ -43,6 +43,16 @@ impl Editor {
         }
         true
     }
+    pub fn layer_has_children(&self, id: u64) -> bool {
+        self.document.layers.iter().any(|layer| {
+            layer
+                .territories
+                .as_ref()
+                .and_then(|data| data.parent)
+                .is_some_and(|parent| parent.layer == id)
+        })
+    }
+
     pub fn toggle_layer(&mut self, id: u64) -> bool {
         if self.document.layer(id).is_none() {
             return false;

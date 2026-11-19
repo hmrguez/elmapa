@@ -14,6 +14,18 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
         split_controls(b, strip, s, count);
         return;
     }
+    let parent_name = s
+        .active_region_parent()
+        .and_then(|parent| s.editor.document().region_name(parent));
+    if parent_name.is_some() {
+        b.button(
+            strip,
+            "arrow-up",
+            "",
+            Action::Regions(RegionAction::ParentLayer),
+            false,
+        );
+    }
     let selection = s.regions.selection.as_ref();
     let owner = selection.and_then(|selection| selection.owner);
     let active_layer = s.regions_layer();
@@ -43,11 +55,15 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
         b.commands
             .entity(dot)
             .insert(BackgroundColor(color(pigment(data, owner), 1.)));
-        let mut summary: String = name.chars().take(22).collect();
-        if summary.len() < name.len() {
-            summary.push('…');
-        }
-        b.text(title, summary, 14., p.text, true);
+        b.text(title, short_name(name), 14., p.text, true);
+    } else if let Some(parent) = parent_name {
+        b.text(
+            title,
+            format!("Inside {}", short_name(parent)),
+            14.,
+            p.text,
+            true,
+        );
     }
 
     let hint = match s.regions.mode {
@@ -58,7 +74,11 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
         Mode::Select if owner.is_some() => "Drag a border to adjust it.",
         Mode::Select if selection.is_some() => "Land selected",
         Mode::Select if owners.is_some_and(|data| !data.names.is_empty()) => {
-            "Click land or drag a shared border."
+            if parent_name.is_some() {
+                "Click land inside the parent region."
+            } else {
+                "Click land or drag a shared border."
+            }
         }
         Mode::Select => "Click land to select it.",
     };
@@ -88,6 +108,24 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
 }
 
 fn split_controls(b: &mut Builder, strip: Entity, s: &Studio, count: usize) {
+    let parent = s.split_parent_name();
+    if let Some(parent) = parent {
+        let scope = b.node(
+            strip,
+            Node {
+                padding: UiRect::horizontal(px(8.)),
+                ..row(6.)
+            },
+        );
+        b.icon(scope, "layer-add", b.p.accent, 16.);
+        b.text(
+            scope,
+            format!("Inside {}", short_name(parent)),
+            14.,
+            b.p.text,
+            true,
+        );
+    }
     let stepper = b.node(strip, row(0.));
     for (icon, delta, enabled) in [
         ("minus", -1, count > 2),
@@ -119,10 +157,11 @@ fn split_controls(b: &mut Builder, strip: Entity, s: &Studio, count: usize) {
     );
     b.text(
         hint,
-        s.regions
-            .message
-            .as_deref()
-            .unwrap_or("Drag a dashed border to adjust it."),
+        s.regions.message.as_deref().unwrap_or(if parent.is_some() {
+            "Drag dashed borders to adjust."
+        } else {
+            "Drag a dashed border to adjust it."
+        }),
         12.,
         b.p.text,
         false,
@@ -137,8 +176,20 @@ fn split_controls(b: &mut Builder, strip: Entity, s: &Studio, count: usize) {
     b.button(
         strip,
         "",
-        "Apply split",
+        if parent.is_some() {
+            "Create child layer"
+        } else {
+            "Apply split"
+        },
         Action::Regions(RegionAction::ApplySplit),
         true,
     );
+}
+
+fn short_name(name: &str) -> String {
+    let mut summary: String = name.chars().take(22).collect();
+    if summary.len() < name.len() {
+        summary.push('…');
+    }
+    summary
 }
