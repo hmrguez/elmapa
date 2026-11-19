@@ -82,6 +82,27 @@ impl Document {
                     return Err("Map label identifiers are invalid or duplicated.".into());
                 }
             }
+            if layer.relief_moves.len() > MAX_STROKES
+                || layer
+                    .relief_moves
+                    .windows(2)
+                    .any(|pair| pair[0].key >= pair[1].key)
+                || layer.relief_moves.iter().any(|item| {
+                    let brush = match item.key.specimen {
+                        super::Specimen::Tree { .. } => super::Brush::Forest,
+                        super::Specimen::Peak(_) => super::Brush::Mountain,
+                    };
+                    !item.position.is_in_world()
+                        || item.after_strokes <= item.key.stroke
+                        || item.after_strokes > layer.strokes.len()
+                        || layer
+                            .strokes
+                            .get(item.key.stroke)
+                            .is_none_or(|stroke| stroke.brush != brush)
+                })
+            {
+                return Err("A layer has invalid relief placements.".into());
+            }
             stroke_count += layer.strokes.len();
             for stroke in &layer.strokes {
                 stroke.validate()?;

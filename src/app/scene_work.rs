@@ -69,6 +69,11 @@ impl Default for SceneWork {
 }
 
 impl SceneWork {
+    #[cfg(test)]
+    pub(super) fn set_test_snapshot(&mut self, snapshot: Scene) {
+        self.snapshot = snapshot;
+    }
+
     pub(super) fn epoch(&self) -> u64 {
         self.epoch
     }
@@ -274,7 +279,9 @@ pub fn schedule_scene(mut studio: ResMut<Studio>, canvas: Res<render::Canvas>) {
 }
 
 fn preview_document(studio: &Studio) -> Document {
-    let mut document = studio.editor.document().clone();
+    let mut document = studio
+        .preview_selection()
+        .unwrap_or_else(|| studio.editor.document().clone());
     studio.preview_path(&mut document);
     if let Some(label) = &studio.text.preview {
         for layer in &mut document.layers {

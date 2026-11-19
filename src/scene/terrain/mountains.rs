@@ -109,7 +109,14 @@ pub(in crate::scene) fn mountain_chunks(
         }
         let seed = stroke.seed.wrapping_add(i as u64 * 83);
         let h = |n| hash(seed.wrapping_add(n));
-        let removed = erased(center, layer, index);
+        let placement = layer.relief_move(crate::document::ReliefKey {
+            stroke: index,
+            specimen: crate::document::Specimen::Peak(i),
+        });
+        let (center, after) = placement.map_or((center, index), |item| {
+            (item.position, item.after_strokes.saturating_sub(1))
+        });
+        let removed = erased(center, layer, after);
         if let Some((material, sheet)) = sprites {
             if removed {
                 chunks.push([Vec::new(), Vec::new()]);

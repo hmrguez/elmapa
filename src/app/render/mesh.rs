@@ -295,6 +295,10 @@ mod tests {
             base: Point::new(100., 200.),
             side: -1.,
             width: 60.,
+            bounds: elmapa::document::ContentBounds {
+                min: Point::new(70., 140.),
+                max: Point::new(130., 200.),
+            },
         };
         let transform = mountain_transform(&part, 0.4, (0.2, -2.));
         let ground = transform.transform_point(Vec3::new(100., -200., 0.));
