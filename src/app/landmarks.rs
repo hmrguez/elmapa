@@ -213,9 +213,14 @@ impl Studio {
         let mut p = original.clone();
         p.position.x += point.x - start.x;
         p.position.y += point.y - start.y;
-        if p.validate().is_ok() && self.landmarks.preview.as_ref() != Some(&p) {
-            self.landmarks.preview = Some(p);
-            self.invalidate_preview();
+        if p.validate().is_ok() {
+            // The pointer takes over from the placement animation.
+            if p.position != original.position {
+                self.landmarks.arrivals.remove(&p.id);
+                self.landmarks.preview = Some(p);
+            } else {
+                self.landmarks.preview = None;
+            }
         }
     }
     pub fn finish_landmark_move(&mut self) {
@@ -225,8 +230,6 @@ impl Studio {
             {
                 self.changed();
             }
-            // Even an unchanged preview has to restore authoritative mesh identities.
-            self.invalidate_preview();
             self.ui_dirty = true;
         }
     }
@@ -235,7 +238,6 @@ impl Studio {
         self.landmarks.preview = None;
         self.landmarks.moving = None;
         self.landmarks.selected = None;
-        self.invalidate_preview();
         self.ui_dirty = true;
     }
 }
@@ -323,8 +325,10 @@ mod tests {
         studio.down(cursor - Vec2::new(0., 10.));
         assert_eq!(studio.landmarks.selected, Some(original.id));
         let revision = studio.editor.revision();
+        let scene_epoch = studio.scene.epoch();
         studio.moved(cursor + Vec2::new(45., 20.), false);
         studio.moved(cursor + Vec2::new(50., 20.), false);
+        assert_eq!(studio.scene.epoch(), scene_epoch);
         assert_eq!(studio.editor.landmark(original.id), Some(&original));
         assert!(studio.landmarks.preview.is_some());
         studio.up(cursor + Vec2::new(50., 20.), false);

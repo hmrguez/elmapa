@@ -335,7 +335,13 @@ pub fn sync(
                 if let Some(part) = scene.path_part(source) {
                     commands.entity(entity).insert(OpeningPath(part.clone()));
                 }
-                if let Some(part) = scene.landmark_part(source)
+                let landmark_part = scene.landmark_part(source);
+                if let Some(part) = landmark_part {
+                    commands
+                        .entity(entity)
+                        .insert(landmark_render::PartPosition::new(&part.landmark));
+                }
+                if let Some(part) = landmark_part
                     && let Some(Some(started)) = studio.landmarks.arrivals.get(&part.landmark.id)
                     && let TerrainMaterial::Ink(handle) = &material
                 {

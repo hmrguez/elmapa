@@ -129,6 +129,7 @@ pub fn run() {
                     render::open_path,
                     render::drop_text,
                     landmark_render::assemble,
+                    landmark_render::follow_drag,
                 )
                     .chain(),
                 presentation::resize,

@@ -303,13 +303,5 @@ fn preview_document(studio: &Studio) -> Document {
         // ID zero is reserved for the uncommitted preview in this scene snapshot.
         layer.labels.push(label);
     }
-    if let Some(landmark) = &studio.landmarks.preview {
-        for layer in &mut document.layers {
-            if let Some(target) = layer.landmarks.iter_mut().find(|p| p.id == landmark.id) {
-                *target = landmark.clone();
-                break;
-            }
-        }
-    }
     document
 }
