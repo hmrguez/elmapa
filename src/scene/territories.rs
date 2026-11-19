@@ -238,6 +238,24 @@ impl RegionView {
         Some(())
     }
 
+    /// Focus the largest visible piece while retaining its editable face.
+    pub fn focus(&self, owner: usize, shore: &Shoreline) -> Option<(&RegionFace, Point)> {
+        let (face, piece, _) = self
+            .faces
+            .iter()
+            .filter(|face| face.owner == owner)
+            .flat_map(|face| {
+                visible_face(&face.polygon, shore)
+                    .into_iter()
+                    .map(move |piece| {
+                        let area = split::area(&piece);
+                        (face, piece, area)
+                    })
+            })
+            .max_by(|a, b| a.2.total_cmp(&b.2))?;
+        Some((face, interior(&piece, 1.)?.1))
+    }
+
     pub fn washes(&self, shore: &Shoreline, data: &RegionLayer) -> Vec<Shape> {
         let mut shapes = Vec::new();
         for face in &self.faces {
@@ -268,6 +286,48 @@ impl RegionView {
         }
         shapes
     }
+}
+
+// Find an interior point with clearance in the requested aspect ratio.
+fn interior(polygon: &RegionPolygon, aspect: f64) -> Option<(f64, Point)> {
+    let extent = bounds(polygon.iter().flatten())?;
+    let edges = || {
+        polygon
+            .iter()
+            .flat_map(|ring| ring.iter().zip(ring.iter().cycle().skip(1)))
+    };
+
+    // Try the middle first. Even-odd spans avoid both water and enclosed lakes.
+    let height = f64::from(extent.max.y - extent.min.y);
+    let mut best = None;
+    for step in [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7] {
+        let y =
+            f64::from(f32::midpoint(extent.min.y, extent.max.y)) + height * f64::from(step) / 16.;
+        let mut crossings: Vec<_> = edges()
+            .filter(|&(&[_, ay], &[_, by])| (ay > y) != (by > y))
+            .map(|(&[ax, ay], &[bx, by])| ax + (y - ay) * (bx - ax) / (by - ay))
+            .collect();
+        crossings.sort_unstable_by(f64::total_cmp);
+        let Some(span) = crossings
+            .chunks_exact(2)
+            .max_by(|a, b| (a[1] - a[0]).total_cmp(&(b[1] - b[0])))
+        else {
+            continue;
+        };
+        let x = f64::midpoint(span[0], span[1]);
+        // Measure clearance in the target's proportions so wide objects
+        // have room at their ends as well as at their center.
+        let clearance = edges()
+            .map(|(&[ax, ay], &[bx, by])| {
+                project([x / aspect, y], [ax / aspect, ay], [bx / aspect, by]).1
+            })
+            .fold(f64::INFINITY, f64::min)
+            .sqrt();
+        if best.is_none_or(|(prior, _)| clearance > prior) {
+            best = Some((clearance, Point::new(x as f32, y as f32)));
+        }
+    }
+    best
 }
 
 pub fn visible_face(polygon: &RegionPolygon, shore: &Shoreline) -> Vec<RegionPolygon> {
