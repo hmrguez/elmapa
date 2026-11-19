@@ -39,7 +39,7 @@ pub(in crate::app::ui) fn build_feedback(b: &mut Builder, root: Entity, studio: 
         BorderColor::all(color(if studio.dark { 0x555555 } else { 0x75654f }, 0.65)),
     ));
     if studio.tool == Tool::Landmarks
-        && let Some(index) = studio.available_landmark(&studio.landmarks.placement.kind)
+        && let Some(index) = studio.placement_landmark()
         && let Some((image, size)) = b.assets.landmark_ghosts.get(index)
     {
         let definition = &elmapa::scene::landmark_catalog().items[index];
@@ -111,7 +111,6 @@ pub(in crate::app::ui) fn update_brush_cursor(
 
 pub fn landmark_cursor(studio: Res<Studio>, mut nodes: Query<(&LandmarkCursor, &mut Node)>) {
     let show = studio.tool == Tool::Landmarks
-        && studio.landmarks.picker.is_none()
         && !studio.home
         && !studio.installing
         && studio.opening.is_none()

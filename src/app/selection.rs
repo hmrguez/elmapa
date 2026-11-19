@@ -1,20 +1,18 @@
 //! Dispatch canvas presses using the same active tool shown in the toolbar.
+mod paths;
 use super::state::{Studio, Tool};
 use elmapa::document::Point;
+pub(super) use paths::PathSelection;
 
 impl Studio {
-    pub(super) fn annotation_press(&mut self, point: Point) -> bool {
-        if self.landmarks.picker.take().is_some() {
-            self.ui_dirty = true;
-            return true;
-        }
+    pub(super) fn annotation_press(&mut self, point: Point, shift: bool) -> bool {
         if std::mem::take(&mut self.text.style_open) {
             self.ui_dirty = true;
             return true;
         }
         match self.tool {
             Tool::Brush => return false,
-            Tool::Landmarks => self.place_landmark(point),
+            Tool::Landmarks => self.place_landmark(point, shift),
             Tool::Text => self.place_text(point),
             Tool::Select => {
                 if self.finish_label_draft() {
@@ -29,7 +27,7 @@ impl Studio {
     }
 
     fn select_annotation(&mut self, point: Point) {
-        if self.begin_text_transform(point) {
+        if self.begin_path_drag(point) || self.begin_text_transform(point) {
             return;
         }
         let landmark = self.editor.landmark_at(point, 4. / self.viewport.zoom);
@@ -38,6 +36,9 @@ impl Studio {
         } else {
             self.editor.label_at(point, 6. / self.viewport.zoom)
         };
+        if label.is_some() || landmark.is_some() {
+            self.clear_path_selection();
+        }
         if let Some((layer, id)) = label {
             self.landmarks.selected = None;
             self.select_label(point, layer, id);
@@ -50,6 +51,7 @@ impl Studio {
             self.text.radial.reset();
             self.text.control = None;
             self.text.error = None;
+            self.select_path(point);
         }
     }
 }
@@ -67,13 +69,13 @@ mod tests {
         let landmark = studio.editor.add_landmark(Landmark::default()).unwrap();
 
         studio.tool = Tool::Select;
-        assert!(studio.annotation_press(point));
+        assert!(studio.annotation_press(point, false));
         assert_eq!(studio.text.selected, Some(label));
         assert_eq!(studio.tool, Tool::Select);
         studio.finish();
 
         studio.editor.delete_label(label);
-        assert!(studio.annotation_press(point));
+        assert!(studio.annotation_press(point, false));
         assert_eq!(studio.landmarks.selected, Some(landmark));
         assert_eq!(studio.text.selected, None);
         assert_eq!(studio.tool, Tool::Select);

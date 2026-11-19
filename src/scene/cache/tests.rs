@@ -41,3 +41,132 @@ fn assert_material(scene: &Scene, doc: &Document) {
         );
     }
 }
+
+#[test]
+fn child_borders_and_washes_follow_a_parent_edit_in_the_retained_scene() {
+    use crate::{
+        document::{RegionLayer, RegionNode, RegionParent},
+        editor::Editor,
+        scene::{
+            SceneCache,
+            territories::{RegionView, Shoreline, contains, pigment},
+        },
+    };
+
+    let mut editor = Editor::new(Document::blank()).unwrap();
+    assert!(editor.commit_stroke(Stroke {
+        creation_id: None,
+        brush: Brush::Land,
+        material: None,
+        points: vec![Point::new(-140., 0.), Point::new(140., 0.)].into(),
+        size: 200.,
+        strength: 1.,
+        seed: 41,
+    }));
+    let mut cache = SceneCache::default();
+    let shore = cache.render(editor.document(), None).shoreline().clone();
+    let box_land = |right| {
+        vec![vec![
+            [-100., -45.],
+            [right, -45.],
+            [right, 45.],
+            [-100., 45.],
+        ]]
+    };
+    let vertical = |x| vec![Point::new(x, -80.), Point::new(x, 80.)];
+    let mut continents = RegionLayer::default();
+    let first = continents.new_region();
+    let second = continents.new_region();
+    let land = continents.claim(box_land(100.), first);
+    assert!(continents.split(land, vertical(60.), second));
+    let view = RegionView::resolve(&continents, &shore).unwrap();
+    let owner = view
+        .faces
+        .iter()
+        .find(|face| contains(&face.polygon, Point::new(-70., 0.)))
+        .unwrap()
+        .owner;
+    editor
+        .set_regions(None, continents.clone(), &shore)
+        .unwrap();
+    let parent_layer = editor.active_layer();
+    let parent = RegionParent {
+        layer: parent_layer,
+        owner,
+    };
+
+    let mut countries = RegionLayer {
+        parent: Some(parent),
+        ..RegionLayer::default()
+    };
+    let first = countries.new_region();
+    let second = countries.new_region();
+    let land = countries.claim(box_land(60.), first);
+    assert!(countries.split(
+        land,
+        vec![Point::new(-120., 0.), Point::new(100., 0.)],
+        second
+    ));
+    let child_ink = pigment(&countries, first);
+    editor.set_regions(None, countries.clone(), &shore).unwrap();
+    let child_layer = editor.active_layer();
+    assert!(editor.set_regions(None, countries.clone(), &shore).is_err());
+    assert!(!editor.remove_layer(parent_layer));
+    let check_border = |scene: &crate::scene::Scene, end: f32, wash_end: f32| {
+        let view = scene.region_view(child_layer).unwrap();
+        let border = &view.borders[0].visible[0];
+        let right = border
+            .iter()
+            .map(|point| point.x)
+            .fold(f32::NEG_INFINITY, f32::max);
+        assert!((right - end).abs() < 0.01, "border ended at {right}");
+        let right = scene.shapes()
+            .filter(|shape| matches!(shape, crate::scene::Shape::Polygon { fill, .. } if *fill == child_ink))
+            .filter_map(crate::scene::Shape::bounds)
+            .map(|bounds| bounds.max.x)
+            .fold(f32::NEG_INFINITY, f32::max);
+        assert!((right - wash_end).abs() < 0.01, "wash ended at {right}");
+    };
+    check_border(&cache.render(editor.document(), None), 60., 60.);
+
+    let RegionNode::Cut { path, .. } = &mut continents.areas[0].nodes[0] else {
+        panic!("continental border");
+    };
+    path.insert(1, Point::new(-15., 0.));
+    editor
+        .set_regions(Some(parent_layer), continents, &shore)
+        .unwrap();
+    check_border(&cache.render(editor.document(), None), -15., 27.1875);
+    assert_eq!(
+        &**editor.document().region_data(child_layer).unwrap(),
+        &countries
+    );
+    let ancestors = countries
+        .ancestors(|id| editor.document().region_data(id))
+        .unwrap();
+    let scope = Shoreline::scoped(&shore, &ancestors).unwrap();
+    assert!(scope.island_at(Point::new(0., 3.)).is_none());
+    assert!(scope.island_at(Point::new(-30., 15.)).is_some());
+
+    assert!(editor.move_layer(child_layer, -1));
+    let reopened: Document =
+        serde_json::from_slice(&serde_json::to_vec(editor.document()).unwrap()).unwrap();
+    reopened.validate().unwrap();
+    check_border(
+        &SceneCache::default().render(&reopened, None),
+        -15.,
+        27.1875,
+    );
+    let mut invalid = reopened.clone();
+    let child = invalid
+        .layer_mut(child_layer)
+        .unwrap()
+        .territories
+        .as_mut()
+        .unwrap();
+    std::sync::Arc::make_mut(child).parent = Some(RegionParent {
+        layer: child_layer,
+        owner: first,
+    });
+    assert!(invalid.validate().is_err());
+}

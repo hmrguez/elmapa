@@ -1,5 +1,6 @@
 //! Bevy application: retained GPU rendering, transactional editor and native UI.
 mod benchmark;
+mod branding;
 mod brush_motion;
 mod brush_orbit;
 #[cfg(not(target_os = "macos"))]
@@ -54,12 +55,15 @@ pub fn run() {
     native::observe_presentations();
     let mut app = App::new();
     #[cfg(target_os = "macos")]
-    app.add_systems(Startup, native::setup_menu).add_systems(
-        Update,
-        native::menu_actions
-            .after(input::dispatch)
-            .before(files::poll),
-    );
+    app.add_systems(Startup, (native::setup_menu, branding::set_app_icon))
+        .add_systems(
+            Update,
+            native::menu_actions
+                .after(input::dispatch)
+                .before(files::poll),
+        );
+    #[cfg(not(target_os = "macos"))]
+    app.add_systems(Update, branding::set_window_icon);
     let app = app
         .add_plugins(
             DefaultPlugins
@@ -129,7 +133,7 @@ pub fn run() {
                     .chain(),
                 presentation::resize,
                 render::camera,
-                render::region_overlay,
+                (render::region_overlay, render::path_guide).chain(),
                 (
                     render::view_replay::video::prepare,
                     render::view_replay::play,
@@ -151,6 +155,7 @@ pub fn run() {
                     ui::landmark_selection_follow,
                     ui::text_selection_follow,
                     ui::region_selection_follow,
+                    ui::path_selection_follow,
                     ui::radial_follow,
                     ui::text_ime,
                 )

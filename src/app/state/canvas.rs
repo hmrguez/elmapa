@@ -8,6 +8,7 @@ use elmapa::document::{
 
 impl Studio {
     pub fn finish(&mut self) {
+        self.finish_path_drag();
         self.finish_text_move();
         self.finish_landmark_move();
         self.drag = None;
@@ -36,6 +37,10 @@ impl Studio {
         }
     }
     pub fn down(&mut self, point: Vec2) {
+        self.down_with_shift(point, false);
+    }
+
+    pub fn down_with_shift(&mut self, point: Vec2, shift: bool) {
         self.pointer = Some(point);
         if self.home || self.installing || self.opening.is_some() {
             return;
@@ -54,7 +59,7 @@ impl Studio {
             self.region_down(point);
             return;
         }
-        if self.annotation_press(point) {
+        if self.annotation_press(point, shift) {
             return;
         }
         if !self
@@ -122,6 +127,10 @@ impl Studio {
             }
             return;
         }
+        if self.path_dragging() {
+            self.move_path_node(self.map_point(point));
+            return;
+        }
         if blocked && self.text.transforming.is_none() {
             return;
         }
@@ -142,6 +151,11 @@ impl Studio {
             if self.editor.revision() != revision {
                 self.changed();
             }
+            return;
+        }
+        if self.path_dragging() {
+            self.move_path_node(self.map_point(point));
+            self.finish();
             return;
         }
         if self.landmarks.selected.is_some() {

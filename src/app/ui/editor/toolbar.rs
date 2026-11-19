@@ -196,29 +196,6 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
         b.icon(choice, "chevron-down", p.muted, 13.);
     }
     if placing_landmarks {
-        let current = s
-            .available_landmark(&s.landmarks.placement.kind)
-            .map(|index| &elmapa::scene::landmark_catalog().items[index]);
-        let choice = b.button(
-            toolbar,
-            "",
-            current.map_or("Choose symbol", |item| item.name.as_str()),
-            Action::LandmarkPicker,
-            s.landmarks.picker.is_some(),
-        );
-        if let Some(item) = current {
-            let thumbnail = b.icon(choice, item.kind.key(), p.text, 26.);
-            b.commands.entity(choice).insert_children(0, &[thumbnail]);
-        }
-        b.icon(choice, "chevron-down", p.muted, 13.);
-        b.commands
-            .entity(choice)
-            .entry::<Node>()
-            .and_modify(|mut node| {
-                node.max_width = px(172.);
-                node.overflow = Overflow::clip();
-                node.justify_content = JustifyContent::Start;
-            });
         b.button(toolbar, "minus", "", Action::LandmarkSize(-16.), false);
         b.text(
             toolbar,

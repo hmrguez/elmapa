@@ -221,3 +221,95 @@ fn split_replaces_only_the_selected_piece_of_an_existing_region() {
         &original
     );
 }
+
+#[test]
+fn the_region_orbit_creates_and_reopens_a_child_layer() {
+    use elmapa::document::RegionParent;
+
+    let (mut studio, shore, island) = fixture();
+    let anchor = Point::new(0., 0.);
+    studio.region_action(RegionAction::Make);
+    let parent = RegionParent {
+        layer: studio.editor.active_layer(),
+        owner: studio.regions.selection.as_ref().unwrap().owner.unwrap(),
+    };
+    let separate = Selection::new(
+        shore.island_at(island).unwrap().clone(),
+        None,
+        shore.clone(),
+    );
+    studio.claim_region(separate, Some(parent.owner));
+    studio.regions.style.anchor = Some(anchor);
+    let before = studio.editor.document().clone();
+    let action = studio
+        .region_style_actions()
+        .into_iter()
+        .find(|item| item.title == "Split into child regions…")
+        .and_then(|item| item.action);
+    assert!(matches!(
+        action,
+        Some(crate::app::state::Action::Regions(
+            RegionAction::ChildRegions
+        ))
+    ));
+
+    studio.region_action(RegionAction::ChildRegions);
+    assert_eq!(studio.split_parent_name(), Some("Region 1"));
+    studio.region_action(RegionAction::SplitCount(1));
+    let (preview, _) = studio.regions.split_preview().unwrap();
+    assert_eq!(preview.faces.len(), 3);
+    assert!(
+        preview
+            .faces
+            .iter()
+            .all(|face| !territories::contains(&face.polygon, island))
+    );
+    assert_eq!(studio.editor.document(), &before);
+    assert!(studio.cancel_region_step());
+    assert_eq!(studio.editor.document(), &before);
+    assert!(studio.regions.split_preview().is_none());
+
+    studio.region_action(RegionAction::ChildRegions);
+    studio.region_action(RegionAction::SplitCount(1));
+    studio.region_action(RegionAction::ApplySplit);
+    let child = studio.editor.active_layer();
+    let doc = studio.editor.document();
+    assert_eq!(doc.layer(parent.layer), before.layer(parent.layer));
+    assert_eq!(doc.child_regions(parent).unwrap().id, child);
+    let countries = doc.region_data(child).unwrap();
+    assert_eq!(countries.names.len(), 3);
+    let ancestors = countries.ancestors(|id| doc.region_data(id)).unwrap();
+    assert!(
+        Shoreline::scoped(&shore, &ancestors)
+            .unwrap()
+            .island_at(island)
+            .is_some()
+    );
+    assert!(doc.validate().is_ok());
+    let created = doc.clone();
+    assert!(studio.editor.undo());
+    assert_eq!(studio.editor.document(), &before);
+    assert!(studio.editor.redo());
+    assert_eq!(studio.editor.document(), &created);
+
+    studio.region_action(RegionAction::ParentLayer);
+    assert_eq!(studio.editor.active_layer(), parent.layer);
+    studio.regions.selection = Some(Selection::new(
+        shore.island_at(anchor).unwrap().clone(),
+        Some((
+            elmapa::document::RegionAddress { area: 0, node: 0 },
+            parent.owner,
+        )),
+        shore,
+    ));
+    studio.regions.style.anchor = Some(anchor);
+    assert!(
+        studio
+            .region_style_actions()
+            .iter()
+            .any(|item| item.title == "Open child regions")
+    );
+    studio.region_action(RegionAction::ChildRegions);
+    assert_eq!(studio.editor.active_layer(), child);
+    assert_eq!(studio.editor.document(), &created);
+}

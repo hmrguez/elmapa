@@ -20,6 +20,34 @@ fn middle(app: &mut App, window: Entity, state: ButtonState) {
         }));
 }
 #[test]
+fn shift_is_read_at_landmark_press_and_releasing_it_restores_selection() {
+    use crate::app::state::Tool;
+    let (mut app, window) = app();
+    key(&mut app, window, KeyCode::KeyL, ButtonState::Pressed);
+    key(&mut app, window, KeyCode::ShiftRight, ButtonState::Pressed);
+    for point in [Vec2::new(360., 400.), Vec2::new(500., 400.)] {
+        moved(&mut app, window, point);
+        button(&mut app, window, ButtonState::Pressed);
+        button(&mut app, window, ButtonState::Released);
+        app.update();
+        let studio = app.world().resource::<Studio>();
+        assert_eq!(studio.tool, Tool::Landmarks);
+        assert!(studio.landmarks.selected.is_none());
+    }
+
+    key(&mut app, window, KeyCode::ShiftRight, ButtonState::Released);
+    moved(&mut app, window, Vec2::new(640., 400.));
+    button(&mut app, window, ButtonState::Pressed);
+    button(&mut app, window, ButtonState::Released);
+    app.update();
+    let studio = app.world().resource::<Studio>();
+    let landmarks = &studio.editor.document().layers[0].landmarks;
+    assert_eq!(landmarks.len(), 3);
+    assert_eq!(studio.tool, Tool::Select);
+    assert_eq!(studio.landmarks.selected, Some(landmarks[2].id));
+}
+
+#[test]
 fn middle_drag_pans_only_while_held_and_keeps_the_selected_brush() {
     let (mut app, window) = app();
     key(&mut app, window, KeyCode::Digit3, ButtonState::Pressed);

@@ -15,7 +15,7 @@ The table uses macOS key names. On Linux and Windows, use Ctrl for ⌘, Shift fo
 | Hold left-click in place for 1.5 seconds with Land, Water, Forest, or Mountains selected | Open the same orbit |
 | `1`–`7` | Land, water, forest, mountains, river, trail, eraser |
 | `T` / `8` | Text tool |
-| `V` / `9` | Select text labels or landmarks |
+| `V` / `9` | Select labels, landmarks, rivers, or trails |
 | `L` / `0` | Landmark placement tool |
 | Double-click empty canvas (Select) | Draft one label |
 | Typing (selected label) | Replace its name directly |
@@ -46,11 +46,15 @@ With **Land**, **Water**, **Forest**, or **Mountains** selected, choose a finish
 
 Choose **Text** (or press `T` / `8`) to add map names. Click the canvas and type the name directly on the map. Press Return or click the checkmark in the orbit to place it. Clicking the next map point also places a valid name and starts the next draft in the same click. The draft’s orbit lets you change typeface, ink and typography while seeing the name update live. The current style carries forward to the next label. You can also set it ahead of time with the **Aa** button. Escape cancels the current draft or returns to Select when the canvas is ready for another name. New labels follow the active layer.
 
-Choose **Landmarks** (or press `L` / `0`) to place map symbols. The toolbar shows the symbol ready to place. Click its thumbnail to browse enabled packs and choose a different symbol. The cursor previews the current artwork at placement size. Each map click places one landmark and keeps the tool active. Use the toolbar **− / +** or `[` / `]` to change placement size. The icon and size carry across tool switches within the current atlas. Escape returns to Select.
+Choose **Landmarks** (or press `L` / `0`) and click the map to place and select a landmark. The orbit around it lets you choose an icon. With one enabled pack, its icons appear directly in the orbit. With several packs enabled, choose a pack to open its icon ring.
 
-Use **Select** (or `V` / `9`) to edit an existing landmark. Drag to move it, resize with **− / +** or `[` / `]`, or choose **Change icon** from its orbit to open the catalog for that landmark. The orbit also offers Duplicate and Delete (`⌘D` and Backspace). Each placement, icon change, size adjustment and completed drag is one undo step. Settings → Landmark packs controls the available artwork. Turning a pack off leaves placed landmarks visible and editable. Landmarks follow layer visibility, opacity and order, and erasing terrain leaves them intact. Reduced Motion shows finished artwork immediately. Saves, shelf previews and SVG use finished geometry. The [SVG registry guide](../assets/landmarks/README.md) describes how to install and author packs and their animation instructions.
+Landmarks remembers the last icon you placed in the current atlas. Press `L` again and hold Shift before clicking to place copies of that icon without selecting them. Keep Shift held to place more, or release it before a click to select the next landmark. The cursor previews the next icon. Use the toolbar **− / +** or `[` / `]` to adjust placement size.
+
+Use **Select** (or `V` / `9`) to edit an existing landmark. Drag to move it, choose a different icon in the orbit, or use the orbit’s size, Duplicate, and Delete controls. Each placement, icon change, size adjustment and completed drag is one undo step. Settings → Landmark packs controls the available artwork. Turning a pack off leaves placed landmarks visible and editable. Landmarks follow layer visibility, opacity and order, and erasing terrain leaves them intact. Reduced Motion shows finished artwork immediately. Saves, shelf previews and SVG use finished geometry. The [SVG registry guide](../assets/landmarks/README.md) describes how to install and author packs and their animation instructions.
 
 Choose **Select** (or press `V` / `9`) to select labels across visible layers. Double-click empty canvas to draft one label and stay in Select when you finish. Drag a name to move it, drag any corner of its selection frame to resize it proportionally from the opposite corner, or drag the round handle beneath the frame to rotate. Hold Shift while rotating to snap to 15° increments. Handles keep their screen size at every zoom, and each completed move, resize, or rotation is one undo step. Escape cancels an active gesture. Use **Regions** to select land for division.
+
+Click a river or trail with **Select** to show its nodes. Drag a node to bend the nearby course, or drag an endpoint to move where it begins or ends. The orbit adds or removes editing handles for finer or broader adjustments. Release to commit one undo step. Press Escape during a drag to cancel it. Click empty canvas or choose **Done** in the orbit to deselect.
 
 The selected name has five actions in its first ring. Clockwise from the top, they are **Typeface**, **Ink**, **Duplicate**, **Delete**, and **Advanced typography**. Typeface, Ink, and Advanced typography each open a second ring while keeping the first ring visible and highlighting the active action. The second ring fills clockwise with a staggered reveal. Reduced Motion shows it immediately. Hover a bubble for its action name. Click an open parent again or use the outer ring’s close button to close that level. Clicking empty canvas deselects.
 

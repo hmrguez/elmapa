@@ -18,8 +18,8 @@ pub use assets::{setup, snap_text_glyphs};
 pub use editor::{ChromeMotion, advance_motion, brush_icon, menu_animation};
 pub use feedback::{alpha, hover, hover_follow};
 pub use overlays::{
-    TextCard, landmark_cursor, landmark_selection_follow, radial_follow, region_selection_follow,
-    text_ime, text_selection_follow, tooltips,
+    TextCard, landmark_cursor, landmark_selection_follow, path_selection_follow, radial_follow,
+    region_selection_follow, text_ime, text_selection_follow, tooltips,
 };
 pub use shelf::{PreviewSlot, cover_rect};
 pub use widgets::color;
@@ -39,14 +39,12 @@ pub enum ScrollArea {
     Shelf,
     Layers,
     Packs,
-    Landmarks,
 }
 #[derive(Resource, Default)]
 pub struct ScrollOffsets {
     pub shelf: f32,
     pub layers: f32,
     pub packs: f32,
-    pub landmarks: f32,
 }
 
 pub fn sync_scale(studio: Res<Studio>, window: Single<&Window>, mut scale: ResMut<UiScale>) {
@@ -70,6 +68,7 @@ pub fn rebuild(
     (motion, offsets): (Res<ChromeMotion>, Res<ScrollOffsets>),
     roots: Query<Entity, With<UiRoot>>,
 ) {
+    studio.refresh_path_nodes(0);
     if !studio.ui_dirty {
         return;
     }
@@ -103,7 +102,7 @@ pub fn rebuild(
         shelf::build(&mut b, root, &studio, &jobs, offsets.shelf, offsets.packs);
     } else if studio.opening.is_none() {
         editor::build(&mut b, root, &studio, motion.progress, offsets.layers);
-        overlays::build_selection(&mut b, root, &studio, offsets.landmarks);
+        overlays::build_selection(&mut b, root, &studio);
     }
     overlays::build_feedback(&mut b, root, &studio);
 }

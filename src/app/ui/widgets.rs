@@ -201,7 +201,11 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             .spawn((
                 ImageNode {
                     image,
-                    color: color(hex, 1.),
+                    color: if symbol == crate::app::branding::SYMBOL {
+                        Color::WHITE
+                    } else {
+                        color(hex, 1.)
+                    },
                     ..default()
                 },
                 Node {
@@ -341,6 +345,9 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             Action::Redo => crate::app::input::shortcut_hint("Redo", "Z", true),
             Action::LayerTools => "Selected layer settings".into(),
             Action::AddLayer => "New layer".into(),
+            Action::Regions(crate::app::regions::RegionAction::ParentLayer) => {
+                "Back to parent Regions layer".into()
+            }
             Action::Regions(crate::app::regions::RegionAction::SplitCount(delta)) => {
                 if delta < 0 {
                     "Fewer regions".into()
@@ -352,7 +359,6 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             Action::Advanced => "Advanced brush settings".into(),
             Action::LandmarkTool => "Landmarks · L / 0".into(),
             Action::SelectTool => "Select labels and landmarks · V / 9".into(),
-            Action::LandmarkPicker => "Choose a symbol to place".into(),
             Action::TextStyle => "New label style".into(),
             Action::PlaceLabel => "Place label · Return".into(),
             Action::TextTool => "Text · T / 8".into(),

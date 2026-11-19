@@ -12,6 +12,7 @@ impl Studio {
         }
         self.cancel_text();
         self.cancel_landmark();
+        self.clear_path_selection();
         self.tool = tool;
         self.advanced = false;
     }
@@ -36,6 +37,11 @@ impl Studio {
                 }
                 _ => return,
             }
+        }
+        if let Action::SetLayerBranch(branch, expanded) = action {
+            self.layer_branches.insert(branch, expanded);
+            self.ui_dirty = true;
+            return;
         }
         let orbit_open = self.brush_orbit.anchor.is_some();
         if !matches!(action, Action::BrushOrbitPage(_)) {
@@ -72,12 +78,6 @@ impl Studio {
         } else {
             self.commit_text_field();
         }
-        if !matches!(
-            action,
-            Action::LandmarkPicker | Action::LandmarkKind(_) | Action::Zoom(_) | Action::Fit
-        ) {
-            self.landmarks.picker = None;
-        }
         if !matches!(action, Action::TextField(field) | Action::TextStep(field, _)
             if Some(field) == self.text.control)
         {
@@ -87,6 +87,7 @@ impl Studio {
         let revision = self.editor.revision();
         match action {
             Action::Regions(action) => self.region_action(action),
+            Action::SetLayerBranch(..) => unreachable!(),
             Action::Brush(b) => {
                 self.set_tool(Tool::Brush);
                 self.brush = b;
@@ -103,10 +104,12 @@ impl Studio {
             | Action::BrushOrbitPage(_)
             | Action::CloseBrushOrbit => {}
             Action::SelectTool => self.set_tool(Tool::Select),
+            Action::PathNodeDensity(step) => self.refresh_path_nodes(step),
+            Action::DeselectPath => self.clear_path_selection(),
             Action::TextTool => self.set_tool(Tool::Text),
             Action::LandmarkTool => self.set_tool(Tool::Landmarks),
-            Action::LandmarkPicker
-            | Action::CloseLandmarkPicker
+            Action::LandmarkEnter(_, _)
+            | Action::LandmarkBack
             | Action::LandmarkKind(_)
             | Action::LandmarkSize(_)
             | Action::LandmarkDuplicate
@@ -130,7 +133,7 @@ impl Studio {
                     if !self.disabled_landmark_packs.remove(&pack.id) {
                         self.disabled_landmark_packs.insert(pack.id.clone());
                     }
-                    self.landmarks.picker = None;
+                    self.landmarks.radial.reset();
                     jobs.preferences = true;
                 }
             }
@@ -170,11 +173,13 @@ impl Studio {
             Action::Radius(v) => self.radius = (self.radius + v).clamp(12., 360.),
             Action::Strength(v) => self.strength = (self.strength + v).clamp(0.15, 1.),
             Action::AddLayer => {
+                self.clear_path_selection();
                 self.regions.active = false;
                 self.regions.clear();
                 self.editor.add_layer();
             }
             Action::SelectLayer(id) => {
+                self.clear_path_selection();
                 self.text.selected = None;
                 self.landmarks.selected = None;
                 self.editor.select_layer(id);
@@ -190,7 +195,10 @@ impl Studio {
             }
             Action::DeleteLayer => {
                 self.regions.clear();
-                if !self.editor.remove_layer(self.editor.active_layer()) {
+                let layer = self.editor.active_layer();
+                if self.editor.layer_has_children(layer) {
+                    self.status = "Remove the child Regions layers first.".into();
+                } else if !self.editor.remove_layer(layer) {
                     self.status = "Keep at least one layer in your world.".into();
                 }
             }
@@ -207,6 +215,7 @@ impl Studio {
                 }
             }
             Action::Undo => {
+                self.clear_path_selection();
                 self.regions.clear();
                 self.landmarks.arrivals.clear();
                 self.text.animate = None;
@@ -219,6 +228,7 @@ impl Studio {
                 self.animate_new = false;
             }
             Action::Redo => {
+                self.clear_path_selection();
                 self.regions.clear();
                 self.landmarks.arrivals.clear();
                 self.text.animate = None;
@@ -288,6 +298,18 @@ impl Studio {
                 .any(|l| l.visible && l.opacity > 0. && l.landmarks.iter().any(|p| p.id == id))
         {
             self.landmarks.selected = None;
+        }
+        if self
+            .landmarks
+            .last_placed
+            .is_some_and(|id| self.editor.landmark(id).is_none())
+        {
+            self.landmarks.last_placed = None;
+        }
+        if let Some(path) = &self.path_selection
+            && self.editor.linear_stroke(path.id).is_none()
+        {
+            self.clear_path_selection();
         }
         if self.editor.revision() != revision {
             self.changed();

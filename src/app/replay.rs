@@ -176,12 +176,9 @@ pub fn advance(
         Step::Create => Some(Action::Blank),
         Step::Brush { brush } => Some(Action::Brush(brush)),
         Step::Landmarks => Some(Action::LandmarkTool),
-        Step::Landmark { kind } => {
-            studio.act(Action::LandmarkPicker, &mut jobs);
-            elmapa::scene::landmark_catalog()
-                .find(&kind)
-                .map(Action::LandmarkKind)
-        }
+        Step::Landmark { kind } => elmapa::scene::landmark_catalog()
+            .find(&kind)
+            .map(Action::LandmarkKind),
         Step::Select => Some(Action::SelectTool),
         Step::Theme => Some(Action::Theme),
         Step::Pan => {

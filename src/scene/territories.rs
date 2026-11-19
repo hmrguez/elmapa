@@ -25,10 +25,11 @@ pub const WASHES: [u32; 9] = [
 ];
 
 pub fn pigment(data: &RegionLayer, owner: usize) -> u32 {
+    let palette_offset = if data.parent.is_some() { 3 } else { 0 };
     data.styles
         .get(&owner)
         .and_then(|style| style.color)
-        .unwrap_or(WASHES[owner % WASHES.len()])
+        .unwrap_or(WASHES[(owner + palette_offset) % WASHES.len()])
 }
 
 #[derive(Default)]
@@ -66,6 +67,48 @@ impl Shoreline {
                 .filter_map(|polygon| Some((bounds(polygon.iter().flatten())?, polygon)))
                 .collect()
         })
+    }
+
+    /// Restrict terrain to every enclosing region, preserving disconnected land.
+    pub fn scoped(
+        world: &Arc<Self>,
+        ancestors: &[(usize, &Arc<RegionLayer>)],
+    ) -> Option<Arc<Self>> {
+        let mut shore = world.clone();
+        for &(owner, layer) in ancestors {
+            let view = RegionView::resolve(layer, &shore)?;
+            let mut pieces: Vec<_> = view
+                .faces
+                .iter()
+                .filter(|face| face.owner == owner)
+                .flat_map(|face| visible_face(&face.polygon, &shore))
+                .collect();
+            if pieces.len() > 1 {
+                let rings: RegionPolygon = pieces.into_iter().flatten().collect();
+                pieces = Vec::<RegionPolygon>::new().overlay_as::<i64>(
+                    &rings,
+                    OverlayRule::Union,
+                    FillRule::NonZero,
+                );
+            }
+            let land: Vec<_> = pieces
+                .into_iter()
+                .filter_map(|piece| Some((bounds(piece.iter().flatten())?, piece)))
+                .collect();
+            shore = Arc::new(Self {
+                land: OnceLock::from(land),
+                ..Self::default()
+            });
+        }
+        Some(shore)
+    }
+
+    pub fn visible_path(&self, path: &[Point]) -> Vec<Vec<Point>> {
+        let path = coordinates(path);
+        clip(&path, &self.nearby(path.iter()))
+            .iter()
+            .map(|span| points(span))
+            .collect()
     }
 
     pub fn island_at(&self, point: Point) -> Option<&RegionPolygon> {
@@ -195,6 +238,24 @@ impl RegionView {
         Some(())
     }
 
+    /// Focus the largest visible piece while retaining its editable face.
+    pub fn focus(&self, owner: usize, shore: &Shoreline) -> Option<(&RegionFace, Point)> {
+        let (face, piece, _) = self
+            .faces
+            .iter()
+            .filter(|face| face.owner == owner)
+            .flat_map(|face| {
+                visible_face(&face.polygon, shore)
+                    .into_iter()
+                    .map(move |piece| {
+                        let area = split::area(&piece);
+                        (face, piece, area)
+                    })
+            })
+            .max_by(|a, b| a.2.total_cmp(&b.2))?;
+        Some((face, interior(&piece, 1.)?.1))
+    }
+
     pub fn washes(&self, shore: &Shoreline, data: &RegionLayer) -> Vec<Shape> {
         let mut shapes = Vec::new();
         for face in &self.faces {
@@ -227,6 +288,48 @@ impl RegionView {
     }
 }
 
+// Find an interior point with clearance in the requested aspect ratio.
+fn interior(polygon: &RegionPolygon, aspect: f64) -> Option<(f64, Point)> {
+    let extent = bounds(polygon.iter().flatten())?;
+    let edges = || {
+        polygon
+            .iter()
+            .flat_map(|ring| ring.iter().zip(ring.iter().cycle().skip(1)))
+    };
+
+    // Try the middle first. Even-odd spans avoid both water and enclosed lakes.
+    let height = f64::from(extent.max.y - extent.min.y);
+    let mut best = None;
+    for step in [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7] {
+        let y =
+            f64::from(f32::midpoint(extent.min.y, extent.max.y)) + height * f64::from(step) / 16.;
+        let mut crossings: Vec<_> = edges()
+            .filter(|&(&[_, ay], &[_, by])| (ay > y) != (by > y))
+            .map(|(&[ax, ay], &[bx, by])| ax + (y - ay) * (bx - ax) / (by - ay))
+            .collect();
+        crossings.sort_unstable_by(f64::total_cmp);
+        let Some(span) = crossings
+            .chunks_exact(2)
+            .max_by(|a, b| (a[1] - a[0]).total_cmp(&(b[1] - b[0])))
+        else {
+            continue;
+        };
+        let x = f64::midpoint(span[0], span[1]);
+        // Measure clearance in the target's proportions so wide objects
+        // have room at their ends as well as at their center.
+        let clearance = edges()
+            .map(|(&[ax, ay], &[bx, by])| {
+                project([x / aspect, y], [ax / aspect, ay], [bx / aspect, by]).1
+            })
+            .fold(f64::INFINITY, f64::min)
+            .sqrt();
+        if best.is_none_or(|(prior, _)| clearance > prior) {
+            best = Some((clearance, Point::new(x as f32, y as f32)));
+        }
+    }
+    best
+}
+
 pub fn visible_face(polygon: &RegionPolygon, shore: &Shoreline) -> Vec<RegionPolygon> {
     polygon.overlay_as::<i64>(
         &shore.nearby(polygon.iter().flatten()),
@@ -250,11 +353,30 @@ where
     )
 }
 
+fn continuous_border(mut spans: Vec<Vec<[f64; 2]>>) -> Option<Vec<[f64; 2]>> {
+    let mut border = spans.pop()?;
+    // The clipper can return adjoining segments separately and out of order.
+    while !spans.is_empty() {
+        let index = spans
+            .iter()
+            .position(|span| span.first() == border.last() || span.last() == border.first())?;
+        let mut span = spans.swap_remove(index);
+        if span.first() == border.last() {
+            border.extend(span.into_iter().skip(1));
+        } else {
+            span.pop();
+            span.append(&mut border);
+            border = span;
+        }
+    }
+    Some(border)
+}
+
 /// Extract one directed border and its two neighbors. A cut through more than
 /// one span (for example, across an inlet) can be made as separate gestures.
 pub fn cut(polygon: &RegionPolygon, path: &[Point]) -> Option<([RegionPolygon; 2], Vec<[f64; 2]>)> {
     let path = coordinates(path);
-    let [border]: [_; 1] = clip(&path, polygon).try_into().ok()?;
+    let border = continuous_border(clip(&path, polygon))?;
     let [first, second]: [_; 2] = polygon
         .slice_by_as::<i64>(&path, FillRule::EvenOdd)
         .try_into()

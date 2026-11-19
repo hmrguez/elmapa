@@ -135,3 +135,48 @@ fn nonforest_worker_snapshots_share_settled_forest_placement_and_instances() {
         &placement
     ));
 }
+
+#[test]
+fn linear_edits_keep_terrain_and_respect_erasers_and_visibility() {
+    let mut doc = Document::blank();
+    let lay = &mut doc.layers[0];
+    let mut land = stroke(Brush::Land);
+    land.size = 420.;
+    land.points = vec![Point::new(145., 0.)].into();
+    lay.strokes.push(land);
+    for brush in [Brush::River, Brush::Path] {
+        let mut course = stroke(brush);
+        course.size = 55.;
+        course.points = vec![Point::new(0., 0.), Point::new(280., 0.)].into();
+        lay.strokes.push(course);
+    }
+    let mut erase = stroke(Brush::Erase);
+    erase.size = 50.;
+    erase.points = vec![Point::new(170., 0.)].into();
+    lay.strokes.push(erase);
+    let mut cache = SceneCache::default();
+    let original = cache.render(&doc, None);
+    let pick = |scene: &crate::scene::Scene, x, y| {
+        scene
+            .linear_stroke_at(Point::new(x, y), 6.)
+            .map(|id| id.index)
+    };
+    assert_eq!(pick(&original, 76., 0.), Some(2));
+    assert_eq!(pick(&original, 170., 0.), None);
+    doc.layers[0].strokes[2].points = vec![
+        Point::new(0., 0.),
+        Point::new(76., -66.),
+        Point::new(170., 0.),
+        Point::new(280., 0.),
+    ]
+    .into();
+    let edited = cache.render(&doc, None);
+    assert_eq!(cache.work().field_samples, 0);
+    assert_eq!(cache.work().line_strokes, 1);
+    assert_eq!(pick(&edited, 76., 0.), Some(1));
+    assert_eq!(pick(&edited, 76., -66.), Some(2));
+    assert_eq!(pick(&edited, 170., 0.), None);
+    assert_material(&edited, &doc);
+    doc.layers[0].visible = false;
+    assert_eq!(pick(&cache.render(&doc, None), 76., -66.), None);
+}

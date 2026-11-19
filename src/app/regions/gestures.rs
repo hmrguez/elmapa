@@ -209,7 +209,13 @@ impl Studio {
                     Some("This land already belongs to the selected region.".into());
             }
             Some(_) => self.regions.message = Some("Choose land without a region.".into()),
-            None => self.regions.message = Some("Click an island to add it to this region.".into()),
+            None => {
+                self.regions.message = Some(if self.active_region_parent().is_some() {
+                    "Choose unassigned land inside the parent region.".into()
+                } else {
+                    "Click an island to add it to this region.".into()
+                });
+            }
         }
     }
 
@@ -272,7 +278,9 @@ impl Studio {
             return;
         };
         *border = path;
-        let shore = self.scene.snapshot().shoreline().clone();
+        let Some(shore) = self.region_shore() else {
+            return;
+        };
         match self.editor.set_regions(id, data, &shore) {
             Ok(()) => self.regions.selection = None,
             Err(error) => self.regions.message = Some(error),

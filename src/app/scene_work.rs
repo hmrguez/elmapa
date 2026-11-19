@@ -117,7 +117,7 @@ impl SceneWork {
         (generated.epoch == self.epoch).then_some(generated.result)
     }
 
-    fn publish(&mut self, scene: Scene, meshes: Vec<SceneMesh>) {
+    pub(super) fn publish(&mut self, scene: Scene, meshes: Vec<SceneMesh>) {
         self.snapshot = scene;
         self.meshes = meshes;
         self.request_sync();
@@ -275,6 +275,7 @@ pub fn schedule_scene(mut studio: ResMut<Studio>, canvas: Res<render::Canvas>) {
 
 fn preview_document(studio: &Studio) -> Document {
     let mut document = studio.editor.document().clone();
+    studio.preview_path(&mut document);
     if let Some(label) = &studio.text.preview {
         for layer in &mut document.layers {
             if let Some(target) = layer.labels.iter_mut().find(|l| l.id == label.id) {
