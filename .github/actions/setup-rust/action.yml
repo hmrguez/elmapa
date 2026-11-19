@@ -1,0 +1,31 @@
+name: Set up the Rust build
+description: Install native dependencies and the pinned toolchain, then restore Cargo dependencies.
+inputs:
+  cache-profile:
+    description: Cargo cache profile (Test or Package)
+    required: true
+  clippy:
+    description: Install the Clippy component
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - name: Install Linux build dependencies
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends --no-upgrade build-essential pkg-config libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 libx11-dev libxi-dev libxrandr-dev libxcursor-dev fonts-dejavu-core mesa-vulkan-drivers xvfb xauth
+    - name: Install the CI Rust toolchain
+      shell: bash
+      env:
+        # rust-cache fingerprints every installed toolchain. Keep its environment stable.
+        RUSTUP_HOME: ${{ runner.temp }}/elmapa-rustup
+      run: |
+        rustup toolchain install "$RUSTUP_TOOLCHAIN" --no-self-update --profile minimal ${{ inputs.clippy == 'true' && '--component clippy' || '' }}
+        echo "RUSTUP_HOME=$RUSTUP_HOME" >> "$GITHUB_ENV"
+    - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+      with:
+        # Retain the existing Test-build and Package-build cache namespaces.
+        shared-key: ${{ inputs.cache-profile }}-build
+        save-if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
