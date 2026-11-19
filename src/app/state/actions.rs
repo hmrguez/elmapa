@@ -57,6 +57,7 @@ impl Studio {
                 | Action::SelectTool
                 | Action::Save
                 | Action::Export
+                | Action::AtlasStyle
                 | Action::Open
                 | Action::Home
                 | Action::Quit
@@ -277,6 +278,15 @@ impl Studio {
             Action::Open => {
                 self.menu = false;
                 jobs.request(files::Request::Open(None));
+            }
+            Action::AtlasStyle => {
+                use elmapa::document::AtlasStyle;
+                let style = match self.editor.document().style {
+                    AtlasStyle::Classic => AtlasStyle::Woodland,
+                    AtlasStyle::Woodland => AtlasStyle::Classic,
+                };
+                self.editor.set_atlas_style(style);
+                self.menu = false;
             }
             Action::Export => {
                 self.menu = false;

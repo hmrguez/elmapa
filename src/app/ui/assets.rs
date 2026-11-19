@@ -3,7 +3,7 @@ use crate::app::{branding, presentation::DisplayCamera, render};
 use bevy::{prelude::*, text::TextLayoutInfo};
 use elmapa::{
     brush_materials::{self, ForestStyle},
-    document::{Brush, LabelFont},
+    document::{AtlasStyle, Brush, LabelFont},
     scene::{forest_specimen_svg, forest_swatch},
 };
 use resvg::tiny_skia::{Pixmap, Transform};
@@ -166,8 +166,13 @@ pub fn setup(
     let avenir = load(LabelFont::Avenir);
     let baskerville = load(LabelFont::Baskerville);
     let mut brush_swatches = canvas.brush_textures.clone();
-    for (index, material) in brush_materials::for_brush(Brush::Forest) {
-        brush_swatches.insert(index, images.add(forest_preview(material.forest)));
+    for style in [AtlasStyle::Classic, AtlasStyle::Woodland] {
+        for (index, material) in brush_materials::for_brush(Brush::Forest) {
+            brush_swatches.insert(
+                brush_materials::artwork_index(index, style),
+                images.add(forest_preview(material.forest, style)),
+            );
+        }
     }
     commands.insert_resource(UiAssets {
         camera: *camera,
@@ -194,13 +199,13 @@ fn unpremultiply(mut pixels: Vec<u8>) -> Vec<u8> {
     pixels
 }
 
-fn forest_preview(style: Option<ForestStyle>) -> Image {
+fn forest_preview(family: Option<ForestStyle>, style: AtlasStyle) -> Image {
     const SIZE: u32 = 96;
     let mut svg = format!(
         "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{SIZE}\" height=\"{SIZE}\" viewBox=\"-45 -45 90 90\">"
     );
     use std::fmt::Write;
-    let variants = forest_swatch(style);
+    let variants = forest_swatch(family);
     for (index, &variant) in variants.iter().enumerate() {
         let transform = match (variants.len(), index) {
             (1, _) => "translate(-2 22) scale(1.12)",
@@ -210,7 +215,7 @@ fn forest_preview(style: Option<ForestStyle>) -> Image {
         write!(
             svg,
             "<g transform=\"{transform}\">{}</g>",
-            forest_specimen_svg(variant)
+            forest_specimen_svg(variant, style)
         )
         .unwrap();
     }

@@ -4,7 +4,7 @@ use bevy::prelude::*;
 
 pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, p: Palette, pack_scroll: f32) {
     let dark = s.dark;
-    let ink = if dark { p.text } else { 0x2c485a };
+    let ink = if dark { p.text } else { 0x304742 };
     let overlay = b.node(
         root,
         Node {
@@ -17,7 +17,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, p: Palette, pack_
         },
     );
     b.commands.entity(overlay).insert(BackgroundColor(color(
-        if dark { 0x000000 } else { 0x152d3d },
+        if dark { 0x000000 } else { 0x263c36 },
         0.18,
     )));
     b.hit(overlay, None);
@@ -35,7 +35,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, p: Palette, pack_
         true,
     );
     b.commands.entity(settings).insert(BackgroundColor(color(
-        if dark { p.surface } else { 0xf6fbff },
+        if dark { p.surface } else { 0xf8f8ef },
         0.98,
     )));
     b.commands.entity(settings).insert(BorderColor::all(color(

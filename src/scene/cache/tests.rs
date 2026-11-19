@@ -5,9 +5,9 @@ mod retention;
 mod terrain_finishes;
 mod terrain_tiles;
 
-use super::Scene;
+use super::{Scene, SceneCache};
 use crate::{
-    document::{Brush, Document, Point, Stroke},
+    document::{AtlasStyle, Brush, Document, Point, Stroke},
     scene::build_scene,
 };
 
@@ -107,7 +107,7 @@ fn child_borders_and_washes_follow_a_parent_edit_in_the_retained_scene() {
         vec![Point::new(-120., 0.), Point::new(100., 0.)],
         second
     ));
-    let child_ink = pigment(&countries, first);
+    let child_ink = pigment(&countries, first, editor.document().style);
     editor.set_regions(None, countries.clone(), &shore).unwrap();
     let child_layer = editor.active_layer();
     assert!(editor.set_regions(None, countries.clone(), &shore).is_err());
@@ -169,4 +169,53 @@ fn child_borders_and_washes_follow_a_parent_edit_in_the_retained_scene() {
         owner: first,
     });
     assert!(invalid.validate().is_err());
+}
+
+#[test]
+fn woodland_style_round_trips_and_keeps_saved_relief_anchors() {
+    let mut classic = crate::document::Document::demo();
+    classic.style = AtlasStyle::Classic;
+    let mut explicit = classic.layers[1].strokes[0].clone();
+    explicit.material = Some("weathered-highlands".into());
+    classic.layers[1].strokes.push(explicit);
+    let old_file = serde_json::to_string(&classic).unwrap();
+    assert!(!old_file.contains("\"style\""));
+    let mut editor = crate::editor::Editor::new(serde_json::from_str(&old_file).unwrap()).unwrap();
+    let mut cache = SceneCache::default();
+    let before = cache.render(editor.document(), None);
+    assert_eq!(before.style(), AtlasStyle::Classic);
+    let classic_svg = crate::scene::to_svg(editor.document());
+
+    editor.set_atlas_style(AtlasStyle::Woodland);
+    cache.begin_generation();
+    let after = cache.render(editor.document(), None);
+    assert_eq!(after.style(), AtlasStyle::Woodland);
+    assert!(after.forest_trees().count() > 0);
+    assert!(
+        before
+            .forest_trees()
+            .all(|tree| after.forest_trees().any(|same| same == tree))
+    );
+    assert!(before.mountain_parts().count() > 0);
+    assert!(before.mountain_parts().all(|part| {
+        after.mountain_parts().any(|same| {
+            part.id == same.id && crate::scene::geometry::distance(part.base, same.base) < 0.001
+        })
+    }));
+    cache.finish_generation(false);
+    assert!(cache.committed_scene() == before);
+    let retried = cache.render(editor.document(), None);
+    assert_eq!(retried.style(), after.style());
+    assert!(retried.shapes().eq(after.shapes()));
+    assert_eq!(editor.document().layers, classic.layers);
+    let reopened: crate::document::Document =
+        serde_json::from_slice(&serde_json::to_vec(editor.document()).unwrap()).unwrap();
+    assert_eq!(&reopened, editor.document());
+    let woodland_svg = crate::scene::to_svg(&reopened);
+    assert_ne!(woodland_svg, classic_svg);
+    assert!(woodland_svg.contains("#777f5c"));
+    editor.undo();
+    assert_eq!(crate::scene::to_svg(editor.document()), classic_svg);
+    editor.redo();
+    assert_eq!(crate::scene::to_svg(editor.document()), woodland_svg);
 }

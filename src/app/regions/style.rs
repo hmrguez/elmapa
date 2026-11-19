@@ -8,7 +8,7 @@ use crate::app::{
 use bevy::{input::keyboard::KeyboardInput, prelude::KeyCode};
 use elmapa::{
     document::{Point, RegionLayer, RegionParent, limits::MAX_LABEL_TEXT_BYTES},
-    scene::territories::{WASHES, pigment},
+    scene::territories::{pigment, washes_for},
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -87,7 +87,7 @@ impl Studio {
         let Some((layer, data, owner)) = self.region_style_target() else {
             return Vec::new();
         };
-        let current = pigment(data, owner);
+        let current = pigment(data, owner, self.editor.document().style);
         let shown = data.styles.get(&owner).and_then(|style| style.label) == Some(true);
         let shades = [
             "Terracotta",
@@ -102,7 +102,7 @@ impl Studio {
         ];
         let mut colors: Vec<_> = shades
             .into_iter()
-            .zip(WASHES)
+            .zip(washes_for(self.editor.document().style))
             .map(|(title, color)| {
                 let mut item = Item::action(title, "", action(StyleAction::UseColor(color)));
                 item.swatch = Some(color);
@@ -160,11 +160,14 @@ impl Studio {
                 self.regions.style.edit(StyleField::Name, name);
             }
             StyleAction::CustomColor => {
-                let color = format!("#{:06X}", pigment(data, owner));
+                let color = format!(
+                    "#{:06X}",
+                    pigment(data, owner, self.editor.document().style)
+                );
                 self.regions.style.edit(StyleField::Color, color);
             }
             StyleAction::UseColor(color) => {
-                if color != pigment(data, owner) {
+                if color != pigment(data, owner, self.editor.document().style) {
                     self.update_region_style(|data, owner| {
                         data.styles.entry(owner).or_default().color = Some(color);
                     });

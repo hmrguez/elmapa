@@ -4,7 +4,7 @@ use super::{
     snapshot::{Batch, RegionSource},
 };
 use crate::{
-    document::{Brush, Layer, Point},
+    document::{AtlasStyle, Brush, Layer, Point},
     scene::{
         Shape,
         builder::relief_order,
@@ -29,6 +29,7 @@ use tiles::TerrainTiles;
 
 #[derive(Clone)]
 pub(super) struct MaterialLayer {
+    style: AtlasStyle,
     pub(super) source: Layer,
     field: Arc<FieldIndex>,
     memory: OnceLock<usize>,
@@ -117,7 +118,14 @@ impl MaterialLayer {
                 .binary_search_by_key(&index, |(i, _)| *i)
                 .ok()?;
             let previous = &mut result.lines[slot].1;
-            *previous = stroke_batches(&opaque, index, previous, &result.field, &mut result.rivers);
+            *previous = stroke_batches(
+                &opaque,
+                index,
+                previous,
+                &result.field,
+                &mut result.rivers,
+                result.style,
+            );
         }
         result.valid &= !crate::scene::generation::is_stopped();
         Some(result)
@@ -145,16 +153,17 @@ impl MaterialLayer {
             + self.placement.bytes()
             + self.field.bytes()
     }
-    pub(super) fn new(source: &Layer) -> Self {
+    pub(super) fn new(source: &Layer, style: AtlasStyle) -> Self {
         let authoritative = source;
         let mut opaque = source.clone();
         opaque.opacity = 1.;
         let source = &opaque;
         let field = Arc::new(FieldIndex::new(source));
-        let terrain = TerrainTiles::new(source, &field);
+        let terrain = TerrainTiles::new(source, &field, style);
         let placement = Arc::new(forest::Placement::new(source));
         let mut rivers = HashMap::new();
         let mut material = Self {
+            style,
             source: authoritative.clone(),
             field: field.clone(),
             memory: OnceLock::new(),
@@ -168,7 +177,12 @@ impl MaterialLayer {
                 .enumerate()
                 .take_while(|_| !crate::scene::generation::stopped())
                 .filter(|(_, s)| matches!(s.brush, Brush::Mountain | Brush::River | Brush::Path))
-                .map(|(i, _)| (i, stroke_batches(source, i, &[], &field, &mut rivers)))
+                .map(|(i, _)| {
+                    (
+                        i,
+                        stroke_batches(source, i, &[], &field, &mut rivers, style),
+                    )
+                })
                 .collect(),
             rivers,
         };
@@ -304,26 +318,13 @@ impl MaterialLayer {
     }
 }
 
-#[cfg(test)]
-pub(in crate::scene) fn build_terrain(layer: &Layer) -> Vec<Shape> {
-    let terrain = TerrainTiles::new(layer, &FieldIndex::new(layer));
-    (0..REGIONS.len())
-        .rev()
-        .flat_map(|index| terrain.regions(index).flat_map(|(_, tile)| &tile.batches))
-        .flat_map(|batch| batch.iter().cloned())
-        .map(|mut shape| {
-            *shape.opacity_mut() *= layer.opacity;
-            shape
-        })
-        .collect()
-}
-
 fn stroke_batches(
     layer: &Layer,
     index: usize,
     previous: &[Batch],
     field: &Arc<FieldIndex>,
     rivers: &mut HashMap<usize, Arc<crate::scene::RiverReach>>,
+    style: AtlasStyle,
 ) -> Vec<Batch> {
     crate::scene::work::update(|work| work.line_strokes += 1);
     let stroke = &layer.strokes[index];
@@ -332,7 +333,7 @@ fn stroke_batches(
             rivers.remove(&(Arc::as_ptr(batch) as usize));
         }
         return crate::scene::terrain::field::with_index(layer, field.clone(), || {
-            crate::scene::terrain::rivers::river_batches(layer, index, stroke)
+            crate::scene::terrain::rivers::river_batches(layer, index, stroke, style)
                 .into_iter()
                 .enumerate()
                 .map(|(i, batch)| {
@@ -349,12 +350,12 @@ fn stroke_batches(
     }
     let chunks = crate::scene::terrain::field::with_index(layer, field.clone(), || {
         if stroke.brush == Brush::Mountain {
-            mountain_chunks(layer, index, stroke)
+            mountain_chunks(layer, index, stroke, style)
                 .into_iter()
                 .flatten()
                 .collect()
         } else {
-            crate::scene::terrain::linear::linear_chunks(layer, index, stroke)
+            crate::scene::terrain::linear::linear_chunks(layer, index, stroke, style)
         }
     });
     chunks

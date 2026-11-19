@@ -33,6 +33,7 @@ impl LiveMaterial {
             distance: LiveDistance::default(),
             material: MaterialLayer {
                 source,
+                style: base.style,
                 field: base.field.clone(),
                 memory: OnceLock::new(),
                 valid: base.valid,
@@ -128,6 +129,7 @@ impl LiveMaterial {
                                 shapes,
                                 &self.material.field,
                                 &mut self.material.rivers,
+                                base.style,
                             )
                         } else {
                             shapes.clone()
@@ -154,6 +156,7 @@ impl LiveMaterial {
                     &previous,
                     &self.material.field,
                     &mut self.material.rivers,
+                    base.style,
                 ),
             ));
         }

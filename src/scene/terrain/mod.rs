@@ -13,6 +13,6 @@ pub(super) const SEA: u32 = 0xe6e5d3;
 pub(super) const LAND: u32 = 0xf4ecd5;
 
 #[cfg(test)]
-pub(super) use {contours::contours, field::region_field, linear::linear_stroke};
+pub(super) use {contours::contours, field::region_field};
 
 pub(in crate::scene) mod field_index;

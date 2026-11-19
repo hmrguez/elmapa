@@ -5,6 +5,7 @@ mod forest_animation;
 mod geometry;
 mod mountain_animation;
 mod noise;
+mod palette;
 mod paper;
 mod path_animation;
 mod render;
@@ -46,8 +47,8 @@ pub use labels::{label_caret, label_font_bytes, label_shapes};
 mod landmarks;
 pub use landmarks::{
     LandmarkBatch, LandmarkDefinition, LandmarkMotion, LandmarkPart, LandmarkStep,
-    landmark_batches, landmark_bounds, landmark_definition, landmark_pose, landmark_registry,
-    landmark_svg,
+    landmark_batches, landmark_batches_in, landmark_bounds, landmark_definition, landmark_pose,
+    landmark_registry, landmark_svg,
 };
 
 mod landmark_packs;

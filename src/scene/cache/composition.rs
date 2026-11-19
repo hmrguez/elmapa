@@ -6,10 +6,10 @@ use super::{
     territories::Territories,
 };
 use crate::{
-    document::{Document, Label, Landmark, Layer},
+    document::{AtlasStyle, Document, Label, Landmark, Layer},
     scene::{
         ForestTree, LandmarkBatch, LandmarkPart, MountainPart, PathPart, RiverReach, generation,
-        label_shapes, landmark_batches, territories::Shoreline,
+        label_shapes, landmark_batches_in, territories::Shoreline,
     },
 };
 use std::{collections::HashMap, sync::Arc};
@@ -88,6 +88,7 @@ impl Composition {
         layer: &Layer,
         cache: &AnnotationCache,
         source: &mut AnnotationSource<'_>,
+        style: AtlasStyle,
     ) {
         for landmark in &layer.landmarks {
             let parts = cache
@@ -95,7 +96,7 @@ impl Composition {
                 .iter()
                 .find(|(old, _)| old == landmark)
                 .map(|(_, parts)| parts.clone())
-                .unwrap_or_else(|| landmark_batches(landmark));
+                .unwrap_or_else(|| landmark_batches_in(landmark, style));
             for batch in &parts {
                 if !source.admits(&batch.shapes) {
                     break;
@@ -115,7 +116,16 @@ impl Composition {
                 .iter()
                 .find(|(old, _)| old == label)
                 .map(|(_, batch)| batch.clone())
-                .unwrap_or_else(|| label_shapes(label));
+                .unwrap_or_else(|| {
+                    let mut glyphs = label_shapes(label);
+                    if !style.is_classic() {
+                        super::super::palette::recolor(
+                            Arc::make_mut(&mut glyphs).as_mut_slice(),
+                            |_| label.ink.color_in(style),
+                        );
+                    }
+                    glyphs
+                });
             if !source.admits(&batch) {
                 break;
             }
@@ -128,8 +138,9 @@ impl Composition {
         }
     }
 
-    fn finish(self, shoreline: Arc<Shoreline>) -> Scene {
+    fn finish(self, style: AtlasStyle, shoreline: Arc<Shoreline>) -> Scene {
         Scene {
+            style,
             batches: Arc::new(self.batches),
             trees: Arc::new(self.trees),
             mountains: Arc::new(self.mountains),
@@ -147,6 +158,7 @@ impl Composition {
 }
 
 pub(super) fn compose<'a>(
+    style: AtlasStyle,
     materials: impl Iterator<Item = &'a MaterialLayer> + Clone,
     cache: &AnnotationCache,
     mut source: AnnotationSource<'_>,
@@ -161,7 +173,7 @@ pub(super) fn compose<'a>(
     {
         composition.terrain(material);
         if let Some(layer) = source.layer(&material.source) {
-            if let Some((batch, view)) = territories.render(layer, |id| {
+            if let Some((batch, view)) = territories.render(layer, style, |id| {
                 let material = materials
                     .clone()
                     .find(|material| material.source.id == id)?;
@@ -176,10 +188,10 @@ pub(super) fn compose<'a>(
                     ),
                 );
             }
-            composition.annotations(layer, cache, &mut source);
+            composition.annotations(layer, cache, &mut source, style);
         }
     }
-    let mut scene = composition.finish(territories.shore.clone());
+    let mut scene = composition.finish(style, territories.shore.clone());
     territories.retain(&scene);
     junctions.apply(&mut scene, materials);
     scene.order_paths_between_rivers_and_relief();

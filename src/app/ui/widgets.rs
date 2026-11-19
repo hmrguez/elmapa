@@ -2,7 +2,10 @@
 use super::{Hit, assets::UiAssets, editor::MenuArrow, feedback::Hover};
 use crate::app::state::Action;
 use bevy::prelude::*;
-use elmapa::{brush_materials, document::Brush};
+use elmapa::{
+    brush_materials,
+    document::{AtlasStyle, Brush},
+};
 
 pub fn color(hex: u32, alpha: f32) -> Color {
     Color::linear_rgba(
@@ -35,12 +38,12 @@ impl Palette {
             }
         } else {
             Self {
-                surface: 0xf9faf4,
-                text: 0x303e33,
-                muted: 0x7a8577,
-                line: 0xd9dfd1,
-                accent: 0x4f6b43,
-                wash: 0xe2ead8,
+                surface: 0xf8f6ed,
+                text: 0x35382d,
+                muted: 0x676e5e,
+                line: 0xdbd8c7,
+                accent: 0x4f6241,
+                wash: 0xe1e6d3,
             }
         }
     }
@@ -51,11 +54,11 @@ impl Palette {
         } else {
             Self {
                 surface: 0xffffff,
-                text: 0x263f50,
-                muted: 0x3d5e70,
+                text: 0x304742,
+                muted: 0x536d64,
                 line: 0xffffff,
-                accent: 0x66a8c4,
-                wash: 0x99c8dc,
+                accent: 0x547971,
+                wash: 0xafc7bb,
             }
         }
     }
@@ -103,6 +106,7 @@ pub(super) struct Builder<'a, 'w, 's> {
     pub(super) assets: &'a UiAssets,
     pub(super) p: Palette,
     order: u32,
+    pub(super) atlas_style: AtlasStyle,
 }
 impl<'a, 'w, 's> Builder<'a, 'w, 's> {
     pub(super) fn new(
@@ -115,6 +119,7 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             assets,
             p,
             order: 0,
+            atlas_style: AtlasStyle::Classic,
         }
     }
 
@@ -220,7 +225,8 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
         id
     }
     pub(super) fn material_swatch(&mut self, parent: Entity, index: usize, size: f32) -> Entity {
-        let material = &brush_materials::catalog()[index];
+        let index = brush_materials::artwork_index(index, self.atlas_style);
+        let material = &brush_materials::artwork_catalog()[index];
         let image = self.assets.brush_swatches.get(&index).cloned();
         let sheet = material.sprites;
         if material.brush != Brush::Forest && sheet.is_none() {

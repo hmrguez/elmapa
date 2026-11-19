@@ -16,7 +16,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, menu_progress: f3
                 position_type: PositionType::Absolute,
                 top: px(78.),
                 right: px(20.),
-                width: px(180.),
+                width: px(214.),
                 ..column(0.)
             },
             16.,
@@ -29,6 +29,15 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, menu_progress: f3
             ("save", "Save", Action::Save),
             ("folder-open", "Open", Action::Open),
             ("export-svg", "Export SVG", Action::Export),
+            (
+                "atlas",
+                if s.editor.document().style.is_classic() {
+                    "Use woodland palette"
+                } else {
+                    "Use classic palette"
+                },
+                Action::AtlasStyle,
+            ),
             ("redo", "Replay this view", Action::ReplayView),
             ("world-new", "New world", Action::Blank),
             ("world-example", "Example world", Action::Demo),

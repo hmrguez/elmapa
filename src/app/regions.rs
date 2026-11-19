@@ -369,7 +369,13 @@ impl Studio {
         let source = self
             .regions_layer()
             .and_then(|layer| layer.territories.as_deref());
-        match SplitDraft::new(selection, source, count, child) {
+        match SplitDraft::new(
+            selection,
+            source,
+            count,
+            child,
+            self.editor.document().style,
+        ) {
             Ok(draft) => {
                 self.regions.split = Some(draft);
                 self.regions.mode = Mode::Split;

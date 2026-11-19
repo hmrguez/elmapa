@@ -35,7 +35,7 @@ pub(super) fn build(
     let (a, c, d) = if dark {
         (0x121212, p.surface, 0x1a1a1a)
     } else {
-        (0xe5eff5, 0xf4f7f5, 0xdcebed)
+        (0xe7eee6, 0xf5f4e9, 0xd8e5da)
     };
     let background = b.node(
         root,
@@ -266,11 +266,11 @@ pub(super) fn build(
                 },
             );
             b.commands.entity(arrow).insert((
-                BackgroundColor(color(if dark { p.wash } else { 0x85b9cc }, 0.19)),
+                BackgroundColor(color(if dark { p.wash } else { 0x8fb4a5 }, 0.19)),
                 HoverFollow {
                     parent: card,
-                    from: color(if dark { p.wash } else { 0x85b9cc }, 0.19),
-                    to: color(if dark { p.wash } else { 0x85b9cc }, 0.31),
+                    from: color(if dark { p.wash } else { 0x8fb4a5 }, 0.19),
+                    to: color(if dark { p.wash } else { 0x8fb4a5 }, 0.31),
                 },
             ));
             b.icon(arrow, "chevron-right", ink, 17.);

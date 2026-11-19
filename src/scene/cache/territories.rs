@@ -5,7 +5,7 @@ use super::{
     snapshot::Batch,
 };
 use crate::{
-    document::{Layer, RegionLayer},
+    document::{AtlasStyle, Layer, RegionLayer},
     scene::territories::{RegionView, Shoreline},
 };
 use std::{collections::HashMap, sync::Arc};
@@ -67,6 +67,7 @@ impl Territories {
     pub(super) fn render<'a>(
         &mut self,
         layer: &Layer,
+        style: AtlasStyle,
         lookup: impl Fn(u64) -> Option<&'a Arc<RegionLayer>>,
     ) -> Option<(Batch, Arc<RegionView>)> {
         let source = layer.territories.as_ref()?;
@@ -84,7 +85,7 @@ impl Territories {
         }
         let shore = Shoreline::scoped(&self.shore, &ancestors)?;
         let view = Arc::new(RegionView::resolve(source, &shore)?);
-        let batch = Arc::new(view.shapes(&shore, source));
+        let batch = Arc::new(view.shapes(&shore, source, style));
         if crate::scene::generation::stopped() {
             return None;
         }

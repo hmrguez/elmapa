@@ -4,7 +4,8 @@
       "id": "parchment",
       "brush": "land",
       "name": "Parchment",
-      "color": "#f4ecd5"
+      "color": "#f4ecd5",
+      "woodland_color": "#f3e8cd"
     },
     {
       "id": "ochre-sands",
@@ -13,7 +14,8 @@
       "color": "#e9dfc5",
       "texture": "ochre-sands.png",
       "tile_size": 240,
-      "source": "https://polyhaven.com/a/sand_01"
+      "source": "https://polyhaven.com/a/sand_01",
+      "woodland_color": "#e6d4ad"
     },
     {
       "id": "lichen-heath",
@@ -22,7 +24,8 @@
       "color": "#e1d6bd",
       "texture": "lichen-heath.png",
       "tile_size": 224,
-      "source": "https://polyhaven.com/a/forrest_ground_01"
+      "source": "https://polyhaven.com/a/forrest_ground_01",
+      "woodland_color": "#d5cba9"
     },
     {
       "id": "weathered-shale",
@@ -31,7 +34,8 @@
       "color": "#d6cbb4",
       "texture": "weathered-shale.png",
       "tile_size": 208,
-      "source": "https://polyhaven.com/a/dry_ground_rocks"
+      "source": "https://polyhaven.com/a/dry_ground_rocks",
+      "woodland_color": "#c8bba0"
     },
     {
       "id": "ocean",
@@ -39,7 +43,9 @@
       "name": "Ocean",
       "color": "#b5b3a8",
       "texture": "ocean.png",
-      "tile_size": 264
+      "tile_size": 264,
+      "woodland_color": "#90a9a2",
+      "woodland_shoreline_ink": "#5e7977"
     },
     {
       "id": "shallow-ocean",
@@ -47,7 +53,9 @@
       "name": "Shallow Ocean",
       "color": "#e0dac5",
       "texture": "shallow-ocean.png",
-      "tile_size": 242
+      "tile_size": 242,
+      "woodland_color": "#b3c3b6",
+      "woodland_shoreline_ink": "#5e7977"
     },
     {
       "id": "lake",
@@ -56,33 +64,39 @@
       "color": "#ccc9ba",
       "texture": "lake.png",
       "tile_size": 236,
-      "shoreline_ink": "#897e69"
+      "shoreline_ink": "#897e69",
+      "woodland_color": "#a4b9b1",
+      "woodland_shoreline_ink": "#5e7977"
     },
     {
       "id": "mixed-woodland",
       "brush": "forest",
       "name": "Mixed Woodland",
-      "color": "#e5d6b5"
+      "color": "#e5d6b5",
+      "woodland_color": "#858d67"
     },
     {
       "id": "fir-grove",
       "brush": "forest",
       "name": "Fir Grove",
       "color": "#e5d6b5",
-      "forest": "fir"
+      "forest": "fir",
+      "woodland_color": "#737f5c"
     },
     {
       "id": "oak-grove",
       "brush": "forest",
       "name": "Oak Grove",
       "color": "#e5d6b5",
-      "forest": "oak"
+      "forest": "oak",
+      "woodland_color": "#969a70"
     },
     {
       "id": "engraved-peaks",
       "brush": "mountain",
       "name": "Engraved Peaks",
-      "color": "#e9dfc2"
+      "color": "#e9dfc2",
+      "woodland_color": "#c9b396"
     },
     {
       "id": "alpine-crags",
@@ -90,7 +104,8 @@
       "name": "Alpine Crags",
       "color": "#eee3ca",
       "texture": "alpine-crags.png",
-      "sprite_frames": 2
+      "sprite_frames": 2,
+      "woodland_color": "#d6c9ae"
     },
     {
       "id": "ochre-escarpments",
@@ -98,7 +113,8 @@
       "name": "Ochre Escarpments",
       "color": "#e1c39a",
       "texture": "ochre-escarpments.png",
-      "sprite_frames": 2
+      "sprite_frames": 2,
+      "woodland_color": "#c1a17c"
     },
     {
       "id": "weathered-highlands",
@@ -106,7 +122,8 @@
       "name": "Weathered Highlands",
       "color": "#d9cfb6",
       "texture": "weathered-highlands.png",
-      "sprite_frames": 2
+      "sprite_frames": 2,
+      "woodland_color": "#bbae96"
     }
   ]
 }

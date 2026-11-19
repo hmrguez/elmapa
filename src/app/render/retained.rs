@@ -82,6 +82,9 @@ pub fn sync(
     if studio.home || !studio.scene.needs_sync() {
         return;
     }
+    if !canvas.forest_atlas.matches(studio.scene.snapshot().style()) {
+        return;
+    }
     let Some(forest_material) = canvas.forest_atlas.material().cloned() else {
         return;
     };

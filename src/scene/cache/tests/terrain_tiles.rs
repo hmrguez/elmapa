@@ -57,6 +57,7 @@ fn textured_fill_and_shoreline_cross_a_tile_boundary() {
     };
 
     let mut doc = Document::blank();
+    doc.style = crate::document::AtlasStyle::Classic;
     let mut land = stroke(Brush::Land);
     land.size = 300.;
     land.material = Some("ochre-sands".into());
@@ -82,7 +83,7 @@ fn textured_fill_and_shoreline_cross_a_tile_boundary() {
                 };
                 (rings.iter().filter(|ring| contains(ring, point)).count() % 2 == 1).then_some((
                     fill,
-                    material.map(|id| brush_materials::catalog()[id].id.as_str()),
+                    material.map(|id| brush_materials::artwork_catalog()[id].id.as_str()),
                 ))
             })
             .collect::<Vec<_>>()

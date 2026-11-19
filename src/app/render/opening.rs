@@ -36,7 +36,7 @@ pub fn opening(
             commands.entity(old.image).despawn();
             commands.entity(old.cover).despawn();
         }
-        clear.0 = color(0xe6e5d3, 1.);
+        clear.0 = color(studio.editor.document().style.paper(), 1.);
         return;
     };
     clear.0 = color(if studio.dark { 0x171717 } else { 0xeceee7 }, 1.);
@@ -72,7 +72,7 @@ pub fn opening(
         color: if studio.opening_image.is_some() {
             Color::WHITE
         } else {
-            color(0xe6e5d3, 1.)
+            color(studio.editor.document().style.paper(), 1.)
         },
         ..default()
     };
@@ -94,10 +94,10 @@ pub fn opening(
         let p = view.map_point(p);
         [p.x, -p.y, 0.]
     });
-    let rgba = color(0xdce9e8, 0.9 * (1. - fold))
+    let rgba = color(0xdce9df, 0.9 * (1. - fold))
         .to_linear()
         .to_f32_array();
-    let hinge = color(0x213f4d, 0.22 * (1. - fold))
+    let hinge = color(0x304742, 0.22 * (1. - fold))
         .to_linear()
         .to_f32_array();
     let mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::all())

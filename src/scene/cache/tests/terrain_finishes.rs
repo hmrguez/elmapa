@@ -26,7 +26,7 @@ fn land_materials_follow_paint_order_and_erasure_in_live_and_cold_scenes() {
                     .iter()
                     .filter(|ring| contains(ring, Point::new(x, 390.)))
                     .count();
-                (inside % 2 == 1).then_some(brush_materials::catalog()[*index].id.as_str())
+                (inside % 2 == 1).then_some(brush_materials::artwork_catalog()[*index].id.as_str())
             })
             .collect::<Vec<_>>()
     };
@@ -94,6 +94,7 @@ fn water_finishes_survive_overlap_erasing_history_and_round_trips() {
 
     let center = Point::new(520., 390.);
     let mut editor = Editor::blank();
+    editor.set_atlas_style(crate::document::AtlasStyle::Classic);
     let id = editor.active_layer();
     let mut cache = SceneCache::default();
     let mut paint = |editor: &mut Editor, brush, material: Option<&str>, size| {
@@ -143,7 +144,7 @@ fn water_finishes_survive_overlap_erasing_history_and_round_trips() {
                     return None;
                 };
                 let inside = contours.iter().filter(|ring| contains(ring, q)).count() % 2 == 1;
-                inside.then_some(brush_materials::catalog()[*index].id.as_str())
+                inside.then_some(brush_materials::artwork_catalog()[*index].id.as_str())
             })
             .collect::<Vec<_>>()
     };
@@ -215,6 +216,7 @@ fn water_cuts_a_shared_shoreline_live_and_later_land_reclaims_it() {
     }
 
     let mut doc = Document::blank();
+    doc.style = crate::document::AtlasStyle::Classic;
     let id = doc.layers[0].id;
     let mut land = stroke(Brush::Land);
     land.size = 270.;
@@ -240,7 +242,7 @@ fn water_cuts_a_shared_shoreline_live_and_later_land_reclaims_it() {
                     ..
                 } if contours.iter().filter(|ring| contains(ring, q)).count() % 2 == 1 => Some((
                     *fill,
-                    material.map(|i| brush_materials::catalog()[i].id.as_str()),
+                    material.map(|i| brush_materials::artwork_catalog()[i].id.as_str()),
                 )),
                 _ => None,
             })

@@ -260,6 +260,13 @@ pub(super) fn parse_artwork(svg: &str, parts: &[LandmarkStep]) -> Result<Artwork
     })
 }
 pub fn landmark_batches(landmark: &Landmark) -> Vec<LandmarkBatch> {
+    landmark_batches_in(landmark, crate::document::AtlasStyle::Classic)
+}
+
+pub fn landmark_batches_in(
+    landmark: &Landmark,
+    style: crate::document::AtlasStyle,
+) -> Vec<LandmarkBatch> {
     let ordinal = landmark_catalog().ordinal(&landmark.kind);
     let def = landmark_definition(&landmark.kind);
     let scale = landmark.size / def.width;
@@ -295,7 +302,11 @@ pub fn landmark_batches(landmark: &Landmark) -> Vec<LandmarkBatch> {
                             };
                             Shape::Polygon {
                                 points: points.iter().copied().map(world).collect(),
-                                fill: *fill,
+                                fill: if style.is_classic() {
+                                    *fill
+                                } else {
+                                    super::palette::landmark(*fill)
+                                },
                                 opacity: *opacity,
                             }
                         })

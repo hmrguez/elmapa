@@ -1,12 +1,11 @@
 //! Resolve land, water and shoreline artwork with an apron around each tile.
 use super::{
-    LAND, SEA,
     contours::RegionGrid,
     materials::{self, Contours, Masks},
 };
 use crate::{
-    document::{Brush, ContentBounds},
-    scene::{Shape, generation, geometry::softened},
+    document::{AtlasStyle, Brush, ContentBounds},
+    scene::{Shape, generation, geometry::softened, palette},
 };
 use i_overlay::{
     core::{fill_rule::FillRule, overlay_rule::OverlayRule},
@@ -22,6 +21,16 @@ use std::sync::Arc;
 pub(in crate::scene) const SHORE_INK: u32 = 0x777d65;
 pub(in crate::scene) const SHORE_WASH: [(f64, u32, f32); 2] =
     [(17., 0xaaba9e, 0.28), (8., 0xf5ecd0, 0.62)];
+
+pub(in crate::scene) fn pigments(style: AtlasStyle) -> (u32, [(f64, u32, f32); 2]) {
+    match style {
+        AtlasStyle::Classic => (SHORE_INK, SHORE_WASH),
+        AtlasStyle::Woodland => (
+            palette::SHORE,
+            [(17., 0x879f94, 0.25), (8., 0xe7e6cb, 0.58)],
+        ),
+    }
+}
 
 pub(in crate::scene) fn contours(grid: &RegionGrid) -> Contours {
     grid.contours_ref()
@@ -41,6 +50,7 @@ pub(in crate::scene) fn build(
     masks: &Masks,
     coast: Option<&Arc<RegionGrid>>,
     bounds: ContentBounds,
+    style: AtlasStyle,
 ) -> (Contours, Vec<Vec<Shape>>) {
     let subject = contours(grid);
     if subject.is_empty() || generation::stopped() {
@@ -54,12 +64,17 @@ pub(in crate::scene) fn build(
         return (Vec::new(), Vec::new());
     }
 
-    let fallback = if brush == Brush::Land { LAND } else { SEA };
+    let fallback = if brush == Brush::Land {
+        palette::land(style)
+    } else {
+        palette::water(style)
+    };
+    let (shore_ink, shore_wash) = pigments(style);
     let (finishes, mut details) = materials::partition(&regions, masks, fallback);
     let surface: Contours = regions.into_iter().flatten().collect();
     let frame = rectangle(bounds);
     if brush == Brush::Land {
-        for (width, color, opacity) in SHORE_WASH {
+        for (width, color, opacity) in shore_wash {
             if generation::stopped() {
                 break;
             }
@@ -82,7 +97,7 @@ pub(in crate::scene) fn build(
             .into_iter()
             .flatten()
             .collect();
-        materials::surface(&mut details, ink, None, SHORE_INK, 0.78);
+        materials::surface(&mut details, ink, None, shore_ink, 0.78);
     }
     let finishes = finishes.into_iter().filter_map(|shape| {
         let mut batch = Vec::new();

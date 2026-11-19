@@ -10,11 +10,19 @@ use crate::{
 use std::sync::OnceLock;
 use usvg::{Node, Paint, tiny_skia_path::PathSegment};
 
-pub(super) fn specimens() -> &'static [Vec<Shape>; super::FOREST_SPECIMEN_COUNT] {
+pub(super) fn specimens(
+    style: crate::document::AtlasStyle,
+) -> &'static [Vec<Shape>; super::FOREST_SPECIMEN_COUNT] {
     static SPECIMENS: OnceLock<[Vec<Shape>; super::FOREST_SPECIMEN_COUNT]> = OnceLock::new();
-    SPECIMENS.get_or_init(|| {
+    static WOODLAND: OnceLock<[Vec<Shape>; super::FOREST_SPECIMEN_COUNT]> = OnceLock::new();
+    let specimens = if style.is_classic() {
+        &SPECIMENS
+    } else {
+        &WOODLAND
+    };
+    specimens.get_or_init(|| {
         std::array::from_fn(|variant| {
-            let tree = super::forest_specimen_tree(variant);
+            let tree = super::forest_specimen_tree(variant, style);
             let mut shapes = Vec::new();
             visit(tree.root(), 1., &mut shapes);
             // usvg resolves the root viewBox to positive viewport coordinates.

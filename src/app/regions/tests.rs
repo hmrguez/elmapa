@@ -137,14 +137,14 @@ fn style_edits_belong_to_the_owner_and_survive_round_trip_and_split() {
     assert_eq!(data.styles[&owner].label, Some(true));
     assert_eq!(data.styles[&owner].color, Some(0x3d8476));
     let view = RegionView::resolve(data, &shore).unwrap();
-    let washes = view.washes(&shore, data);
+    let washes = view.washes(&shore, data, elmapa::document::AtlasStyle::Classic);
     assert_eq!(washes.len(), 2);
     assert!(
         washes
             .iter()
             .all(|shape| matches!(shape, Shape::Polygon { fill: 0x3d8476, .. }))
     );
-    let ink = view.shapes(&shore, data);
+    let ink = view.shapes(&shore, data, elmapa::document::AtlasStyle::Classic);
     assert!(ink.len() > washes.len());
     assert!(
         ink[washes.len()..]
@@ -161,7 +161,11 @@ fn style_edits_belong_to_the_owner_and_survive_round_trip_and_split() {
 
     studio.region_action(style(StyleAction::ToggleLabel));
     let (_, data, _) = studio.region_style_target().unwrap();
-    assert_eq!(view.shapes(&shore, data).len(), washes.len());
+    assert_eq!(
+        view.shapes(&shore, data, elmapa::document::AtlasStyle::Classic)
+            .len(),
+        washes.len()
+    );
     assert!(studio.editor.undo());
     studio.region_action(RegionAction::Split);
     assert!(

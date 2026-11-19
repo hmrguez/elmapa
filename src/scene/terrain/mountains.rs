@@ -1,4 +1,6 @@
 //! Original pen-and-wash peaks inspired by pictorial relief in early atlases.
+mod woodland;
+
 use super::super::{
     Shape,
     geometry::{distance, p},
@@ -8,7 +10,7 @@ use super::super::{
 use super::field::erased;
 use crate::{
     brush_materials,
-    document::{Brush, Layer, Point, Stroke},
+    document::{AtlasStyle, Brush, Layer, Point, Stroke},
 };
 
 pub(in crate::scene) fn mountain_base(left_flank: &[Shape]) -> Option<Point> {
@@ -91,6 +93,7 @@ pub(in crate::scene) fn mountain_chunks(
     layer: &Layer,
     index: usize,
     stroke: &Stroke,
+    style: AtlasStyle,
 ) -> Vec<[Vec<Shape>; 2]> {
     if stroke.strength <= 0. {
         return Vec::new();
@@ -118,6 +121,7 @@ pub(in crate::scene) fn mountain_chunks(
         });
         let removed = erased(center, layer, after);
         if let Some((material, sheet)) = sprites {
+            let material = brush_materials::artwork_index(material, style);
             if removed {
                 chunks.push([Vec::new(), Vec::new()]);
                 continue;
@@ -145,6 +149,14 @@ pub(in crate::scene) fn mountain_chunks(
             };
             // Retain the ordinal pair used by the depth and uplift caches.
             chunks.push([vec![sprite], Vec::new()]);
+            continue;
+        }
+        if style == AtlasStyle::Woodland {
+            chunks.push(if removed {
+                [Vec::new(), Vec::new()]
+            } else {
+                woodland::peak(center, stroke.size, seed, alpha, shade)
+            });
             continue;
         }
         let w = stroke.size * (1.00 + h(1) * 0.24);
@@ -343,45 +355,51 @@ mod tests {
         let mut doc = Document::blank();
         let mut s = stroke();
         doc.layers[0].strokes.push(s.clone());
-        let click = mountain_chunks(&doc.layers[0], 0, &s);
+        let click = mountain_chunks(&doc.layers[0], 0, &s, AtlasStyle::Classic);
         assert_eq!(click.len(), 1);
         s.points = vec![p(100., 100.), p(210., 100.)].into();
         doc.layers[0].strokes[0] = s.clone();
-        let extended = mountain_chunks(&doc.layers[0], 0, &s);
+        let extended = mountain_chunks(&doc.layers[0], 0, &s, AtlasStyle::Classic);
         assert_eq!(click, extended[..1]);
         let mut eraser = stroke();
         eraser.brush = Brush::Erase;
         eraser.size = 30.;
         eraser.strength = 1.;
         doc.layers[0].strokes.push(eraser.clone());
-        let erased = mountain_chunks(&doc.layers[0], 0, &s);
+        let erased = mountain_chunks(&doc.layers[0], 0, &s, AtlasStyle::Classic);
         assert!(erased[0].iter().all(Vec::is_empty));
         assert_eq!(erased[1..], extended[1..]);
         doc.layers[0].strokes = vec![eraser, s.clone()].into();
-        assert_eq!(mountain_chunks(&doc.layers[0], 1, &s), extended);
+        assert_eq!(
+            mountain_chunks(&doc.layers[0], 1, &s, AtlasStyle::Classic),
+            extended
+        );
     }
     #[test]
     fn textured_peaks_keep_their_frames_and_ground_anchors_after_extension_and_erasure() {
         let mut doc = Document::blank();
         let mut s = stroke();
-        let fallback = mountain_chunks(&doc.layers[0], 0, &s);
+        let fallback = mountain_chunks(&doc.layers[0], 0, &s, AtlasStyle::Classic);
         s.material = Some("missing-mountain-finish".into());
-        assert_eq!(mountain_chunks(&doc.layers[0], 0, &s), fallback);
+        assert_eq!(
+            mountain_chunks(&doc.layers[0], 0, &s, AtlasStyle::Classic),
+            fallback
+        );
 
         s.material = Some("alpine-crags".into());
-        let click = mountain_chunks(&doc.layers[0], 0, &s);
+        let click = mountain_chunks(&doc.layers[0], 0, &s, AtlasStyle::Classic);
         assert!(matches!(click[0][0].as_slice(), [Shape::Sprite { .. }]));
         assert_eq!(mountain_base(&click[0][0]), Some(s.points[0]));
         s.points = vec![p(100., 100.), p(257., 121.)].into();
         doc.layers[0].strokes.push(s.clone());
-        let ridgeline = mountain_chunks(&doc.layers[0], 0, &s);
+        let ridgeline = mountain_chunks(&doc.layers[0], 0, &s, AtlasStyle::Classic);
         assert_eq!(click, ridgeline[..1]);
         let mut eraser = stroke();
         eraser.brush = Brush::Erase;
         eraser.size = 30.;
         eraser.strength = 1.;
         doc.layers[0].strokes.push(eraser);
-        let erased = mountain_chunks(&doc.layers[0], 0, &s);
+        let erased = mountain_chunks(&doc.layers[0], 0, &s, AtlasStyle::Classic);
         assert!(erased[0].iter().all(Vec::is_empty));
         assert_eq!(erased[1..], ridgeline[1..]);
     }
@@ -395,7 +413,7 @@ mod tests {
                 s.size = size;
                 s.seed = seed;
                 let frame = s.bounds().unwrap();
-                for shape in mountain_chunks(&doc.layers[0], 0, &s)
+                for shape in mountain_chunks(&doc.layers[0], 0, &s, AtlasStyle::Classic)
                     .into_iter()
                     .flatten()
                     .flatten()
@@ -416,7 +434,7 @@ mod tests {
     fn pigments_are_parchment_only_and_zero_strength_is_empty() {
         let doc = Document::blank();
         let mut s = stroke();
-        for shape in mountain_chunks(&doc.layers[0], 0, &s)
+        for shape in mountain_chunks(&doc.layers[0], 0, &s, AtlasStyle::Classic)
             .into_iter()
             .flatten()
             .flatten()
@@ -431,6 +449,6 @@ mod tests {
             assert!((c >> 16) > ((c >> 8) & 255) && ((c >> 8) & 255) > (c & 255));
         }
         s.strength = 0.;
-        assert!(mountain_chunks(&doc.layers[0], 0, &s).is_empty());
+        assert!(mountain_chunks(&doc.layers[0], 0, &s, AtlasStyle::Classic).is_empty());
     }
 }

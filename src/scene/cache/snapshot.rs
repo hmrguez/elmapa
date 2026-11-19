@@ -1,6 +1,6 @@
 //! Ordered scene geometry and metadata shared by the renderer and exporters.
 use crate::{
-    document::{Brush, ContentBounds, Label, LinearStrokeId, Point, RegionLayer},
+    document::{AtlasStyle, Brush, ContentBounds, Label, LinearStrokeId, Point, RegionLayer},
     scene::{
         LandmarkPart, MountainPart, PathPart, RiverReach, Shape,
         terrain::forest::{self, ForestTree},
@@ -19,6 +19,7 @@ pub(super) type TerritoryView = (Arc<RegionLayer>, Arc<RegionView>);
 /// Cheaply cloned, ordered material batches shared by successive canvas frames.
 #[derive(Clone, Default)]
 pub struct Scene {
+    pub(super) style: AtlasStyle,
     pub(super) batches: Arc<Vec<Batch>>,
     pub(super) trees: Arc<HashMap<usize, ForestTree>>,
     pub(super) mountains: Arc<HashMap<usize, MountainPart>>,
@@ -35,11 +36,18 @@ pub struct Scene {
 
 impl PartialEq for Scene {
     fn eq(&self, other: &Self) -> bool {
-        self.batches == other.batches && self.trees == other.trees && self.opacity == other.opacity
+        self.style == other.style
+            && self.batches == other.batches
+            && self.trees == other.trees
+            && self.opacity == other.opacity
     }
 }
 
 impl Scene {
+    pub fn style(&self) -> AtlasStyle {
+        self.style
+    }
+
     pub(super) fn order_paths_between_rivers_and_relief(&mut self) {
         if self.paths.is_empty()
             || (self.rivers.is_empty() && self.trees.is_empty() && self.mountains.is_empty())
@@ -219,7 +227,7 @@ impl Scene {
                                     })
                                     .collect()
                             },
-                            forest::tree_shapes,
+                            |tree| forest::tree_shapes(tree, self.style),
                         )
                     })
                     .collect()

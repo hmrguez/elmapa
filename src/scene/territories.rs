@@ -24,12 +24,23 @@ pub const WASHES: [u32; 9] = [
     0xb66948, 0x6e8244, 0x806684, 0x46798a, 0xb19043, 0x876151, 0x598374, 0x9b576b, 0x797d9c,
 ];
 
-pub fn pigment(data: &RegionLayer, owner: usize) -> u32 {
+pub fn washes_for(style: crate::document::AtlasStyle) -> [u32; 9] {
+    if style.is_classic() {
+        WASHES
+    } else {
+        [
+            0xaa785d, 0x818963, 0x918092, 0x718f8a, 0xad935d, 0x927660, 0x7d967f, 0x9f7980,
+            0x7e8894,
+        ]
+    }
+}
+
+pub fn pigment(data: &RegionLayer, owner: usize, style: crate::document::AtlasStyle) -> u32 {
     let palette_offset = if data.parent.is_some() { 3 } else { 0 };
     data.styles
         .get(&owner)
         .and_then(|style| style.color)
-        .unwrap_or(WASHES[(owner + palette_offset) % WASHES.len()])
+        .unwrap_or(washes_for(style)[(owner + palette_offset) % WASHES.len()])
 }
 
 #[derive(Default)]
@@ -256,7 +267,12 @@ impl RegionView {
         Some((face, interior(&piece, 1.)?.1))
     }
 
-    pub fn washes(&self, shore: &Shoreline, data: &RegionLayer) -> Vec<Shape> {
+    pub fn washes(
+        &self,
+        shore: &Shoreline,
+        data: &RegionLayer,
+        style: crate::document::AtlasStyle,
+    ) -> Vec<Shape> {
         let mut shapes = Vec::new();
         for face in &self.faces {
             if generation::stopped() {
@@ -267,22 +283,34 @@ impl RegionView {
                 &mut shapes,
                 land.into_iter().flatten().collect(),
                 None,
-                pigment(data, face.owner),
-                0.30,
+                pigment(data, face.owner, style),
+                if style.is_classic() { 0.30 } else { 0.24 },
             );
         }
         shapes
     }
 
-    pub fn shapes(&self, shore: &Shoreline, data: &RegionLayer) -> Vec<Shape> {
-        let mut shapes = self.washes(shore, data);
+    pub fn shapes(
+        &self,
+        shore: &Shoreline,
+        data: &RegionLayer,
+        style: crate::document::AtlasStyle,
+    ) -> Vec<Shape> {
+        let mut shapes = self.washes(shore, data, style);
+        let border_ink = if style.is_classic() {
+            BORDER_INK
+        } else {
+            super::palette::UMBER
+        };
         for border in &self.borders {
             for span in &border.visible {
-                line(&mut shapes, span.clone(), BORDER_INK, 1.6, 0.89);
+                line(&mut shapes, span.clone(), border_ink, 1.6, 0.89);
             }
         }
         for label in labels::place(self, shore, data) {
+            let start = shapes.len();
             shapes.extend(super::label_shapes(&label).iter().cloned());
+            super::palette::recolor(&mut shapes[start..], |_| label.ink.color_in(style));
         }
         shapes
     }
@@ -530,7 +558,7 @@ mod tests {
         );
         let svg = to_svg(editor.document());
         assert!(
-            svg.contains("#594731"),
+            svg.contains("#5d4b3b"),
             "committed border appears in export"
         );
         let json = serde_json::to_string(editor.document()).unwrap();

@@ -35,7 +35,7 @@ impl Scene {
                     seed: tree.seed,
                 },
                 anchor: tree.center,
-                bounds: tree.bounds(),
+                bounds: tree.bounds(self.style()),
             });
         }
         let peak = self.mountain_part(batch)?;
@@ -64,12 +64,14 @@ impl Scene {
             if !hit.bounds.padded(tolerance).intersects(pick) {
                 return None;
             }
-            let inside = match batch.first() {
-                Some(Shape::Polygon { points, .. }) => contains(points, point),
-                Some(Shape::Sprite { points, .. }) => contains(points, point),
-                _ => self
-                    .forest_tree(batch)
-                    .is_some_and(|tree| tree.contains(point, tolerance)),
+            let inside = if let Some(tree) = self.forest_tree(batch) {
+                tree.contains(point, tolerance, self.style())
+            } else {
+                batch.iter().any(|shape| match shape {
+                    Shape::Polygon { points, .. } => contains(points, point),
+                    Shape::Sprite { points, .. } => contains(points, point),
+                    _ => false,
+                })
             };
             inside.then_some(hit)
         })
