@@ -61,7 +61,9 @@ fn trees_and_mountain_flanks_follow_ground_depth_within_a_layer() {
         let mut upper = doc.layers[0].clone();
         upper.id = 2;
         upper.strokes = vec![stroke(Brush::Mountain)].into();
-        let top = crate::scene::builder::build_layer(&upper);
+        let mut upper_only = doc.clone();
+        upper_only.layers = vec![upper.clone()].into();
+        let top = crate::scene::build_scene(&upper_only);
         doc.layers.push(upper);
         let scene = cache.render(&doc, None);
         let shapes: Vec<_> = scene.shapes().cloned().collect();

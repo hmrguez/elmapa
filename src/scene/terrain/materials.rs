@@ -45,7 +45,7 @@ pub(super) fn partition(
             .into_iter()
             .flatten()
             .collect();
-        if let Some(ink) = brush_materials::catalog()[*material].shoreline_ink {
+        if let Some(ink) = brush_materials::artwork_catalog()[*material].shoreline_ink {
             for region in regions {
                 water_ripples::draw(&mut ripples, region, &textured, ink);
             }

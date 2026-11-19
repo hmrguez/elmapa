@@ -128,9 +128,10 @@ impl<'a> Tree<'a> {
                     ..default()
                 },
             );
-            b.commands
-                .entity(dot)
-                .insert(BackgroundColor(color(pigment(data, owner), 1.)));
+            b.commands.entity(dot).insert(BackgroundColor(color(
+                pigment(data, owner, b.atlas_style),
+                1.,
+            )));
             let title = b.text(item, name, 12., p.text, false);
             b.commands.entity(title).insert(Node {
                 min_width: px(0.),

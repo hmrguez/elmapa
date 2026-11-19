@@ -2,6 +2,7 @@
 mod drawing;
 mod specimens;
 mod vector;
+mod woodland;
 
 use crate::scene::{
     Shape,
@@ -9,7 +10,7 @@ use crate::scene::{
 };
 use crate::{
     brush_materials::{self, ForestStyle},
-    document::{Brush, Layer, Point, Stroke},
+    document::{AtlasStyle, Brush, Layer, Point, Stroke},
 };
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
@@ -25,20 +26,34 @@ pub const FOREST_SPECIMEN_COUNT: usize = OAK.end;
 
 /// Original canopy artwork in coordinates local to the trunk.
 pub fn forest_specimen(variant: usize) -> String {
-    forest_specimen_svg(variant).to_owned()
+    forest_specimen_svg(variant, AtlasStyle::Classic).to_owned()
 }
 
 /// Shared original SVG fragments used by export and both vector/raster adapters.
-pub fn forest_specimen_svg(variant: usize) -> &'static str {
+pub fn forest_specimen_svg(variant: usize, style: AtlasStyle) -> &'static str {
     static SVG: OnceLock<[String; FOREST_SPECIMEN_COUNT]> = OnceLock::new();
-    &SVG.get_or_init(|| std::array::from_fn(specimens::specimen))[variant]
+    static WOODLAND: OnceLock<[String; FOREST_SPECIMEN_COUNT]> = OnceLock::new();
+    match style {
+        AtlasStyle::Classic => {
+            &SVG.get_or_init(|| std::array::from_fn(specimens::specimen))[variant]
+        }
+        AtlasStyle::Woodland => {
+            &WOODLAND.get_or_init(|| std::array::from_fn(woodland::specimen))[variant]
+        }
+    }
 }
 
 /// Parse each original specimen once for the lifetime of the process.
-pub fn forest_specimen_tree(variant: usize) -> &'static usvg::Tree {
+pub fn forest_specimen_tree(variant: usize, style: AtlasStyle) -> &'static usvg::Tree {
     static TREES: OnceLock<[usvg::Tree; FOREST_SPECIMEN_COUNT]> = OnceLock::new();
-    &TREES.get_or_init(|| std::array::from_fn(|variant| {
-        let svg = format!("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\" viewBox=\"-50 -50 100 100\">{}</svg>", forest_specimen_svg(variant));
+    static WOODLAND: OnceLock<[usvg::Tree; FOREST_SPECIMEN_COUNT]> = OnceLock::new();
+    let trees = if style.is_classic() {
+        &TREES
+    } else {
+        &WOODLAND
+    };
+    &trees.get_or_init(|| std::array::from_fn(|variant| {
+        let svg = format!("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\" viewBox=\"-50 -50 100 100\">{}</svg>", forest_specimen_svg(variant, style));
         usvg::Tree::from_str(&svg, &usvg::Options::default()).expect("original tree specimen")
     }))[variant]
 }
@@ -355,7 +370,7 @@ fn dabs(stroke: &Stroke) -> impl Iterator<Item = Point> + '_ {
     stroke.points.first().copied().into_iter().chain(tail)
 }
 
-pub(in crate::scene) fn tree_shapes(tree: &ForestTree) -> Vec<Shape> {
+pub(in crate::scene) fn tree_shapes(tree: &ForestTree, style: AtlasStyle) -> Vec<Shape> {
     let (sin, cos) = tree.rotation.to_radians().sin_cos();
     let transform = |q: Point| {
         p(
@@ -363,7 +378,7 @@ pub(in crate::scene) fn tree_shapes(tree: &ForestTree) -> Vec<Shape> {
             tree.center.y + (q.x * sin + q.y * cos) * tree.scale,
         )
     };
-    vector::specimens()[tree.variant]
+    vector::specimens(style)[tree.variant]
         .iter()
         .map(|shape| match shape {
             Shape::RegionSurface { .. } | Shape::Sprite { .. } => {

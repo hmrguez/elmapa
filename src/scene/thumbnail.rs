@@ -4,7 +4,7 @@ use resvg::tiny_skia::{FilterQuality, Pixmap, PixmapPaint, Transform};
 use std::collections::HashMap;
 
 use crate::{
-    document::{ContentBounds, Document, Point},
+    document::{AtlasStyle, ContentBounds, Document, Point},
     library::Camera,
 };
 pub const WIDTH: u32 = 512;
@@ -41,7 +41,14 @@ pub fn thumbnail_from_scene(scene: &super::Scene, camera: Camera) -> Result<Vec<
                 resvg::render(&tree, transform, &mut pixmap.as_mut());
             }
             PreviewPart::Tree(tree) => {
-                draw_tree(&mut pixmap, &mut specimens, tree, bounds, scale);
+                draw_tree(
+                    &mut pixmap,
+                    &mut specimens,
+                    tree,
+                    bounds,
+                    scale,
+                    scene.style(),
+                );
             }
         }
         Ok(())
@@ -68,6 +75,7 @@ fn draw_tree(
     tree: &ForestTree,
     bounds: ContentBounds,
     scale: f32,
+    style: AtlasStyle,
 ) {
     let extent = ContentBounds {
         min: tree.center,
@@ -81,7 +89,7 @@ fn draw_tree(
     let specimen = specimens.entry((tree.variant, size)).or_insert_with(|| {
         let mut pixmap = Pixmap::new(size, size).expect("bounded specimen pixmap");
         resvg::render(
-            super::forest_specimen_tree(tree.variant),
+            super::forest_specimen_tree(tree.variant, style),
             Transform::from_scale(size as f32 / 100., size as f32 / 100.),
             &mut pixmap.as_mut(),
         );

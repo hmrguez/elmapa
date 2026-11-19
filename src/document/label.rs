@@ -1,5 +1,5 @@
 use super::{
-    ContentBounds, Point,
+    AtlasStyle, ContentBounds, Point,
     limits::{
         MAX_LABEL_CURVATURE, MAX_LABEL_SIZE, MAX_LABEL_SPACING, MAX_LABEL_TEXT_BYTES,
         MIN_LABEL_SIZE, MIN_LABEL_SPACING,
@@ -44,6 +44,18 @@ impl LabelInk {
             Self::Parchment => "Parchment",
         }
     }
+    pub fn color_in(self, style: AtlasStyle) -> u32 {
+        if style.is_classic() {
+            return self.color();
+        }
+        match self {
+            Self::Sepia => 0x5d4b3b,
+            Self::Charcoal => 0x37352d,
+            Self::Blue => 0x3a625e,
+            Self::Parchment => 0xf3e8cd,
+        }
+    }
+
     pub fn color(self) -> u32 {
         match self {
             Self::Sepia => 0x554430,

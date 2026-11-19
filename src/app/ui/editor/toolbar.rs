@@ -182,7 +182,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
             Action::TextStyle,
             s.text.style_open,
         );
-        let ink = b.swatch(choice, style.ink.color(), 9., None);
+        let ink = b.swatch(choice, style.ink.color_in(b.atlas_style), 9., None);
         let sample = b.text(choice, "Aa", 15., p.text, true);
         let font = match style.font {
             elmapa::document::LabelFont::Baskerville => b.assets.baskerville.clone(),

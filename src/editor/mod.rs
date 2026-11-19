@@ -6,7 +6,7 @@ mod layers;
 mod strokes;
 mod territories;
 
-use crate::document::{Document, Layer, Stroke};
+use crate::document::{AtlasStyle, Document, Layer, Stroke};
 use history::Snapshot;
 
 pub struct Editor {
@@ -64,6 +64,13 @@ impl Editor {
         self.recount();
         true
     }
+    pub fn set_atlas_style(&mut self, style: AtlasStyle) {
+        if self.document.style != style {
+            self.checkpoint();
+            self.document.style = style;
+        }
+    }
+
     /// Read-only access keeps all mutations inside undoable editor operations.
     pub fn document(&self) -> &Document {
         &self.document

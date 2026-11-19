@@ -80,6 +80,7 @@ pub enum Action {
     Save,
     Open,
     Export,
+    AtlasStyle,
     Zoom(f32),
     Fit,
     Blank,

@@ -6,7 +6,7 @@ use crate::{
         RiverReach, Shape, generation,
         terrain::{
             materials::{Contours, coordinates, surface},
-            regions::SHORE_INK,
+            regions::pigments,
         },
     },
 };
@@ -139,6 +139,7 @@ impl Junctions {
             }
             self.rivers.insert(key, cut);
         }
+        let shore_ink = pigments(scene.style()).0;
         for batch in scene.batches() {
             if mouths.is_empty() {
                 break;
@@ -146,7 +147,7 @@ impl Junctions {
             let Some((layer, Brush::Land, _)) = scene.region(batch) else {
                 continue;
             };
-            if !batch.iter().any(is_shore_ink) {
+            if !batch.iter().any(|shape| is_shore_ink(shape, shore_ink)) {
                 continue;
             }
             if generation::stopped() {
@@ -177,7 +178,7 @@ impl Junctions {
                 })
                 .unwrap_or_else(|| ShoreCut {
                     source: batch.clone(),
-                    batch: open_shore(batch, &nearby),
+                    batch: open_shore(batch, &nearby, shore_ink),
                     mouths: nearby.into_iter().cloned().collect(),
                 });
             if !Arc::ptr_eq(batch, &cut.batch) {
@@ -384,24 +385,24 @@ fn clip_river(shape: &Shape, mask: &Contours) -> Vec<Shape> {
     out
 }
 
-fn is_shore_ink(shape: &Shape) -> bool {
+fn is_shore_ink(shape: &Shape, ink: u32) -> bool {
     matches!(
         shape,
         Shape::Polygon {
-            fill: SHORE_INK,
+            fill,
             ..
         } | Shape::RegionSurface {
-            fill: SHORE_INK,
+            fill,
             ..
-        }
+        } if *fill == ink
     )
 }
 
-fn open_shore(batch: &Batch, mouths: &[&Arc<Mouth>]) -> Batch {
+fn open_shore(batch: &Batch, mouths: &[&Arc<Mouth>], color: u32) -> Batch {
     let mut changed = false;
     let mut out = Vec::new();
     for shape in batch.iter() {
-        if is_shore_ink(shape) {
+        if is_shore_ink(shape, color) {
             let bounds = shape.bounds().unwrap();
             let channels: Contours = mouths
                 .iter()
@@ -431,7 +432,7 @@ fn open_shore(batch: &Batch, mouths: &[&Arc<Mouth>]) -> Batch {
                         .into_iter()
                         .flatten()
                         .collect();
-                    surface(&mut out, remaining, None, SHORE_INK, opacity);
+                    surface(&mut out, remaining, None, color, opacity);
                     continue;
                 }
             }
@@ -476,7 +477,7 @@ mod tests {
     fn shore_crossings(scene: &Scene) -> Vec<f32> {
         scene
             .shapes()
-            .filter(|shape| is_shore_ink(shape))
+            .filter(|shape| is_shore_ink(shape, pigments(scene.style()).0))
             .flat_map(|shape| match shape {
                 Shape::Polygon { points, .. } => std::slice::from_ref(points),
                 Shape::RegionSurface { contours, .. } => contours,
@@ -519,7 +520,7 @@ mod tests {
             assert!(river_art(&scene).any(|(_, reach)| !reach.spray));
             assert!(river_art(&scene).any(|(_, reach)| reach.spray));
             if finish.is_some() {
-                assert!(river_art(&scene).all(|(_, reach)| reach.channel_fill == 0xccc9ba));
+                assert!(river_art(&scene).all(|(_, reach)| reach.channel_fill == 0xa4b9b1));
             }
             let shore = shore_crossings(&scene);
             assert_eq!(shore.len(), 2, "all three river mouths must be open");

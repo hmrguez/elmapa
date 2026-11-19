@@ -1,7 +1,7 @@
 //! An editable subdivision held outside the document until Apply.
 use super::Selection;
 use elmapa::{
-    document::{Point, RegionAddress, RegionLayer, RegionNode, RegionParent},
+    document::{AtlasStyle, Point, RegionAddress, RegionLayer, RegionNode, RegionParent},
     scene::{
         Shape,
         territories::{RegionView, Shoreline, contains, split_land, visible_face},
@@ -14,9 +14,9 @@ struct Preview {
 }
 
 impl Preview {
-    fn new(data: &RegionLayer, shore: &Shoreline) -> Option<Self> {
+    fn new(data: &RegionLayer, shore: &Shoreline, style: AtlasStyle) -> Option<Self> {
         let view = RegionView::resolve(data, shore)?;
-        let washes = view.washes(shore, data);
+        let washes = view.washes(shore, data, style);
         // Every drafted piece needs visible land, including after a shoreline edit.
         (washes.len() == view.faces.len()).then_some(Self { view, washes })
     }
@@ -29,6 +29,7 @@ pub(super) struct ChildSplit {
 }
 
 pub(super) struct SplitDraft {
+    style: AtlasStyle,
     pub(super) count: usize,
     pub(super) child: Option<ChildSplit>,
     pub(super) data: RegionLayer,
@@ -43,6 +44,7 @@ impl SplitDraft {
         source: Option<&RegionLayer>,
         count: usize,
         child: Option<ChildSplit>,
+        style: AtlasStyle,
     ) -> Result<Self, String> {
         let (data, first_owner) = if let Some(child) = child {
             let piece = visible_face(&selection.polygon, &selection.shore)
@@ -62,9 +64,10 @@ impl SplitDraft {
             }
             (data, first_owner)
         };
-        let preview = Preview::new(&data, &selection.shore)
+        let preview = Preview::new(&data, &selection.shore, style)
             .ok_or("The split needs visible land in every region.")?;
         Ok(Self {
+            style,
             count,
             child,
             data,
@@ -118,7 +121,7 @@ impl SplitDraft {
             return;
         };
         let original = std::mem::replace(border, path.to_vec());
-        let preview = Preview::new(&self.data, shore);
+        let preview = Preview::new(&self.data, shore, self.style);
         *self.border_mut(address).expect("draft border") = original;
         if let Some(preview) = preview {
             self.moving = Some((path.to_vec(), preview));

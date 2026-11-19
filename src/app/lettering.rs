@@ -407,7 +407,7 @@ impl Studio {
             .map(|ink| {
                 let mut item = Item::action(ink.name(), "", Action::TextInk(ink));
                 item.active = label.ink == ink;
-                item.swatch = Some(ink.color());
+                item.swatch = Some(ink.color_in(self.editor.document().style));
                 item
             })
             .collect();

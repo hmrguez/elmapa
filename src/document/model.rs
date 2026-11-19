@@ -130,9 +130,33 @@ impl Layer {
     }
 }
 
+/// Controls the map's artwork independently of the editor's light or dark appearance.
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AtlasStyle {
+    #[default]
+    Classic,
+    Woodland,
+}
+
+impl AtlasStyle {
+    pub fn is_classic(&self) -> bool {
+        *self == Self::Classic
+    }
+
+    pub fn paper(self) -> u32 {
+        match self {
+            Self::Classic => 0xe6e5d3,
+            Self::Woodland => 0xe1e6da,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Document {
     pub version: u32,
+    #[serde(default, skip_serializing_if = "AtlasStyle::is_classic")]
+    pub style: AtlasStyle,
     pub name: String,
     pub width: f32,
     pub height: f32,
@@ -151,6 +175,7 @@ impl Document {
     pub fn blank() -> Self {
         Self {
             version: DOCUMENT_VERSION,
+            style: AtlasStyle::Woodland,
             name: "Untitled atlas".into(),
             width: 1600.0,
             height: 1000.0,

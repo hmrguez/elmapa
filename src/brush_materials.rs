@@ -1,6 +1,8 @@
 //! Shared catalog for brushes with a material picker. Documents store stable IDs.
-use crate::document::Brush;
+use crate::document::{AtlasStyle, Brush};
 use serde::Deserialize;
+
+mod woodland;
 use std::{collections::HashSet, io::Cursor, num::NonZeroU32, sync::OnceLock};
 
 #[derive(Deserialize)]
@@ -8,13 +10,17 @@ struct Manifest {
     materials: Vec<Material>,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 pub struct Material {
     pub id: String,
     pub brush: Brush,
     pub name: String,
     #[serde(deserialize_with = "hex_color")]
     pub color: u32,
+    #[serde(default, deserialize_with = "optional_hex_color")]
+    woodland_color: Option<u32>,
+    #[serde(default, deserialize_with = "optional_hex_color")]
+    woodland_shoreline_ink: Option<u32>,
     #[serde(default)]
     pub tile_size: f32,
     #[serde(default, deserialize_with = "optional_hex_color")]
@@ -136,6 +142,36 @@ pub fn catalog() -> &'static [Material] {
         }
         materials
     })
+}
+
+pub fn artwork_catalog() -> &'static [Material] {
+    static ARTWORK: OnceLock<Vec<Material>> = OnceLock::new();
+    ARTWORK.get_or_init(|| {
+        let classic = catalog();
+        static TEXTURES: OnceLock<Vec<Option<Box<[u8]>>>> = OnceLock::new();
+        let textures = TEXTURES.get_or_init(|| {
+            classic
+                .iter()
+                .map(|base| woodland::texture(base, base.woodland_color.unwrap_or(base.color)))
+                .collect()
+        });
+        let mut artwork = classic.to_vec();
+        artwork.extend(classic.iter().zip(textures).map(|(base, texture)| {
+            let mut entry = base.clone();
+            entry.color = base.woodland_color.unwrap_or(base.color);
+            entry.shoreline_ink = base.woodland_shoreline_ink.or(base.shoreline_ink);
+            entry.texture = texture.as_deref();
+            entry
+        }));
+        artwork
+    })
+}
+
+pub fn artwork_index(index: usize, style: AtlasStyle) -> usize {
+    match style {
+        AtlasStyle::Classic => index,
+        AtlasStyle::Woodland => catalog().len() + index,
+    }
 }
 
 pub fn for_brush(brush: Brush) -> impl Iterator<Item = (usize, &'static Material)> {

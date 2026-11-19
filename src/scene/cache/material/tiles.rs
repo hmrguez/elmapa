@@ -2,7 +2,7 @@
 use super::{Batch, REGIONS};
 use crate::{
     brush_materials,
-    document::{Brush, ContentBounds, Layer, Point, Stroke},
+    document::{AtlasStyle, Brush, ContentBounds, Layer, Point, Stroke},
     scene::{
         generation,
         noise::noise,
@@ -107,13 +107,16 @@ struct Tile {
 }
 
 #[derive(Clone, Default)]
-pub(in crate::scene::cache) struct TerrainTiles(Arc<BTreeMap<Coord, Arc<Tile>>>);
+pub(in crate::scene::cache) struct TerrainTiles {
+    tiles: Arc<BTreeMap<Coord, Arc<Tile>>>,
+    style: AtlasStyle,
+}
 
 pub(in crate::scene::cache) struct TerrainIdentity(Weak<BTreeMap<Coord, Arc<Tile>>>);
 
 impl TerrainIdentity {
     pub(in crate::scene::cache) fn matches(&self, tiles: &TerrainTiles) -> bool {
-        self.0.as_ptr() == Arc::as_ptr(&tiles.0)
+        self.0.as_ptr() == Arc::as_ptr(&tiles.tiles)
     }
 }
 
@@ -133,26 +136,26 @@ fn brush_index(brush: Brush) -> Option<usize> {
     REGIONS.iter().position(|&region| region == brush)
 }
 
-fn texture(stroke: &Stroke) -> Option<usize> {
+fn texture(stroke: &Stroke, style: AtlasStyle) -> Option<usize> {
     let id = stroke.material.as_deref()?;
     brush_materials::for_brush(stroke.brush)
         .find(|(_, material)| material.id == id && material.texture.is_some())
-        .map(|(index, _)| index)
+        .map(|(index, _)| brush_materials::artwork_index(index, style))
 }
 
 impl TerrainTiles {
     pub(in crate::scene::cache) fn identity(&self) -> TerrainIdentity {
-        TerrainIdentity(Arc::downgrade(&self.0))
+        TerrainIdentity(Arc::downgrade(&self.tiles))
     }
 
-    pub(super) fn new(layer: &Layer, field: &FieldIndex) -> Self {
+    pub(super) fn new(layer: &Layer, field: &FieldIndex, style: AtlasStyle) -> Self {
         let mut history: BTreeMap<Coord, TileHistory> = BTreeMap::new();
         for (stroke_index, stroke) in layer.strokes.iter().enumerate() {
             let brush = brush_index(stroke.brush);
             if stroke.strength <= 0. || (brush.is_none() && stroke.brush != Brush::Erase) {
                 continue;
             }
-            let finish = texture(stroke);
+            let finish = texture(stroke, style);
             footprint(&stroke.points, influence(stroke) + APRON, |coord| {
                 let tile = match history.entry(coord) {
                     Entry::Occupied(entry) => entry.into_mut(),
@@ -206,14 +209,22 @@ impl TerrainTiles {
                         finishes: paint
                             .finishes
                             .into_iter()
-                            .map(|id| (id, sampled(Some(&brush_materials::catalog()[id].id))))
+                            .map(|id| {
+                                (
+                                    id,
+                                    sampled(Some(&brush_materials::artwork_catalog()[id].id)),
+                                )
+                            })
                             .collect(),
                     }
                 });
-                (coord, Arc::new(Tile::new(coord, fields, None)))
+                (coord, Arc::new(Tile::new(coord, fields, None, style)))
             })
             .collect();
-        Self(Arc::new(tiles))
+        Self {
+            tiles: Arc::new(tiles),
+            style,
+        }
     }
 
     pub(super) fn apply(
@@ -242,15 +253,15 @@ impl TerrainTiles {
                     .or_insert(bounds);
             });
         }
-        let finish = texture(stroke);
-        let tiles = Arc::make_mut(&mut self.0);
+        let finish = texture(stroke, self.style);
+        let tiles = Arc::make_mut(&mut self.tiles);
         let empty = Tile::default();
         for (coord, dirty_bounds) in dirty {
             if generation::stopped() {
                 break;
             }
             let old = tiles.get(&coord).map_or(&empty, Arc::as_ref);
-            let committed = base.0.get(&coord).map_or(&empty, Arc::as_ref);
+            let committed = base.tiles.get(&coord).map_or(&empty, Arc::as_ref);
             let bounds = coord.bounds().padded(APRON);
             let mut fields = old.fields.clone();
             for (index, brush) in REGIONS.into_iter().enumerate() {
@@ -296,7 +307,7 @@ impl TerrainTiles {
                 .zip(&old.fields)
                 .any(|(next, prior)| !next.same(prior))
             {
-                let next = Tile::new(coord, fields, Some(old));
+                let next = Tile::new(coord, fields, Some(old), self.style);
                 tiles.insert(coord, Arc::new(next));
             }
         }
@@ -306,13 +317,13 @@ impl TerrainTiles {
         &self,
         brush_index: usize,
     ) -> impl Iterator<Item = (Coord, &TileRegion)> {
-        self.0
+        self.tiles
             .iter()
             .map(move |(&coord, tile)| (coord, &tile.regions[brush_index]))
     }
 
     pub(super) fn bytes(&self) -> usize {
-        self.0
+        self.tiles
             .values()
             .map(|tile| {
                 tile.fields
@@ -368,7 +379,7 @@ fn same_contours(a: Option<&Arc<RegionGrid>>, b: Option<&Arc<RegionGrid>>) -> bo
 }
 
 impl Tile {
-    fn new(coord: Coord, fields: [Field; 2], old: Option<&Self>) -> Self {
+    fn new(coord: Coord, fields: [Field; 2], old: Option<&Self>, style: AtlasStyle) -> Self {
         let land = fields[0].coverage.as_ref();
         let land_unchanged =
             old.is_some_and(|old| same_contours(land, old.fields[0].coverage.as_ref()));
@@ -387,7 +398,7 @@ impl Tile {
                     .collect();
                 let coast = (index == 1).then_some(land).flatten();
                 let (surface, batches) =
-                    regions::build(coverage, brush, &masks, coast, coord.bounds());
+                    regions::build(coverage, brush, &masks, coast, coord.bounds(), style);
                 let prior = old
                     .map(|old| &old.regions[index])
                     .filter(|prior| !prior.batches.is_empty());

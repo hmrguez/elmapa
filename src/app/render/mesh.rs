@@ -8,7 +8,7 @@ use bevy::{
 use elmapa::{
     brush_materials,
     document::Point,
-    scene::{CURRENT_INK, PathPart, RiverReach, Shape},
+    scene::{PathPart, RiverReach, Shape},
 };
 use lyon::{
     math::point,
@@ -50,7 +50,7 @@ fn tessellate_river(
             opacity,
         } = shape
         {
-            let frames = brush_materials::catalog()[*material]
+            let frames = brush_materials::artwork_catalog()[*material]
                 .sprites
                 .expect("sprite sheet material")
                 .frames as f32;
@@ -82,7 +82,7 @@ fn tessellate_river(
                 fill,
                 opacity,
             } => {
-                let tile = material.map(|id| brush_materials::catalog()[id].tile_size);
+                let tile = material.map(|id| brush_materials::artwork_catalog()[id].tile_size);
                 let color = if tile.is_some() { 0xffffff } else { *fill };
                 (contours.as_slice(), color, *opacity, tile)
             }
@@ -128,7 +128,7 @@ fn tessellate_river(
                     let (along, across) = reach.coordinates(Point::new(v[0], -v[1]));
                     let surface = if shape_index >= source.len() {
                         3.
-                    } else if hex == CURRENT_INK {
+                    } else if reach.is_current_ink(hex) {
                         1.
                     } else if reach.is_water_fill(hex) {
                         0.
@@ -256,7 +256,7 @@ mod tests {
             },
             Shape::Line {
                 points: reach.course.clone(),
-                color: CURRENT_INK,
+                color: elmapa::scene::CURRENT_INK,
                 width: 0.6,
                 opacity: 0.5,
             },

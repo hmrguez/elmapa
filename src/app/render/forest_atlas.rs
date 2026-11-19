@@ -9,7 +9,7 @@ use bevy::{
     tasks::{AsyncComputeTaskPool, Task, block_on, poll_once},
 };
 use elmapa::{
-    document::ContentBounds,
+    document::{AtlasStyle, ContentBounds},
     scene::{FOREST_SPECIMEN_COUNT, Scene},
 };
 
@@ -39,6 +39,7 @@ impl TreeSprite {
 }
 
 struct Atlas {
+    style: AtlasStyle,
     image: Image,
     sprites: [TreeSprite; FOREST_SPECIMEN_COUNT],
     levels: [u32; FOREST_SPECIMEN_COUNT],
@@ -48,7 +49,7 @@ fn resolution(extent: f32) -> u32 {
         .next_power_of_two()
         .min(2048)
 }
-fn tree_atlas(levels: [u32; FOREST_SPECIMEN_COUNT]) -> Atlas {
+fn tree_atlas(levels: [u32; FOREST_SPECIMEN_COUNT], style: AtlasStyle) -> Atlas {
     // Group similar LODs so a zoomed-in specimen does not enlarge every cell.
     // With up to four 2048-pixel tiles per row and four rows, each axis fits 8192.
     let mut variants: [usize; FOREST_SPECIMEN_COUNT] = std::array::from_fn(|i| i);
@@ -70,7 +71,7 @@ fn tree_atlas(levels: [u32; FOREST_SPECIMEN_COUNT]) -> Atlas {
         let size = levels[variant];
         let mut tile = resvg::tiny_skia::Pixmap::new(size, size).expect("tree tile");
         resvg::render(
-            elmapa::scene::forest_specimen_tree(variant),
+            elmapa::scene::forest_specimen_tree(variant, style),
             resvg::tiny_skia::Transform::from_scale(size as f32 / 100., size as f32 / 100.),
             &mut tile.as_mut(),
         );
@@ -112,6 +113,7 @@ fn tree_atlas(levels: [u32; FOREST_SPECIMEN_COUNT]) -> Atlas {
         };
     }
     Atlas {
+        style,
         image: rgba_image(width, height, pixels),
         sprites,
         levels,
@@ -119,6 +121,7 @@ fn tree_atlas(levels: [u32; FOREST_SPECIMEN_COUNT]) -> Atlas {
 }
 #[derive(Default)]
 pub(super) struct ForestAtlas {
+    style: AtlasStyle,
     job: Option<Task<Atlas>>,
     material: Option<Handle<ForestWind>>,
     sprites: [TreeSprite; FOREST_SPECIMEN_COUNT],
@@ -129,12 +132,17 @@ pub(super) struct ForestAtlas {
 impl ForestAtlas {
     pub(super) fn initialize(&mut self) {
         self.job = Some(
-            AsyncComputeTaskPool::get().spawn(async { tree_atlas([128; FOREST_SPECIMEN_COUNT]) }),
+            AsyncComputeTaskPool::get()
+                .spawn(async { tree_atlas([128; FOREST_SPECIMEN_COUNT], AtlasStyle::Classic) }),
         );
     }
 
     pub(super) fn ready(&self) -> bool {
         self.material.is_some() && self.job.is_none()
+    }
+
+    pub(super) fn matches(&self, style: AtlasStyle) -> bool {
+        self.style == style
     }
 
     pub(super) fn material(&self) -> Option<&Handle<ForestWind>> {
@@ -165,6 +173,7 @@ impl ForestAtlas {
             self.job = Some(job);
             return false;
         };
+        self.style = atlas.style;
         self.sprites = atlas.sprites;
         self.levels = atlas.levels;
         let atlas_size = atlas.image.size().as_vec2();
@@ -191,8 +200,11 @@ impl ForestAtlas {
         scene: &Scene,
         scene_changed: bool,
     ) {
+        let style = scene.style();
         let lod_view = (viewport, bounds.size, scale_factor);
-        if self.job.is_some() || !scene_changed && self.lod_view == Some(lod_view) {
+        if self.job.is_some()
+            || self.matches(style) && !scene_changed && self.lod_view == Some(lod_view)
+        {
             return;
         }
         self.lod_view = Some(lod_view);
@@ -222,8 +234,9 @@ impl ForestAtlas {
                 old
             }
         });
-        if levels != self.levels {
-            self.job = Some(AsyncComputeTaskPool::get().spawn(async move { tree_atlas(levels) }));
+        if levels != self.levels || !self.matches(style) {
+            self.job =
+                Some(AsyncComputeTaskPool::get().spawn(async move { tree_atlas(levels, style) }));
         }
     }
 }
@@ -240,12 +253,13 @@ mod tests {
     }
     #[test]
     fn atlas_preserves_exact_specimen_pixels_cropping_and_world_pivots() {
-        let atlas = tree_atlas([128; FOREST_SPECIMEN_COUNT]);
+        let style = AtlasStyle::Classic;
+        let atlas = tree_atlas([128; FOREST_SPECIMEN_COUNT], style);
         let data = atlas.image.data.as_ref().unwrap();
         for variant in 0..FOREST_SPECIMEN_COUNT {
             let mut reference = resvg::tiny_skia::Pixmap::new(128, 128).unwrap();
             resvg::render(
-                elmapa::scene::forest_specimen_tree(variant),
+                elmapa::scene::forest_specimen_tree(variant, style),
                 resvg::tiny_skia::Transform::from_scale(1.28, 1.28),
                 &mut reference.as_mut(),
             );

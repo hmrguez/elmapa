@@ -284,7 +284,7 @@ fn mcp_uses_native_road_and_river_defaults_and_places_rotated_labels() {
     let map_id = &created["map_id"];
     let export = mcp.text("export_map", json!({"map_id":map_id}));
     let svg = std::fs::read_to_string(export["svg_path"].as_str().unwrap()).unwrap();
-    assert!(svg.contains(r##"fill="#ccc9ba""##));
+    assert!(svg.contains(r##"fill="#a4b9b1""##));
     let edited = mcp.text(
         "edit_map",
         json!({

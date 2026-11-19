@@ -283,7 +283,7 @@ pub(super) fn placement_style(b: &mut Builder, root: Entity, s: &Studio) {
     );
     for ink in LabelInk::ALL {
         let button = b.button(inks, "", ink.name(), Action::TextInk(ink), style.ink == ink);
-        let swatch = b.swatch(button, ink.color(), 10., None);
+        let swatch = b.swatch(button, ink.color_in(b.atlas_style), 10., None);
         b.commands.entity(button).insert_children(0, &[swatch]);
     }
     let (name, value, step) = style_setting(Field::Size, style);

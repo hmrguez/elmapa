@@ -93,6 +93,7 @@ pub fn rebuild(
         ))
         .id();
     let mut b = Builder::new(&mut commands, &assets, Palette::new(studio.dark));
+    b.atlas_style = studio.editor.document().style;
     // Build in hit order so overlays take precedence over the editor chrome.
     if let Some(replay) = studio.replay_view {
         editor::replay_controls(&mut b, root, replay, video.busy(), &studio.status);

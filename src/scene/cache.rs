@@ -9,14 +9,11 @@ use super::{
     noise::noise,
     terrain::field::{radius, roughness},
 };
-use crate::document::{Brush, Document, Point, Stroke};
+use crate::document::{AtlasStyle, Brush, Document, Point, Stroke};
 use composition::{AnnotationCache, AnnotationSource, compose};
 use material::{LiveMaterial, MaterialLayer};
 use snapshot::Batch;
 pub use snapshot::Scene;
-
-#[cfg(test)]
-pub(super) use material::build_terrain;
 
 const REGIONS: [Brush; 2] = [Brush::Land, Brush::Water];
 
@@ -31,6 +28,9 @@ pub fn region_stroke_covers(stroke: &Stroke, point: Point) -> bool {
 /// during a drag and after commit. Cancel simply drops the transient material.
 #[derive(Default)]
 pub struct SceneCache {
+    style: AtlasStyle,
+    generating: bool,
+    previous_style: Option<Box<Self>>,
     layers: Vec<MaterialLayer>,
     live: Option<LiveMaterial>,
     retained: Vec<MaterialLayer>,
@@ -46,10 +46,19 @@ impl SceneCache {
     /// Preserve the last complete live material while a cancellable worker
     /// advances it. Geometry and immutable indices share their allocations.
     pub fn begin_generation(&mut self) {
+        self.generating = true;
         self.rollback = self.live.clone();
         self.rollback_order = self.layers.iter().map(|layer| layer.source.id).collect();
     }
     pub fn finish_generation(&mut self, success: bool) {
+        self.generating = false;
+        if let Some(previous) = self.previous_style.take()
+            && !success
+        {
+            *self = *previous;
+            self.finish_generation(false);
+            return;
+        }
         if success {
             self.rollback = None;
             self.rollback_order.clear();
@@ -79,6 +88,7 @@ impl SceneCache {
     /// A ready authoritative base snapshot for immediate gesture cancellation.
     pub fn committed_scene(&self) -> Scene {
         compose(
+            self.style,
             self.layers.iter(),
             &self.annotations,
             AnnotationSource::Committed,
@@ -94,6 +104,20 @@ impl SceneCache {
     pub fn render(&mut self, doc: &Document, live: Option<(u64, &Stroke)>) -> Scene {
         let _span = crate::performance::Span::new("scene_generation");
         super::work::take();
+        if self.style != doc.style {
+            let generating = self.generating;
+            let previous = std::mem::replace(
+                self,
+                Self {
+                    style: doc.style,
+                    generating,
+                    ..Self::default()
+                },
+            );
+            if generating {
+                self.previous_style = Some(Box::new(previous));
+            }
+        }
         // Mouse-up can append points without a rendered live frame. Advance from
         // the retained base before promotion, including gestures between frames.
         if live.is_none() {
@@ -176,7 +200,7 @@ impl SceneCache {
                     }
                     self.layers.push(material);
                 } else {
-                    self.layers.push(MaterialLayer::new(layer));
+                    self.layers.push(MaterialLayer::new(layer, self.style));
                 }
                 changed = true;
             }
@@ -217,6 +241,7 @@ impl SceneCache {
         });
         let mut updated = AnnotationCache::default();
         let scene = compose(
+            self.style,
             materials,
             &self.annotations,
             AnnotationSource::Current {

@@ -1,11 +1,10 @@
 use super::{
-    FOREST_SPECIMEN_COUNT, Scene, SceneCache, SceneRenderer, Shape, forest_specimen_svg,
-    paper_detail,
-    terrain::{LAND, SEA, regions::SHORE_WASH},
+    FOREST_SPECIMEN_COUNT, Scene, SceneCache, SceneRenderer, Shape, forest_specimen_svg, palette,
+    paper_detail, terrain::regions::pigments,
 };
 use crate::{
     brush_materials,
-    document::{Brush, ContentBounds, Document, Point},
+    document::{AtlasStyle, Brush, ContentBounds, Document, Point},
 };
 use base64::engine::general_purpose::STANDARD;
 use std::{collections::BTreeMap, sync::Arc};
@@ -13,6 +12,7 @@ use std::{collections::BTreeMap, sync::Arc};
 struct SvgRenderer<W> {
     svg: W,
     opacity: f32,
+    style: AtlasStyle,
 }
 
 impl<W: std::fmt::Write> SceneRenderer for SvgRenderer<W> {
@@ -83,7 +83,7 @@ impl<W: std::fmt::Write> SceneRenderer for SvgRenderer<W> {
 }
 
 fn pattern_id(index: usize) -> String {
-    let material = &brush_materials::catalog()[index];
+    let material = &brush_materials::artwork_catalog()[index];
     if material.brush == Brush::Land {
         format!("land-material-{index}")
     } else {
@@ -117,10 +117,11 @@ fn write_svg_open(svg: &mut impl std::fmt::Write, bounds: ContentBounds) {
     );
 }
 
-fn write_background(svg: &mut impl std::fmt::Write, bounds: ContentBounds) {
+fn write_background(svg: &mut impl std::fmt::Write, bounds: ContentBounds, style: AtlasStyle) {
+    let paper = style.paper();
     let _ = writeln!(
         svg,
-        "<rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" fill=\"#e6e5d3\"/>",
+        "<rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" fill=\"#{paper:06x}\"/>",
         bounds.min.x,
         bounds.min.y,
         bounds.width(),
@@ -141,16 +142,16 @@ fn write_definitions(svg: &mut impl std::fmt::Write, scene: &Scene, include_tree
         let _ = write!(
             svg,
             "<g id=\"forest-{variant}\">{}</g>",
-            forest_specimen_svg(variant)
+            forest_specimen_svg(variant, scene.style())
         );
     }
-    let mut used_materials = vec![false; brush_materials::catalog().len()];
+    let mut used_materials = vec![false; brush_materials::artwork_catalog().len()];
     for batch in scene.batches() {
         if let Some(index) = batch.first().and_then(Shape::texture_index) {
             used_materials[index] = true;
         }
     }
-    for (index, material) in brush_materials::catalog().iter().enumerate() {
+    for (index, material) in brush_materials::artwork_catalog().iter().enumerate() {
         let Some(texture) = material.texture.filter(|_| used_materials[index]) else {
             continue;
         };
@@ -224,10 +225,11 @@ impl<W: std::fmt::Write> SvgRenderer<W> {
                 };
                 let order = if material.is_some() {
                     0
-                } else if matches!(fill, LAND | SEA) {
+                } else if fill == palette::land(self.style) || fill == palette::water(self.style) {
                     1
                 } else {
-                    SHORE_WASH
+                    pigments(self.style)
+                        .1
                         .iter()
                         .position(|(_, color, _)| *color == fill)
                         .map_or(4, |i| i + 2)
@@ -287,9 +289,13 @@ pub(super) fn render_svg<W: std::fmt::Write>(
 ) -> W {
     let _span = crate::performance::Span::new("svg_generation");
     write_svg_open(&mut svg, bounds);
-    write_background(&mut svg, bounds);
+    write_background(&mut svg, bounds, scene.style());
     write_definitions(&mut svg, scene, true);
-    let mut renderer = SvgRenderer { svg, opacity: 1. };
+    let mut renderer = SvgRenderer {
+        svg,
+        opacity: 1.,
+        style: scene.style(),
+    };
     for item in artwork(scene) {
         if super::generation::is_stopped() {
             break;
@@ -325,16 +331,20 @@ pub(super) fn render_preview_parts(
 ) -> Result<(), String> {
     // Keep each parsed fragment comfortably below usvg's one-million-node cap.
     const PART_NODE_BUDGET: usize = 100_000;
-    let tree_cost: [usize; FOREST_SPECIMEN_COUNT] =
-        std::array::from_fn(|variant| 2 + forest_specimen_svg(variant).matches('<').count());
+    let tree_cost: [usize; FOREST_SPECIMEN_COUNT] = std::array::from_fn(|variant| {
+        2 + forest_specimen_svg(variant, scene.style())
+            .matches('<')
+            .count()
+    });
     let mut renderer = SvgRenderer {
         svg: String::new(),
         opacity: 1.,
+        style: scene.style(),
     };
     write_svg_open(&mut renderer.svg, bounds);
     write_definitions(&mut renderer.svg, scene, !raster_trees);
     let header = renderer.svg.len();
-    write_background(&mut renderer.svg, bounds);
+    write_background(&mut renderer.svg, bounds, scene.style());
     let mut nodes = 1;
     let flush = |svg: &mut String,
                  render: &mut dyn FnMut(PreviewPart<'_>) -> Result<(), String>| {
@@ -464,7 +474,7 @@ mod tests {
             + super::super::thumbnail::WIDTH / 2) as usize
             * 4;
         // Thumbnails use BGRA. The textured center has a warm, near-monochrome tint.
-        assert!((28..=44).contains(&(sand[center + 2] - sand[center])));
+        assert!((50..=65).contains(&(sand[center + 2] - sand[center])));
         assert!(sand[center] < parchment[center]);
     }
     #[test]

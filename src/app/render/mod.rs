@@ -101,7 +101,7 @@ pub fn setup(
     canvas.forest_atlas.initialize();
     canvas.tree_mesh = meshes.add(forest_wind::mesh());
     canvas.paper_material = materials.add(ColorMaterial::default());
-    for (index, material) in brush_materials::catalog().iter().enumerate() {
+    for (index, material) in brush_materials::artwork_catalog().iter().enumerate() {
         let Some(texture) = material.texture else {
             continue;
         };

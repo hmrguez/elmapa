@@ -9,7 +9,7 @@ use super::super::{
 use super::field::erased;
 use crate::{
     brush_materials,
-    document::{Brush, Layer, Point, Stroke},
+    document::{AtlasStyle, Brush, Layer, Point, Stroke},
 };
 
 pub const CURRENT_INK: u32 = 0x8b9586;
@@ -31,8 +31,16 @@ pub struct RiverReach {
 }
 
 impl RiverReach {
+    pub fn is_current_ink(&self, color: u32) -> bool {
+        matches!(color, CURRENT_INK | crate::scene::palette::CURRENT)
+    }
+
     pub fn is_water_fill(&self, color: u32) -> bool {
-        color == self.channel_fill || color == CHANNEL_HIGHLIGHT
+        color == self.channel_fill
+            || matches!(
+                color,
+                CHANNEL_HIGHLIGHT | crate::scene::palette::CHANNEL_LIGHT
+            )
     }
 
     /// Arc length at a tessellated vertex, including bank overhang. Projection
@@ -135,6 +143,7 @@ pub(in crate::scene) fn river_batches(
     layer: &Layer,
     index: usize,
     stroke: &Stroke,
+    style: AtlasStyle,
 ) -> Vec<RiverBatch> {
     if stroke.strength <= 0. || stroke.points.is_empty() {
         return Vec::new();
@@ -142,11 +151,14 @@ pub(in crate::scene) fn river_batches(
     let channel_fill = stroke.material.as_deref().map_or(CHANNEL_FILL, |id| {
         brush_materials::for_brush(Brush::Water)
             .find(|(_, material)| material.id == id)
-            .map_or(CHANNEL_FILL, |(_, material)| material.color)
+            .map_or(CHANNEL_FILL, |(index, _)| {
+                brush_materials::artwork_catalog()[brush_materials::artwork_index(index, style)]
+                    .color
+            })
     });
     let points = course(stroke);
     if points.len() == 1 {
-        return spring(layer, index, stroke, points[0], channel_fill);
+        return styled(spring(layer, index, stroke, points[0], channel_fill), style);
     }
     let half = (stroke.size * 0.105).clamp(2., 22.);
     let phase = hash(stroke.seed) * std::f32::consts::TAU;
@@ -209,6 +221,17 @@ pub(in crate::scene) fn river_batches(
                 spray: true,
             },
         });
+    }
+    styled(batches, style)
+}
+
+fn styled(mut batches: Vec<RiverBatch>, style: AtlasStyle) -> Vec<RiverBatch> {
+    use crate::scene::palette;
+    if style == AtlasStyle::Woodland {
+        for batch in &mut batches {
+            palette::recolor(&mut batch.shapes, palette::river);
+            batch.reach.channel_fill = palette::river(batch.reach.channel_fill);
+        }
     }
     batches
 }
@@ -370,7 +393,7 @@ fn draw(out: &mut Vec<Shape>, stations: &[Station], shade: f32, alpha: f32, chan
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::document::{Brush, Document};
+    use crate::document::{AtlasStyle, Brush, Document};
     fn river() -> Stroke {
         Stroke {
             creation_id: None,
@@ -386,7 +409,7 @@ mod tests {
     fn banks_follow_a_variable_width_course_and_strength_changes_ink_not_channel() {
         let doc = Document::blank();
         let mut stroke = river();
-        let full = river_batches(&doc.layers[0], 0, &stroke);
+        let full = river_batches(&doc.layers[0], 0, &stroke, AtlasStyle::Classic);
         assert!(full.len() > 5);
         let polygons: Vec<_> = full
             .iter()
@@ -408,7 +431,7 @@ mod tests {
         );
         let mut short = stroke.clone();
         short.points = vec![p(100., 200.), p(104., 200.)].into();
-        let beginning = river_batches(&doc.layers[0], 0, &short);
+        let beginning = river_batches(&doc.layers[0], 0, &short, AtlasStyle::Classic);
         let first_water = beginning[0]
             .shapes
             .iter()
@@ -423,7 +446,7 @@ mod tests {
             .unwrap();
         assert_eq!(source_width(first_water), source_width(polygons[0]));
         stroke.strength = 0.1;
-        let pale = river_batches(&doc.layers[0], 0, &stroke);
+        let pale = river_batches(&doc.layers[0], 0, &stroke, AtlasStyle::Classic);
         for (a, b) in full
             .iter()
             .flat_map(|b| &b.shapes)
@@ -462,7 +485,7 @@ mod tests {
             }
         )));
         stroke.strength = 0.;
-        assert!(river_batches(&doc.layers[0], 0, &stroke).is_empty());
+        assert!(river_batches(&doc.layers[0], 0, &stroke, AtlasStyle::Classic).is_empty());
     }
     #[test]
     fn short_pointer_reversals_do_not_fold_banks_across_the_channel() {
@@ -490,7 +513,7 @@ mod tests {
     fn erasing_breaks_both_banks_and_water_without_reconnecting_the_gap() {
         let mut doc = Document::blank();
         let stroke = river();
-        let original = river_batches(&doc.layers[0], 0, &stroke);
+        let original = river_batches(&doc.layers[0], 0, &stroke, AtlasStyle::Classic);
         doc.layers[0].strokes.push(stroke.clone());
         doc.layers[0].strokes.push(Stroke {
             creation_id: None,
@@ -501,14 +524,14 @@ mod tests {
             strength: 1.,
             seed: 8,
         });
-        let cut = river_batches(&doc.layers[0], 0, &stroke);
+        let cut = river_batches(&doc.layers[0], 0, &stroke, AtlasStyle::Classic);
         assert!(
             cut.iter()
                 .flat_map(|b| &b.shapes)
                 .filter_map(Shape::bounds)
                 .all(|b| b.max.x < 230. || b.min.x > 270.)
         );
-        let later = river_batches(&doc.layers[0], 2, &stroke);
+        let later = river_batches(&doc.layers[0], 2, &stroke, AtlasStyle::Classic);
         assert_eq!(
             original.iter().map(|b| &b.shapes).collect::<Vec<_>>(),
             later.iter().map(|b| &b.shapes).collect::<Vec<_>>()
@@ -528,7 +551,7 @@ mod tests {
             ]
             .into();
             let bounds = stroke.bounds().unwrap();
-            let batches = river_batches(&doc.layers[0], 0, &stroke);
+            let batches = river_batches(&doc.layers[0], 0, &stroke, AtlasStyle::Classic);
             for batch in &batches {
                 let reach = &batch.reach;
                 assert!((reach.coordinate(reach.course[0]) - reach.distance).abs() < 0.001);

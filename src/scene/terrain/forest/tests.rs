@@ -15,7 +15,7 @@ fn forest() -> Stroke {
 
 #[test]
 fn source_variants_keep_layered_crowns_and_use_only_parchment_ink() {
-    let specimens = vector::specimens();
+    let specimens = vector::specimens(AtlasStyle::Classic);
     for shapes in &specimens[MIXED] {
         assert!(
             shapes.len() > 250,
@@ -122,7 +122,7 @@ fn oblique_specimens_keep_a_visible_trunk_and_fit_the_shared_atlas() {
     for variant in 0..FOREST_SPECIMEN_COUNT {
         let mut image = resvg::tiny_skia::Pixmap::new(200, 200).unwrap();
         resvg::render(
-            forest_specimen_tree(variant),
+            forest_specimen_tree(variant, AtlasStyle::Classic),
             resvg::tiny_skia::Transform::from_scale(2., 2.),
             &mut image.as_mut(),
         );

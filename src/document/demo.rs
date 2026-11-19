@@ -1,11 +1,12 @@
-use super::{Brush, DOCUMENT_VERSION, Document, Layer, Point, Stroke};
+use super::{AtlasStyle, Brush, DOCUMENT_VERSION, Document, Layer, Point, Stroke};
 
 impl Document {
     /// The editable example shown on new atlas shelves.
     pub fn spain_example() -> Result<Self, String> {
-        let document: Self =
+        let mut document: Self =
             serde_json::from_slice(include_bytes!("../../assets/atlases/espana.elmapa"))
                 .map_err(|error| format!("Could not open the Spain example: {error}"))?;
+        document.style = AtlasStyle::Woodland;
         document.validate()?;
         Ok(document)
     }
@@ -38,6 +39,7 @@ impl Document {
         }
         Self {
             version: DOCUMENT_VERSION,
+            style: AtlasStyle::Woodland,
             name: "The Stillwater Isles".into(),
             width: 1600.0,
             height: 1000.0,

@@ -52,9 +52,10 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
                 ..default()
             },
         );
-        b.commands
-            .entity(dot)
-            .insert(BackgroundColor(color(pigment(data, owner), 1.)));
+        b.commands.entity(dot).insert(BackgroundColor(color(
+            pigment(data, owner, b.atlas_style),
+            1.,
+        )));
         b.text(title, short_name(name), 14., p.text, true);
     } else if let Some(parent) = parent_name {
         b.text(
