@@ -25,7 +25,11 @@ use bevy::{
     render::render_resource::{Extent3d, TextureDimension, TextureFormat},
     tasks::Task,
 };
-use elmapa::{brush_materials, scene::TreeId};
+use elmapa::{
+    brush_materials,
+    document::AtlasStyle,
+    scene::{Shape, TreeId, granulation},
+};
 use forest_atlas::ForestAtlas;
 use forest_wind::ForestWind;
 use retained::{RetainedMesh, RetainedTree};
@@ -61,27 +65,40 @@ pub struct Canvas {
     paper: Option<Entity>,
     paper_material: Handle<ColorMaterial>,
     pub brush_textures: HashMap<usize, Handle<Image>>,
-    tile_materials: HashMap<(Option<usize>, u32), Weak<StrongHandle>>,
+    granulation: [Handle<Image>; 2],
+    tile_materials: HashMap<(Option<AssetId<Image>>, u32), Weak<StrongHandle>>,
     view_replay: Option<view_replay::Playback>,
 }
 impl Canvas {
     pub fn mesh_keys(&self) -> HashSet<usize> {
         self.meshes.keys().copied().collect()
     }
+    fn batch_texture(&self, batch: &[Shape], style: AtlasStyle) -> Option<Handle<Image>> {
+        if let Some(index) = batch.first().and_then(Shape::texture_index) {
+            return self.brush_textures.get(&index).cloned();
+        }
+        batch
+            .iter()
+            .any(Shape::granulated)
+            .then(|| self.granulation[usize::from(!style.is_classic())].clone())
+    }
+
     fn tile_material(
         &mut self,
-        texture: Option<usize>,
+        batch: &[Shape],
+        style: AtlasStyle,
         opacity: f32,
         materials: &mut Assets<TerrainTile>,
         reduced: bool,
     ) -> Handle<TerrainTile> {
-        let key = (texture, opacity.to_bits());
+        let texture = batch.first().and_then(Shape::texture_index);
+        let image = self.batch_texture(batch, style);
+        let key = (image.as_ref().map(Handle::id), opacity.to_bits());
         if let Some(handle) = self.tile_materials.get(&key).and_then(Weak::upgrade) {
             return Handle::Strong(handle);
         }
         self.tile_materials
             .retain(|_, handle| handle.strong_count() != 0);
-        let image = texture.and_then(|index| self.brush_textures.get(&index).cloned());
         let mut material = TerrainTile::new(image, opacity, reduced);
         material.profile =
             grass_wind::profile(texture).unwrap_or_else(|| water_surface::profile(texture));
@@ -105,6 +122,25 @@ pub fn setup(
     canvas.forest_atlas.initialize();
     canvas.tree_mesh = meshes.add(forest_wind::mesh());
     canvas.paper_material = materials.add(ColorMaterial::default());
+    canvas.granulation = [AtlasStyle::Classic, AtlasStyle::Woodland].map(|style| {
+        let size = granulation::TEXTURE_SIZE;
+        let mut image = Image::new_uninit(
+            Extent3d {
+                width: size,
+                height: size,
+                depth_or_array_layers: 1,
+            },
+            TextureDimension::D2,
+            TextureFormat::Rgba8Unorm,
+            RenderAssetUsages::RENDER_WORLD,
+        );
+        image.texture_descriptor.mip_level_count = size.ilog2() + 1;
+        image.data = Some(granulation::texture_rgba(style));
+        let mut sampler = ImageSamplerDescriptor::linear();
+        sampler.set_address_mode(ImageAddressMode::Repeat);
+        image.sampler = ImageSampler::Descriptor(sampler);
+        images.add(image)
+    });
     for (index, material) in brush_materials::artwork_catalog().iter().enumerate() {
         let Some(texture) = material.texture else {
             continue;

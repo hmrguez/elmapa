@@ -1,3 +1,4 @@
+use super::granulation;
 use super::{
     FOREST_SPECIMEN_COUNT, Scene, SceneCache, SceneRenderer, Shape, forest_specimen_svg, palette,
     paper_detail,
@@ -7,12 +8,16 @@ use crate::{
     document::{AtlasStyle, Brush, ContentBounds, Document, Point},
 };
 use base64::engine::general_purpose::STANDARD;
-use std::{collections::BTreeMap, sync::Arc};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    sync::Arc,
+};
 
 struct SvgRenderer<W> {
     svg: W,
     opacity: f32,
     style: AtlasStyle,
+    pigment_patterns: bool,
 }
 
 impl<W: std::fmt::Write> SceneRenderer for SvgRenderer<W> {
@@ -37,19 +42,27 @@ impl<W: std::fmt::Write> SceneRenderer for SvgRenderer<W> {
             Shape::RegionSurface {
                 contours,
                 material,
+                granulated,
                 fill,
                 opacity,
             } => {
                 self.render_surface(
                     contours.iter().map(Vec::as_slice),
                     *material,
+                    *granulated,
                     *fill,
                     *opacity,
                 );
             }
             Shape::ShoreWash(wash) => {
                 let (fill, opacity) = wash.svg_color();
-                self.render_surface(wash.contours.iter().map(Vec::as_slice), None, fill, opacity);
+                self.render_surface(
+                    wash.contours.iter().map(Vec::as_slice),
+                    None,
+                    false,
+                    fill,
+                    opacity,
+                );
             }
             Shape::Sprite {
                 points,
@@ -133,7 +146,12 @@ fn write_background(svg: &mut impl std::fmt::Write, bounds: ContentBounds, style
     );
 }
 
-fn write_definitions(svg: &mut impl std::fmt::Write, scene: &Scene, include_trees: bool) {
+fn write_definitions(
+    svg: &mut impl std::fmt::Write,
+    scene: &Scene,
+    include_trees: bool,
+    pigment_patterns: bool,
+) {
     // SVG instances and the native sprite atlas share the same specimen artwork.
     let mut used = [false; FOREST_SPECIMEN_COUNT];
     if include_trees {
@@ -150,11 +168,23 @@ fn write_definitions(svg: &mut impl std::fmt::Write, scene: &Scene, include_tree
         );
     }
     let mut used_materials = vec![false; brush_materials::artwork_catalog().len()];
+    let mut pigment_colors = BTreeSet::new();
     for batch in scene.batches() {
         if let Some(index) = batch.first().and_then(Shape::texture_index) {
             used_materials[index] = true;
         }
+        if pigment_patterns {
+            pigment_colors.extend(batch.iter().filter_map(|shape| match shape {
+                Shape::RegionSurface {
+                    fill,
+                    granulated: true,
+                    ..
+                } => Some(*fill),
+                _ => None,
+            }));
+        }
     }
+    write_granulation(svg, scene.style(), pigment_colors);
     for (index, material) in brush_materials::artwork_catalog().iter().enumerate() {
         let Some(texture) = material.texture.filter(|_| used_materials[index]) else {
             continue;
@@ -178,19 +208,41 @@ fn write_definitions(svg: &mut impl std::fmt::Write, scene: &Scene, include_tree
     let _ = svg.write_str("</defs>");
 }
 
+fn write_granulation(svg: &mut impl std::fmt::Write, style: AtlasStyle, colors: BTreeSet<u32>) {
+    if colors.is_empty() {
+        return;
+    }
+    let size = granulation::WORLD_SIZE;
+    let data = base64::display::Base64Display::new(granulation::svg_overlay(style), &STANDARD);
+    let _ = write!(
+        svg,
+        "<image id=\"pigment-granulation\" width=\"{size}\" height=\"{size}\" href=\"data:image/png;base64,{data}\"/>"
+    );
+    for color in colors {
+        let _ = write!(
+            svg,
+            "<pattern id=\"pigment-{color:06x}\" patternUnits=\"userSpaceOnUse\" width=\"{size}\" height=\"{size}\"><rect width=\"{size}\" height=\"{size}\" fill=\"#{color:06x}\"/><use href=\"#pigment-granulation\"/></pattern>"
+        );
+    }
+}
+
 impl<W: std::fmt::Write> SvgRenderer<W> {
     fn render_surface<'a>(
         &mut self,
         contours: impl IntoIterator<Item = &'a [Point]>,
         material: Option<usize>,
+        granulated: bool,
         fill: u32,
         opacity: f32,
     ) {
         let opacity = opacity * self.opacity;
-        let fill = material.map_or_else(
-            || format!("#{fill:06x}"),
-            |index| format!("url(#{})", pattern_id(index)),
-        );
+        let fill = if let Some(index) = material {
+            format!("url(#{})", pattern_id(index))
+        } else if granulated && self.pigment_patterns {
+            format!("url(#pigment-{fill:06x})")
+        } else {
+            format!("#{fill:06x}")
+        };
         let _ = write!(
             self.svg,
             "<path fill=\"{fill}\" fill-rule=\"evenodd\" opacity=\"{opacity:.3}\" d=\""
@@ -209,27 +261,28 @@ impl<W: std::fmt::Write> SvgRenderer<W> {
         &mut self,
         batches: impl IntoIterator<Item = &'a Arc<Vec<Shape>>>,
     ) -> usize {
-        type Style = (usize, Option<usize>, u32, u32);
+        type Style = (usize, Option<usize>, bool, u32, u32);
         let mut surfaces: BTreeMap<Style, Vec<&[Point]>> = BTreeMap::new();
         for batch in batches {
             for shape in batch.iter() {
-                let (contours, material, fill, opacity) = match shape {
+                let (contours, material, granulated, fill, opacity) = match shape {
                     Shape::RegionSurface {
                         contours,
                         material,
+                        granulated,
                         fill,
                         opacity,
-                    } => (contours.as_slice(), *material, *fill, *opacity),
+                    } => (contours.as_slice(), *material, *granulated, *fill, *opacity),
                     Shape::Polygon {
                         points,
                         fill,
                         opacity,
-                    } => (std::slice::from_ref(points), None, *fill, *opacity),
+                    } => (std::slice::from_ref(points), None, false, *fill, *opacity),
                     Shape::ShoreWash(wash) => {
                         let (fill, opacity) = wash.svg_color();
                         if opacity >= 0.001 {
                             surfaces
-                                .entry((2, None, fill, opacity.to_bits()))
+                                .entry((2, None, false, fill, opacity.to_bits()))
                                 .or_default()
                                 .extend(wash.contours.iter().map(Vec::as_slice));
                         }
@@ -245,7 +298,7 @@ impl<W: std::fmt::Write> SvgRenderer<W> {
                     3
                 };
                 surfaces
-                    .entry((order, material, fill, opacity.to_bits()))
+                    .entry((order, material, granulated, fill, opacity.to_bits()))
                     .or_default()
                     .extend(contours.iter().map(Vec::as_slice));
             }
@@ -253,8 +306,14 @@ impl<W: std::fmt::Write> SvgRenderer<W> {
         // Adjacent tiles of one pigment share an SVG path. Rasterizers then
         // antialias its outer edge without blending two half-covered tiles.
         let nodes = surfaces.len();
-        for ((_, material, fill, opacity), contours) in surfaces {
-            self.render_surface(contours, material, fill, f32::from_bits(opacity));
+        for ((_, material, granulated, fill, opacity), contours) in surfaces {
+            self.render_surface(
+                contours,
+                material,
+                granulated,
+                fill,
+                f32::from_bits(opacity),
+            );
         }
         nodes
     }
@@ -300,11 +359,12 @@ pub(super) fn render_svg<W: std::fmt::Write>(
     let _span = crate::performance::Span::new("svg_generation");
     write_svg_open(&mut svg, bounds);
     write_background(&mut svg, bounds, scene.style());
-    write_definitions(&mut svg, scene, true);
+    write_definitions(&mut svg, scene, true, true);
     let mut renderer = SvgRenderer {
         svg,
         opacity: 1.,
         style: scene.style(),
+        pigment_patterns: true,
     };
     for item in artwork(scene) {
         if super::generation::is_stopped() {
@@ -337,6 +397,7 @@ pub(super) fn render_preview_parts(
     scene: &Scene,
     bounds: ContentBounds,
     raster_trees: bool,
+    pixel_scale: f32,
     mut render: impl FnMut(PreviewPart<'_>) -> Result<(), String>,
 ) -> Result<(), String> {
     // Keep each parsed fragment comfortably below usvg's one-million-node cap.
@@ -346,13 +407,17 @@ pub(super) fn render_preview_parts(
             .matches('<')
             .count()
     });
+    // resvg rasterizes a full pattern tile before clipping it to the viewport.
+    // Use solid pigment for tightly cropped and extremely distant snapshots.
+    let pigment_patterns = (8.0..=1024.0).contains(&(granulation::WORLD_SIZE * pixel_scale));
     let mut renderer = SvgRenderer {
         svg: String::new(),
         opacity: 1.,
         style: scene.style(),
+        pigment_patterns,
     };
     write_svg_open(&mut renderer.svg, bounds);
-    write_definitions(&mut renderer.svg, scene, !raster_trees);
+    write_definitions(&mut renderer.svg, scene, !raster_trees, pigment_patterns);
     let header = renderer.svg.len();
     write_background(&mut renderer.svg, bounds, scene.style());
     let mut nodes = 1;
@@ -457,6 +522,47 @@ pub fn write_svg(doc: &Document, writer: impl std::io::Write) -> Result<(), Stri
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn flat_pigment_has_tonal_variation_in_the_shelf_preview() {
+        use crate::{document::Stroke, library::Camera};
+
+        let mut document = Document::blank();
+        document.layers[0].strokes.push(Stroke {
+            brush: Brush::Land,
+            creation_id: None,
+            material: None,
+            points: vec![Point::new(-160., 0.), Point::new(360., 0.)].into(),
+            size: 460.,
+            strength: 1.,
+            seed: 471,
+        });
+        let camera = Camera {
+            center: Point::new(192., 0.),
+            width: 740.,
+            height: 470.,
+        };
+        let pixels = super::super::thumbnail::thumbnail(&document, camera).unwrap();
+        // Sample well inside the land wash, on both sides of a terrain tile join.
+        let red = |x: usize, y: usize| pixels[(y * 512 + x) * 4 + 2];
+        let mut pigments = BTreeSet::new();
+        for y in 140..180 {
+            for x in 220..292 {
+                pigments.insert(red(x, y));
+            }
+            assert!(red(255, y).abs_diff(red(256, y)) < 3);
+        }
+        assert!(pigments.len() > 2);
+        assert!(pigments.iter().all(|red| (233..243).contains(red)));
+
+        let close_up = Camera {
+            width: 64.,
+            height: 40.,
+            ..camera
+        };
+        let pixels = super::super::thumbnail::thumbnail(&document, close_up).unwrap();
+        assert_eq!(pixels[(160 * 512 + 256) * 4 + 2], 0xf3);
+    }
+
     #[test]
     fn exported_land_patterns_embed_raster_data_and_render_in_shelf_previews() {
         use crate::document::{Brush, Point, Stroke};

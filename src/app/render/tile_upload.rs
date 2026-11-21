@@ -59,7 +59,6 @@ impl TileUploads {
         let staged = prepared
             .into_iter()
             .filter_map(|cpu| {
-                let key = cpu.source.first().and_then(Shape::texture_index);
                 let bounds = cpu.mesh.compute_aabb();
                 let index_count = cpu.mesh.indices().map_or(0, |indices| indices.len());
                 if index_count == 0 {
@@ -70,7 +69,8 @@ impl TileUploads {
                 let mesh = meshes.add(cpu.mesh);
                 let tile = scene.region(&cpu.source).map(|_| {
                     let material = canvas.tile_material(
-                        key,
+                        &cpu.source,
+                        scene.style(),
                         scene.batch_opacity(&cpu.source),
                         materials,
                         reduced,

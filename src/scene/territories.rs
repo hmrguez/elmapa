@@ -16,7 +16,7 @@ use std::sync::{Arc, OnceLock};
 use super::{
     Shape, generation,
     shape::line,
-    terrain::materials::{coordinates, points, surface},
+    terrain::materials::{coordinates, granulated_surface, points},
 };
 
 pub const BORDER_INK: u32 = 0x594731;
@@ -279,10 +279,9 @@ impl RegionView {
                 break;
             }
             let land = visible_face(&face.polygon, shore);
-            surface(
+            granulated_surface(
                 &mut shapes,
                 land.into_iter().flatten().collect(),
-                None,
                 pigment(data, face.owner, style),
                 if style.is_classic() { 0.30 } else { 0.24 },
             );

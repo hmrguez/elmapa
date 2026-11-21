@@ -162,9 +162,9 @@ pub fn sync(
                     TerrainMaterial::Tile { opacity, .. }
                         if *opacity != scene.batch_opacity(source) =>
                     {
-                        let texture = source.first().and_then(Shape::texture_index);
                         Some(canvas.tile_material(
-                            texture,
+                            source,
+                            scene.style(),
                             scene.batch_opacity(source),
                             &mut tiles,
                             studio.reduced,
@@ -306,10 +306,7 @@ pub fn sync(
                     }
                     TerrainMaterial::River(handle)
                 } else {
-                    let texture = source
-                        .first()
-                        .and_then(Shape::texture_index)
-                        .and_then(|index| canvas.brush_textures.get(&index).cloned());
+                    let texture = canvas.batch_texture(source, scene.style());
                     let handle = materials.add(ColorMaterial {
                         color: Color::srgba(1., 1., 1., scene.batch_opacity(source)),
                         texture,

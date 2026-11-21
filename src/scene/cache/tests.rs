@@ -121,7 +121,7 @@ fn child_borders_and_washes_follow_a_parent_edit_in_the_retained_scene() {
             .fold(f32::NEG_INFINITY, f32::max);
         assert!((right - end).abs() < 0.01, "border ended at {right}");
         let right = scene.shapes()
-            .filter(|shape| matches!(shape, crate::scene::Shape::Polygon { fill, .. } if *fill == child_ink))
+            .filter(|shape| matches!(shape, crate::scene::Shape::RegionSurface { fill, granulated: true, .. } if *fill == child_ink))
             .filter_map(crate::scene::Shape::bounds)
             .map(|bounds| bounds.max.x)
             .fold(f32::NEG_INFINITY, f32::max);

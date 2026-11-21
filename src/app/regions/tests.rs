@@ -138,12 +138,18 @@ fn style_edits_belong_to_the_owner_and_survive_round_trip_and_split() {
     assert_eq!(data.styles[&owner].color, Some(0x3d8476));
     let view = RegionView::resolve(data, &shore).unwrap();
     let washes = view.washes(&shore, data, elmapa::document::AtlasStyle::Classic);
+    let jade_wash = |shape: &Shape| {
+        matches!(
+            shape,
+            Shape::RegionSurface {
+                fill: 0x3d8476,
+                granulated: true,
+                ..
+            }
+        )
+    };
     assert_eq!(washes.len(), 2);
-    assert!(
-        washes
-            .iter()
-            .all(|shape| matches!(shape, Shape::Polygon { fill: 0x3d8476, .. }))
-    );
+    assert!(washes.iter().all(jade_wash));
     let ink = view.shapes(&shore, data, elmapa::document::AtlasStyle::Classic);
     assert!(ink.len() > washes.len());
     assert!(
@@ -175,7 +181,7 @@ fn style_edits_belong_to_the_owner_and_survive_round_trip_and_split() {
             .unwrap()
             .1
             .iter()
-            .any(|shape| matches!(shape, Shape::Polygon { fill: 0x3d8476, .. }))
+            .any(jade_wash)
     );
     studio.region_action(RegionAction::ApplySplit);
     let data = studio

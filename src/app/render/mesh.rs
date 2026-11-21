@@ -8,7 +8,7 @@ use bevy::{
 use elmapa::{
     brush_materials,
     document::Point,
-    scene::{PathPart, RiverReach, Shape},
+    scene::{PathPart, RiverReach, Shape, granulation},
 };
 use lyon::{
     math::point,
@@ -82,9 +82,11 @@ fn tessellate_river(
                 material,
                 fill,
                 opacity,
+                granulated,
             } => {
                 let tile = material.map(|id| brush_materials::artwork_catalog()[id].tile_size);
                 let color = if tile.is_some() { 0xffffff } else { *fill };
+                let tile = tile.or(granulated.then_some(granulation::WORLD_SIZE));
                 (contours.as_slice(), color, *opacity, tile)
             }
         };
@@ -128,7 +130,7 @@ fn tessellate_river(
         }));
         uvs.extend(buffers.vertices.iter().map(|v| {
             river.map_or_else(
-                || tile.map_or([0., 0.], |size| [v[0] / size, -v[1] / size]),
+                || tile.map_or(granulation::NEUTRAL_UV, |size| [v[0] / size, -v[1] / size]),
                 |reach| {
                     let (along, across) = reach.coordinates(Point::new(v[0], -v[1]));
                     let surface = if shape_index >= source.len() {
@@ -195,6 +197,51 @@ mod tests {
     use super::*;
     use crate::app::render::motion::{mountain_transform, path_transform};
     use elmapa::scene::MountainPart;
+
+    #[test]
+    fn granulated_fills_keep_world_uvs_while_ink_uses_a_neutral_sample() {
+        let contours = vec![vec![
+            Point::new(-20., 10.),
+            Point::new(30., 10.),
+            Point::new(30., 40.),
+            Point::new(-20., 40.),
+        ]];
+        let source = Arc::new(vec![
+            Shape::RegionSurface {
+                contours,
+                material: None,
+                granulated: true,
+                fill: 0xf3e8cd,
+                opacity: 1.,
+            },
+            Shape::Line {
+                points: vec![Point::new(-10., -10.), Point::new(10., -10.)],
+                color: 0x777d65,
+                width: 2.,
+                opacity: 1.,
+            },
+        ]);
+        let mesh = tessellate(source).unwrap().mesh;
+        let positions = mesh
+            .attribute(Mesh::ATTRIBUTE_POSITION)
+            .unwrap()
+            .as_float3()
+            .unwrap();
+        let bevy::mesh::VertexAttributeValues::Float32x2(uvs) =
+            mesh.attribute(Mesh::ATTRIBUTE_UV_0).unwrap()
+        else {
+            panic!("pigment coordinates");
+        };
+        for ([x, y, _], uv) in positions.iter().zip(uvs) {
+            let expected = if *y < 0. {
+                [x / granulation::WORLD_SIZE, -y / granulation::WORLD_SIZE]
+            } else {
+                granulation::NEUTRAL_UV
+            };
+            assert_eq!(*uv, expected);
+        }
+    }
+
     #[test]
     fn tessellation_keeps_world_coordinates_alpha_and_shape_order() {
         let source = Arc::new(vec![
