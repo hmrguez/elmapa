@@ -2,15 +2,18 @@
 mod camera;
 mod forest_atlas;
 mod forest_wind;
+mod grass_wind;
 mod mesh;
 mod motion;
 mod opening;
 mod path_guide;
 mod regions;
 mod retained;
+pub(super) mod terrain_tile;
 pub(super) mod tile_upload;
 pub(super) mod tree_leaves;
 pub(super) mod view_replay;
+pub(super) mod wet_edge;
 
 use super::river_material::RiverMaterial;
 use bevy::{
@@ -33,6 +36,7 @@ use std::{
     collections::{HashMap, HashSet},
     sync::{Arc, Weak},
 };
+use terrain_tile::TerrainTile;
 
 pub use camera::camera;
 pub use forest_wind::ForestWindPlugin;
@@ -83,20 +87,20 @@ impl Canvas {
         batch: &[Shape],
         style: AtlasStyle,
         opacity: f32,
-        materials: &mut Assets<ColorMaterial>,
-    ) -> Handle<ColorMaterial> {
-        let texture = self.batch_texture(batch, style);
-        let key = (texture.as_ref().map(Handle::id), opacity.to_bits());
+        materials: &mut Assets<TerrainTile>,
+        reduced: bool,
+    ) -> Handle<TerrainTile> {
+        let texture = batch.first().and_then(Shape::texture_index);
+        let image = self.batch_texture(batch, style);
+        let key = (image.as_ref().map(Handle::id), opacity.to_bits());
         if let Some(handle) = self.tile_materials.get(&key).and_then(Weak::upgrade) {
             return Handle::Strong(handle);
         }
         self.tile_materials
             .retain(|_, handle| handle.strong_count() != 0);
-        let handle = materials.add(ColorMaterial {
-            color: Color::srgba(1., 1., 1., opacity),
-            texture,
-            ..default()
-        });
+        let mut material = TerrainTile::new(image, opacity, reduced);
+        material.profile = grass_wind::profile(texture).unwrap_or_default();
+        let handle = materials.add(material);
         if let Handle::Strong(strong) = &handle {
             self.tile_materials.insert(key, Arc::downgrade(strong));
         }
@@ -161,6 +165,7 @@ pub struct Graphics<'w, 's> {
     images: ResMut<'w, Assets<Image>>,
     meshes: ResMut<'w, Assets<Mesh>>,
     materials: ResMut<'w, Assets<ColorMaterial>>,
+    tiles: ResMut<'w, Assets<TerrainTile>>,
     rivers: ResMut<'w, Assets<RiverMaterial>>,
     forest_materials: ResMut<'w, Assets<ForestWind>>,
 }

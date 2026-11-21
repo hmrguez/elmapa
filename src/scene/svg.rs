@@ -1,7 +1,7 @@
 use super::granulation;
 use super::{
     FOREST_SPECIMEN_COUNT, Scene, SceneCache, SceneRenderer, Shape, forest_specimen_svg, palette,
-    paper_detail, terrain::regions::pigments,
+    paper_detail,
 };
 use crate::{
     brush_materials,
@@ -52,6 +52,16 @@ impl<W: std::fmt::Write> SceneRenderer for SvgRenderer<W> {
                     *granulated,
                     *fill,
                     *opacity,
+                );
+            }
+            Shape::ShoreWash(wash) => {
+                let (fill, opacity) = wash.svg_color();
+                self.render_surface(
+                    wash.contours.iter().map(Vec::as_slice),
+                    None,
+                    false,
+                    fill,
+                    opacity,
                 );
             }
             Shape::Sprite {
@@ -268,6 +278,16 @@ impl<W: std::fmt::Write> SvgRenderer<W> {
                         fill,
                         opacity,
                     } => (std::slice::from_ref(points), None, false, *fill, *opacity),
+                    Shape::ShoreWash(wash) => {
+                        let (fill, opacity) = wash.svg_color();
+                        if opacity >= 0.001 {
+                            surfaces
+                                .entry((2, None, false, fill, opacity.to_bits()))
+                                .or_default()
+                                .extend(wash.contours.iter().map(Vec::as_slice));
+                        }
+                        continue;
+                    }
                     _ => unreachable!("tiled terrain is clipped into filled contours"),
                 };
                 let order = if material.is_some() {
@@ -275,11 +295,7 @@ impl<W: std::fmt::Write> SvgRenderer<W> {
                 } else if fill == palette::land(self.style) || fill == palette::water(self.style) {
                     1
                 } else {
-                    pigments(self.style)
-                        .1
-                        .iter()
-                        .position(|(_, color, _)| *color == fill)
-                        .map_or(4, |i| i + 2)
+                    3
                 };
                 surfaces
                     .entry((order, material, granulated, fill, opacity.to_bits()))

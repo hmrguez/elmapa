@@ -269,11 +269,30 @@ fn water_cuts_a_shared_shoreline_live_and_later_land_reclaims_it() {
             .min_by(f32::total_cmp)
             .expect("shore crosses the middle of the cut");
         assert_eq!(at(scene, bank - 4.), [(0xf4ecd5, Some("ochre-sands"))]);
-        let shallows = at(scene, bank + 4.);
+        assert_eq!(at(scene, bank + 4.), [(0xe6e5d3, Some("lake"))]);
+        let q = Point::new(bank + 4., 390.);
+        let wash: Vec<_> = scene
+            .shapes()
+            .filter_map(|shape| {
+                let Shape::ShoreWash(wash) = shape else {
+                    return None;
+                };
+                (wash
+                    .contours
+                    .iter()
+                    .filter(|ring| contains(ring, q))
+                    .count()
+                    % 2
+                    == 1)
+                    .then(|| wash.vertex_color(q)[3])
+            })
+            .collect();
         assert_eq!(
-            shallows,
-            [(0xe6e5d3, Some("lake")), (0xaaba9e, None), (0xf5ecd0, None)]
+            wash.len(),
+            1,
+            "a live lake or bay should have one shallows wash"
         );
+        assert!(wash[0] > 0.);
     };
 
     let lake = cache.render(&doc, Some((id, &water)));

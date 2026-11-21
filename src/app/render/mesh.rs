@@ -65,6 +65,7 @@ fn tessellate_river(
         }
         let (contours, hex, alpha, tile) = match shape {
             Shape::Sprite { .. } => unreachable!("sprite quads need no tessellation"),
+            Shape::ShoreWash(wash) => (wash.contours.as_slice(), 0, 0., None),
             Shape::Polygon {
                 points,
                 fill,
@@ -101,13 +102,14 @@ fn tessellate_river(
         let mut buffers: VertexBuffers<[f32; 3], u32> = VertexBuffers::new();
         match shape {
             Shape::Sprite { .. } => unreachable!("sprite quads need no tessellation"),
-            Shape::Polygon { .. } | Shape::RegionSurface { .. } => fill.tessellate_path(
-                &path,
-                &FillOptions::default(),
-                &mut BuffersBuilder::new(&mut buffers, |v: FillVertex<'_>| {
-                    [v.position().x, v.position().y, 0.]
-                }),
-            ),
+            Shape::Polygon { .. } | Shape::RegionSurface { .. } | Shape::ShoreWash(_) => fill
+                .tessellate_path(
+                    &path,
+                    &FillOptions::default(),
+                    &mut BuffersBuilder::new(&mut buffers, |v: FillVertex<'_>| {
+                        [v.position().x, v.position().y, 0.]
+                    }),
+                ),
             Shape::Line { width, .. } => stroke.tessellate_path(
                 &path,
                 &StrokeOptions::default()
@@ -122,7 +124,10 @@ fn tessellate_river(
         .map_err(|e| e.to_string())?;
         let offset = positions.len() as u32;
         let rgba = color(hex, alpha).to_linear().to_f32_array();
-        colors.extend(std::iter::repeat_n(rgba, buffers.vertices.len()));
+        colors.extend(buffers.vertices.iter().map(|v| match shape {
+            Shape::ShoreWash(wash) => wash.vertex_color(Point::new(v[0], -v[1])),
+            _ => rgba,
+        }));
         uvs.extend(buffers.vertices.iter().map(|v| {
             river.map_or_else(
                 || tile.map_or(granulation::NEUTRAL_UV, |size| [v[0] / size, -v[1] / size]),

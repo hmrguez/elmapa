@@ -100,6 +100,9 @@ impl Studio {
             Action::Brush(b) => {
                 self.set_tool(Tool::Brush);
                 self.brush = b;
+                if b == elmapa::document::Brush::Erase {
+                    self.wet_release = None;
+                }
             }
             Action::BrushMaterial(index) if orbit_open => {
                 self.brush_orbit.select(self.brush, self.biome_pack, index);
@@ -159,6 +162,7 @@ impl Studio {
             }
             Action::Motion => {
                 self.reduced = !self.reduced;
+                self.wet_release = None;
                 jobs.preferences = true;
             }
             Action::Settings => {
@@ -174,6 +178,7 @@ impl Studio {
             Action::Menu => self.menu = !self.menu,
             Action::ReplayView => {
                 self.menu = false;
+                self.wet_release = None;
                 if !self.home {
                     if self.reduced {
                         self.status = "Replay follows Reduced Motion.".into();

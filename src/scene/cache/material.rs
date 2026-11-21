@@ -26,6 +26,7 @@ pub(super) use live::LiveMaterial;
 mod tiles;
 pub(super) use tiles::TerrainIdentity;
 use tiles::TerrainTiles;
+pub use tiles::WetEdge;
 
 #[derive(Clone)]
 pub(super) struct MaterialLayer {
@@ -138,13 +139,25 @@ impl MaterialLayer {
         let shapes = self
             .batches()
             .map(|batch| {
-                batch
+                let wash_segments = batch
                     .iter()
-                    .map(|shape| {
-                        shape.points().count() * std::mem::size_of::<crate::document::Point>()
-                            + std::mem::size_of::<Shape>()
+                    .find_map(|shape| match shape {
+                        Shape::ShoreWash(wash) => Some(wash.segment_bytes()),
+                        _ => None,
                     })
-                    .sum::<usize>()
+                    .unwrap_or(0);
+                wash_segments
+                    + batch
+                        .iter()
+                        .map(|shape| {
+                            shape.points().count() * std::mem::size_of::<crate::document::Point>()
+                                + std::mem::size_of::<Shape>()
+                                + match shape {
+                                    Shape::ShoreWash(wash) => std::mem::size_of_val(wash.as_ref()),
+                                    _ => 0,
+                                }
+                        })
+                        .sum::<usize>()
             })
             .sum::<usize>();
         shapes
@@ -217,6 +230,7 @@ impl MaterialLayer {
     pub(super) fn mountain_parts(&self, out: &mut HashMap<usize, crate::scene::MountainPart>) {
         for (index, ordinal, base, flanks) in self.mountain_peaks() {
             let stroke = &self.source.strokes[index];
+            let textured = matches!(flanks[1].as_slice(), [Shape::Sprite { .. }]);
             let bounds = flanks
                 .iter()
                 .flat_map(|batch| batch.iter())
@@ -235,7 +249,7 @@ impl MaterialLayer {
                     crate::scene::MountainPart {
                         id: (self.source.id, index, stroke.seed, ordinal),
                         base,
-                        side: if flanks[1].is_empty() {
+                        side: if textured {
                             0.
                         } else if side == 0 {
                             -1.

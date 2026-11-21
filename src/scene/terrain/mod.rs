@@ -7,6 +7,7 @@ pub(in crate::scene) mod mountains;
 pub(in crate::scene) mod regions;
 pub(in crate::scene) mod rivers;
 pub(in crate::scene) mod roads;
+pub(in crate::scene) mod shore_wash;
 mod water_ripples;
 
 pub(super) const SEA: u32 = 0xe6e5d3;

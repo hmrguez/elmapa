@@ -29,7 +29,7 @@ pub(super) fn specimens(
             for shape in &mut shapes {
                 let points = match shape {
                     Shape::Polygon { points, .. } | Shape::Line { points, .. } => points,
-                    Shape::RegionSurface { .. } | Shape::Sprite { .. } => {
+                    Shape::RegionSurface { .. } | Shape::Sprite { .. } | Shape::ShoreWash(_) => {
                         unreachable!("forest specimens contain vector shapes only")
                     }
                 };

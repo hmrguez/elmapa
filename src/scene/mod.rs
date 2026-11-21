@@ -17,7 +17,7 @@ mod terrain;
 pub mod territories;
 
 pub use builder::build_scene;
-pub use cache::{Scene, SceneCache, TerrainHit, region_stroke_covers};
+pub use cache::{Scene, SceneCache, TerrainHit, WetEdge, region_stroke_covers};
 pub use forest_animation::ForestAnimation;
 pub use mountain_animation::{MountainAnimation, MountainId, MountainPart};
 pub use paper::paper_detail;
@@ -32,6 +32,7 @@ pub use terrain::forest::{
     forest_specimen_tree, forest_swatch,
 };
 pub use terrain::rivers::{CURRENT_INK, RiverReach};
+pub use terrain::shore_wash::ShoreWash;
 
 #[cfg(test)]
 mod tests;

@@ -12,6 +12,7 @@ use super::{
 };
 use crate::document::{AtlasStyle, Brush, Document, Point, Stroke};
 use composition::{AnnotationCache, AnnotationSource, compose};
+pub use material::WetEdge;
 use material::{LiveMaterial, MaterialLayer};
 pub use picking::TerrainHit;
 use snapshot::Batch;
@@ -101,6 +102,62 @@ impl SceneCache {
 
     pub fn work(&self) -> super::work::WorkCounts {
         self.work
+    }
+
+    /// Prepare the drying rim for an opted-in native brush preview or release.
+    /// The settled scene continues to share the same geometry with exporters.
+    pub fn render_with_wet_edges(
+        &mut self,
+        doc: &Document,
+        live: Option<(u64, &Stroke)>,
+        layer: u64,
+    ) -> (Scene, Vec<WetEdge>) {
+        let prior_release = live
+            .is_none()
+            .then(|| {
+                let next = doc.layer(layer)?;
+                let base = self.layers.iter().find(|base| {
+                    base.source.id == layer
+                        && next.strokes.len() == base.source.strokes.len() + 1
+                        && next.strokes.has_prefix(&base.source.strokes)
+                        && self.style == doc.style
+                })?;
+                Some(base.terrain.clone())
+            })
+            .flatten();
+        let scene = self.render(doc, live);
+        let limits = super::generation::Limits {
+            vertices: 60_000,
+            ..super::generation::Limits::INTERACTIVE
+        };
+        let edges = super::generation::bounded(limits, None, || {
+            let Some(source) = doc
+                .layer(layer)
+                .filter(|source| source.visible && source.opacity > 0.)
+            else {
+                return Vec::new();
+            };
+            let Some(base) = self.layers.iter().find(|base| base.source.id == layer) else {
+                return Vec::new();
+            };
+            if let Some((_, stroke)) = live {
+                self.live
+                    .as_ref()
+                    .filter(|preview| preview.accepts(layer, stroke))
+                    .map_or_else(Vec::new, |preview| {
+                        preview
+                            .material
+                            .terrain
+                            .wet_edges(&base.terrain, stroke, layer)
+                    })
+            } else if let (Some(prior), Some(stroke)) = (prior_release, source.strokes.last()) {
+                base.terrain.wet_edges(&prior, stroke, layer)
+            } else {
+                Vec::new()
+            }
+        })
+        .unwrap_or_default();
+        (scene, edges)
     }
 
     pub fn render(&mut self, doc: &Document, live: Option<(u64, &Stroke)>) -> Scene {

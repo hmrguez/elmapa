@@ -1,4 +1,6 @@
+use super::ShoreWash;
 use crate::document::Point;
+use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Shape {
@@ -14,6 +16,7 @@ pub enum Shape {
         fill: u32,
         opacity: f32,
     },
+    ShoreWash(Arc<ShoreWash>),
     Sprite {
         points: [Point; 4],
         material: usize,
@@ -54,6 +57,7 @@ impl Shape {
             Self::Polygon { points, .. } | Self::Line { points, .. } => (points, &[]),
             Self::Sprite { points, .. } => (points, &[]),
             Self::RegionSurface { contours, .. } => (&[], contours),
+            Self::ShoreWash(wash) => (&[], &wash.contours),
         };
         points.iter().chain(contours.iter().flatten())
     }
@@ -78,6 +82,7 @@ impl Shape {
 
     pub fn opacity_mut(&mut self) -> &mut f32 {
         match self {
+            Self::ShoreWash(wash) => &mut Arc::make_mut(wash).opacity,
             Self::Polygon { opacity, .. }
             | Self::Line { opacity, .. }
             | Self::Sprite { opacity, .. }

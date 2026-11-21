@@ -14,8 +14,12 @@ impl Studio {
         self.finish_landmark_move();
         self.drag = None;
         if let Some(stroke) = self.stroke.take() {
+            let wet = !self.reduced && matches!(stroke.brush, Brush::Land | Brush::Water);
+            let layer = self.editor.active_layer();
+            let id = self.editor.document().next_id;
             if self.editor.commit_stroke(stroke) {
                 self.changed();
+                self.wet_release = wet.then_some((layer, id));
                 self.status = "Painted your world.".into();
             } else {
                 self.status = "This stroke exceeds the map’s geometry limit.".into();
@@ -81,6 +85,7 @@ impl Studio {
         if point.x.abs() > MAX_WORLD_COORDINATE || point.y.abs() > MAX_WORLD_COORDINATE {
             return;
         }
+        self.wet_release = None;
         self.stroke = Some(Stroke {
             creation_id: Some(self.editor.document().next_id),
             material: self
@@ -102,6 +107,22 @@ impl Studio {
             Brush::Forest | Brush::Mountain | Brush::Path | Brush::River
         );
         self.invalidate();
+    }
+
+    pub(in crate::app) fn wet_paint(&self) -> Option<(u64, u64)> {
+        if self.reduced
+            || self.home
+            || self.installing
+            || self.opening.is_some()
+            || self.replay_view.is_some()
+        {
+            return None;
+        }
+        if let Some(stroke) = &self.stroke {
+            return matches!(stroke.brush, Brush::Land | Brush::Water)
+                .then_some((self.editor.active_layer(), stroke.creation_id?));
+        }
+        self.wet_release
     }
     pub fn begin_pan(&mut self, point: Vec2) {
         if self.home || self.installing || self.opening.is_some() {

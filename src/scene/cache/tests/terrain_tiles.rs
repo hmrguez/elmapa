@@ -79,6 +79,7 @@ fn textured_fill_and_shoreline_cross_a_tile_boundary() {
                     Shape::Polygon { points, fill, .. } => {
                         (std::slice::from_ref(points), *fill, None)
                     }
+                    Shape::ShoreWash(wash) => (wash.contours.as_slice(), wash.svg_color().0, None),
                     _ => return None,
                 };
                 (rings.iter().filter(|ring| contains(ring, point)).count() % 2 == 1).then_some((
@@ -88,7 +89,7 @@ fn textured_fill_and_shoreline_cross_a_tile_boundary() {
             })
             .collect::<Vec<_>>()
     };
-    // x=192 is a tile edge. Check the opaque finish, both washes and the
+    // x=192 is a tile edge. Check the opaque finish, the painted shelf and the
     // thin shoreline within a fraction of a world unit on either side.
     let crest = (-1400..-400)
         .map(|y| y as f32 / 10.)

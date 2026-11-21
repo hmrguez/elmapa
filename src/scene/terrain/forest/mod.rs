@@ -34,14 +34,13 @@ pub fn forest_specimen(variant: usize) -> String {
 pub fn forest_specimen_svg(variant: usize, style: AtlasStyle) -> &'static str {
     static SVG: OnceLock<[String; FOREST_SPECIMEN_COUNT]> = OnceLock::new();
     static WOODLAND: OnceLock<[String; FOREST_SPECIMEN_COUNT]> = OnceLock::new();
-    match style {
-        AtlasStyle::Classic => {
-            &SVG.get_or_init(|| std::array::from_fn(specimens::specimen))[variant]
-        }
-        AtlasStyle::Woodland => {
-            &WOODLAND.get_or_init(|| std::array::from_fn(woodland::specimen))[variant]
-        }
-    }
+    let (cache, specimen): (_, fn(usize) -> String) = match style {
+        AtlasStyle::Classic => (&SVG, specimens::specimen),
+        AtlasStyle::Woodland => (&WOODLAND, woodland::specimen),
+    };
+    &cache.get_or_init(|| {
+        std::array::from_fn(|variant| drawing::ground_contact(variant, style) + &specimen(variant))
+    })[variant]
 }
 
 /// Parse each original specimen once for the lifetime of the process.
@@ -415,7 +414,7 @@ pub(in crate::scene) fn tree_shapes(tree: &ForestTree, style: AtlasStyle) -> Vec
     vector::specimens(style)[tree.variant]
         .iter()
         .map(|shape| match shape {
-            Shape::RegionSurface { .. } | Shape::Sprite { .. } => {
+            Shape::RegionSurface { .. } | Shape::Sprite { .. } | Shape::ShoreWash(_) => {
                 unreachable!("forest specimens contain vector shapes only")
             }
             Shape::Polygon {
