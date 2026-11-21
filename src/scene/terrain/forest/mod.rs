@@ -22,7 +22,8 @@ use std::{
 const MIXED: std::ops::Range<usize> = 0..10;
 const FIR: std::ops::Range<usize> = MIXED.end..MIXED.end + 3;
 const OAK: std::ops::Range<usize> = FIR.end..FIR.end + 3;
-pub const FOREST_SPECIMEN_COUNT: usize = OAK.end;
+const SCRUB: std::ops::Range<usize> = OAK.end..OAK.end + 3;
+pub const FOREST_SPECIMEN_COUNT: usize = SCRUB.end;
 
 /// Original canopy artwork in coordinates local to the trunk.
 pub fn forest_specimen(variant: usize) -> String {
@@ -64,6 +65,7 @@ pub fn forest_swatch(style: Option<ForestStyle>) -> &'static [usize] {
         None => &[0, 7],
         Some(ForestStyle::Fir) => &[FIR.start],
         Some(ForestStyle::Oak) => &[OAK.start],
+        Some(ForestStyle::Scrub) => &[SCRUB.start],
     }
 }
 
@@ -191,17 +193,18 @@ impl Placement {
         }
         let _span = crate::performance::Span::new("forest_placement");
         let radius = stroke.size * 0.5;
-        let count = (stroke.strength * (0.58 / 0.85) * 18.).ceil() as usize;
         let style = stroke.material.as_deref().and_then(|id| {
             brush_materials::for_brush(Brush::Forest)
                 .find(|(_, material)| material.id == id)
                 .and_then(|(_, material)| material.forest)
         });
-        let variants = match style {
-            None => MIXED,
-            Some(ForestStyle::Fir) => FIR,
-            Some(ForestStyle::Oak) => OAK,
+        let (variants, density) = match style {
+            None => (MIXED, 1.),
+            Some(ForestStyle::Fir) => (FIR, 1.),
+            Some(ForestStyle::Oak) => (OAK, 1.),
+            Some(ForestStyle::Scrub) => (SCRUB, 0.25),
         };
+        let count = (stroke.strength * (0.58 / 0.85) * 18. * density).ceil() as usize;
         for (dab, origin) in sampler.advance(stroke) {
             if super::super::generation::stopped() || self.active >= 30_000 {
                 break;

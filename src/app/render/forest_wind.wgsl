@@ -10,7 +10,7 @@ struct Specimen {
 
 struct WindParams {
     enabled: u32,
-    specimens: array<Specimen, 16>, // FOREST_SPECIMEN_COUNT
+    specimens: array<Specimen, 19>, // FOREST_SPECIMEN_COUNT
 };
 
 @group(#{MATERIAL_BIND_GROUP}) @binding(0) var<uniform> wind: WindParams;

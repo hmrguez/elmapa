@@ -5,7 +5,7 @@ use super::{
     ui,
 };
 use bevy::prelude::*;
-use elmapa::{brush_materials, document::Brush};
+use elmapa::{biome_packs, brush_materials, document::Brush};
 use std::{sync::Arc, time::Duration};
 
 const HOLD: Duration = Duration::from_millis(1500);
@@ -49,34 +49,40 @@ pub struct BrushOrbit {
 }
 
 impl BrushOrbit {
-    pub(super) fn current_index(&self, brush: Brush) -> Option<usize> {
-        self.selected[brush as usize]
-            .or_else(|| brush_materials::for_brush(brush).next().map(|(i, _)| i))
+    pub(super) fn reset_picker(&mut self) {
+        *self = Self {
+            generation: self.generation,
+            ..Self::default()
+        };
     }
 
-    pub fn current(&self, brush: Brush) -> Option<&'static brush_materials::Material> {
-        self.current_index(brush)
+    pub(super) fn current_index(&self, brush: Brush, pack: Option<usize>) -> Option<usize> {
+        self.selected[brush as usize].or_else(|| {
+            biome_packs::materials(pack, brush)
+                .next()
+                .map(|(index, _)| index)
+        })
+    }
+
+    pub fn stroke_material(&self, brush: Brush, pack: Option<usize>) -> Option<Arc<str>> {
+        self.current_index(brush, pack)
             .map(|index| &brush_materials::catalog()[index])
-    }
-
-    pub fn stroke_material(&self, brush: Brush) -> Option<Arc<str>> {
-        self.current(brush)
-            .filter(|material| material.texture.is_some() || material.forest.is_some())
+            .filter(|material| {
+                pack.is_some() || material.texture.is_some() || material.forest.is_some()
+            })
             .map(|material| Arc::from(material.id.as_str()))
     }
 
-    pub fn select(&mut self, brush: Brush, index: usize) {
-        if brush_materials::catalog()
-            .get(index)
-            .is_some_and(|material| material.brush == brush)
-        {
+    pub fn select(&mut self, brush: Brush, pack: Option<usize>, index: usize) {
+        if biome_packs::materials(pack, brush).any(|(option, _)| option == index) {
             self.selected[brush as usize] = Some(index);
         }
     }
 
-    pub fn items(&self, brush: Brush) -> Vec<Item<Action>> {
-        let total = brush_materials::for_brush(brush).count();
-        let mut actions: Vec<_> = brush_materials::for_brush(brush)
+    pub fn items(&self, brush: Brush, pack: Option<usize>) -> Vec<Item<Action>> {
+        let total = biome_packs::materials(pack, brush).count();
+        let current = self.current_index(brush, pack);
+        let mut actions: Vec<_> = biome_packs::materials(pack, brush)
             .skip(self.page * PAGE_SIZE)
             .take(PAGE_SIZE)
             .map(|(index, material)| {
@@ -85,7 +91,7 @@ impl BrushOrbit {
                     ui::brush_icon(brush),
                     Action::BrushMaterial(index),
                 );
-                item.active = self.current_index(brush) == Some(index);
+                item.active = current == Some(index);
                 item
             })
             .collect();
@@ -114,7 +120,9 @@ impl Studio {
             && self.drag.is_none()
             && self.tool == super::state::Tool::Brush
             && !self.regions.active
-            && brush_materials::for_brush(self.brush).nth(1).is_some()
+            && biome_packs::materials(self.biome_pack, self.brush)
+                .nth(1)
+                .is_some()
     }
 
     pub fn open_brush_orbit(&mut self, point: Vec2) {

@@ -122,7 +122,7 @@ fn crown_base(d: &str, color: &str) -> String {
     )
 }
 pub(super) fn specimen(variant: usize) -> String {
-    const GROVES: [&str; super::FOREST_SPECIMEN_COUNT - super::MIXED.end] = [
+    const GROVES: [&str; super::OAK.end - super::MIXED.end] = [
         include_str!("../../../../assets/brush-materials/forest/fir-1.svg"),
         include_str!("../../../../assets/brush-materials/forest/fir-2.svg"),
         include_str!("../../../../assets/brush-materials/forest/fir-3.svg"),
@@ -130,6 +130,9 @@ pub(super) fn specimen(variant: usize) -> String {
         include_str!("../../../../assets/brush-materials/forest/oak-2.svg"),
         include_str!("../../../../assets/brush-materials/forest/oak-3.svg"),
     ];
+    if super::SCRUB.contains(&variant) {
+        return scrub(variant).into();
+    }
     if variant >= super::MIXED.end {
         return GROVES[variant - super::MIXED.end].into();
     }
@@ -141,4 +144,13 @@ pub(super) fn specimen(variant: usize) -> String {
     // Foreshorten the crown and lift it above the root pivot. Keep the same
     // projection in the shared artwork so sprites, thumbnails and SVG agree.
     format!("{ground}<g transform=\"translate(0 -23) scale(1 .68)\">{crown}</g>")
+}
+
+pub(super) fn scrub(variant: usize) -> &'static str {
+    const SCRUB: [&str; super::SCRUB.end - super::SCRUB.start] = [
+        include_str!("../../../../assets/brush-materials/forest/scrub-1.svg"),
+        include_str!("../../../../assets/brush-materials/forest/scrub-2.svg"),
+        include_str!("../../../../assets/brush-materials/forest/scrub-3.svg"),
+    ];
+    SCRUB[variant - super::SCRUB.start]
 }

@@ -123,6 +123,15 @@ fn codex_facing_stdio_creates_renders_edits_and_exports_editable_layers() {
             .iter()
             .any(|item| item["id"] == "elmapa.basic:town")
     );
+    let desert = catalog["biome_packs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|pack| pack["id"] == "desert")
+        .expect("discover the Desert biome pack");
+    assert_eq!(desert["materials"]["land"][0], "dune-sand");
+    assert_eq!(desert["landmarks"][0], "elmapa.nature:oasis");
+
     let created = mcp.text("create_map", json!({
         "name": "Sable Island",
         "size": [640, 400],

@@ -51,24 +51,31 @@ fn resolution(extent: f32) -> u32 {
 }
 fn tree_atlas(levels: [u32; FOREST_SPECIMEN_COUNT], style: AtlasStyle) -> Atlas {
     // Group similar LODs so a zoomed-in specimen does not enlarge every cell.
-    // With up to four 2048-pixel tiles per row and four rows, each axis fits 8192.
     let mut variants: [usize; FOREST_SPECIMEN_COUNT] = std::array::from_fn(|i| i);
     variants.sort_by_key(|&variant| std::cmp::Reverse(levels[variant]));
-    let width: u32 = variants[..4].iter().map(|&variant| levels[variant]).sum();
+    let mut tile_sizes = levels;
+    // At extreme zoom the fifth row can exceed the portable texture limit.
+    if variants.iter().step_by(4).map(|&i| levels[i]).sum::<u32>() > 8192 {
+        tile_sizes = levels.map(|level| level.min(1024));
+    }
+    let width: u32 = variants[..4]
+        .iter()
+        .map(|&variant| tile_sizes[variant])
+        .sum();
     let mut origins = [UVec2::ZERO; FOREST_SPECIMEN_COUNT];
     let mut height = 0;
     for row in variants.chunks(4) {
         let mut x = 0;
         for &variant in row {
             origins[variant] = UVec2::new(x, height);
-            x += levels[variant];
+            x += tile_sizes[variant];
         }
-        height += levels[row[0]];
+        height += tile_sizes[row[0]];
     }
     let mut pixels = vec![0; (width * height * 4) as usize];
     let mut sprites = [TreeSprite::default(); FOREST_SPECIMEN_COUNT];
     for variant in 0..FOREST_SPECIMEN_COUNT {
-        let size = levels[variant];
+        let size = tile_sizes[variant];
         let mut tile = resvg::tiny_skia::Pixmap::new(size, size).expect("tree tile");
         resvg::render(
             elmapa::scene::forest_specimen_tree(variant, style),

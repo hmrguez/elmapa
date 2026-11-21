@@ -330,17 +330,6 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             if active { 1. } else { 0.1 },
         );
         let tip = match action {
-            Action::Brush(b) if brush_materials::for_brush(b).nth(1).is_some() => {
-                format!(
-                    "{} · {}-click or hold for materials",
-                    b.label(),
-                    if cfg!(target_os = "macos") {
-                        "Option"
-                    } else {
-                        "Alt"
-                    }
-                )
-            }
             Action::Brush(b) => format!("{} · {}", b.label(), b.shortcut()),
             Action::Menu => "Map actions".into(),
             Action::Save => crate::app::input::shortcut_hint("Save map", "S", false),

@@ -43,6 +43,14 @@ impl Studio {
             self.ui_dirty = true;
             return;
         }
+        if let Action::BiomePack(pack) = action {
+            if self.set_biome_pack(pack) {
+                jobs.preferences = true;
+            }
+            self.menu = false;
+            self.ui_dirty = true;
+            return;
+        }
         let orbit_open = self.brush_orbit.anchor.is_some();
         if !matches!(action, Action::BrushOrbitPage(_)) {
             self.close_brush_orbit();
@@ -88,16 +96,16 @@ impl Studio {
         let revision = self.editor.revision();
         match action {
             Action::Regions(action) => self.region_action(action),
-            Action::SetLayerBranch(..) => unreachable!(),
+            Action::SetLayerBranch(..) | Action::BiomePack(_) => unreachable!(),
             Action::Brush(b) => {
                 self.set_tool(Tool::Brush);
                 self.brush = b;
             }
             Action::BrushMaterial(index) if orbit_open => {
-                self.brush_orbit.select(self.brush, index)
+                self.brush_orbit.select(self.brush, self.biome_pack, index);
             }
             Action::AdvancedBrushMaterial(index) if self.advanced => {
-                self.brush_orbit.select(self.brush, index)
+                self.brush_orbit.select(self.brush, self.biome_pack, index);
             }
             Action::BrushOrbitPage(page) if orbit_open => self.brush_orbit.page = page,
             Action::BrushMaterial(_)

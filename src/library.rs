@@ -56,6 +56,8 @@ pub struct Shelf {
     pub reduced_motion: bool,
     #[serde(default)]
     pub disabled_landmark_packs: std::collections::HashSet<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub biome_pack: Option<String>,
 }
 
 #[derive(Clone)]

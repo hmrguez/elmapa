@@ -3,7 +3,7 @@ mod plan;
 mod store;
 
 use base64::{Engine, engine::general_purpose::STANDARD};
-use elmapa::{brush_materials, scene};
+use elmapa::{biome_packs, brush_materials, scene};
 use rmcp::{
     ServerHandler, ServiceExt,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
@@ -47,7 +47,7 @@ struct Server {
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct Inspect {
-    /// Omit to discover landmark asset and brush material IDs.
+    /// Omit to discover biome packs, landmark asset IDs, and brush material IDs.
     map_id: Option<String>,
     /// Inspect only this layer, using its numeric layer ID.
     layer_id: Option<u64>,
@@ -93,7 +93,7 @@ impl Server {
     }
 
     #[tool(
-        description = "Inspect a map's revision, bounds and named layers without returning stroke geometry. Omit map_id to discover asset IDs.",
+        description = "Inspect a map's revision, bounds and named layers without returning stroke geometry. Omit map_id to discover biome packs and asset IDs.",
         annotations(read_only_hint = true, open_world_hint = false)
     )]
     async fn inspect_map(&self, Parameters(query): Parameters<Inspect>) -> CallToolResult {
@@ -186,5 +186,9 @@ fn asset_catalog() -> Value {
         .iter()
         .map(|asset| json!({"id": asset.kind.key(), "name": asset.name}))
         .collect::<Vec<_>>();
-    json!({"materials": materials, "landmarks": landmarks})
+    json!({
+        "materials": materials,
+        "landmarks": landmarks,
+        "biome_packs": biome_packs::catalog(),
+    })
 }
