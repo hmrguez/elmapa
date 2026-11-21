@@ -11,7 +11,7 @@ use bevy::{
 use elmapa::scene::{FOREST_SPECIMEN_COUNT, ForestTree};
 
 // Keep the uniform array length in forest_wind.wgsl in sync with the atlas.
-const _: () = assert!(FOREST_SPECIMEN_COUNT == 16);
+const _: () = assert!(FOREST_SPECIMEN_COUNT == 19);
 
 pub struct ForestWindPlugin;
 

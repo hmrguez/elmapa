@@ -11,7 +11,7 @@ The table uses macOS key names. On Linux and Windows, use Ctrl for ⌘, Shift fo
 | Shortcut / gesture | Action |
 | --- | --- |
 | Left-click / left-drag | Paint a dab / stroke on the active visible layer |
-| Option / Alt + left-click with Land, Water, Forest, or Mountains selected | Open the brush material orbit |
+| Option / Alt + left-click with a brush that offers multiple finishes | Open the brush material orbit |
 | Hold left-click in place for 1.5 seconds with Land, Water, Forest, or Mountains selected | Open the same orbit |
 | `1`–`7` | Land, water, forest, mountains, river, trail, eraser |
 | `T` / `8` | Text tool |
@@ -42,7 +42,13 @@ The floating zoom **− / +** buttons zoom around the canvas center; **Fit** doe
 
 New atlases use the woodland palette. It pairs olive trees and warm rock with ivory parchment and blue-green water. Older atlases open in their classic palette. Choose **Use woodland palette** in the map actions menu to restyle the current atlas, or **Use classic palette** to return to its previous artwork. The palette switch is undoable and saves with the atlas. It keeps brush paths, materials, and layer order in place.
 
-With **Land**, **Water**, **Forest**, or **Mountains** selected, choose a finish under **Material** in brush settings or open the material orbit on the canvas. Land offers **Parchment**, **Ochre Sands**, **Lichen Heath**, and **Weathered Shale**. Water offers **Ocean**, **Shallow Ocean**, and **Lake**. Forest offers **Mixed Woodland**, **Fir Grove**, and **Oak Grove**. Mountains offers **Engraved Peaks**, **Alpine Crags**, **Ochre Escarpments**, and **Weathered Highlands**. Hover a swatch for its name. The gesture opens the picker without placing a dab. Choose a swatch to set the finish for subsequent strokes, or press Escape or click outside the orbit to dismiss it. Paint over an existing Land or Water stroke to change its finish. Forest and mountain finishes set the artwork of newly placed trees and peaks. Materials follow layer order and opacity and carry through to saves, shelf previews, and SVG exports. Water finishes apply to painted strokes. The ocean backdrop and Water strokes without a material use the washes for the atlas palette. See the [brush material manifest guide](../assets/brush-materials/README.md) to add another finish.
+With **Land**, **Water**, **Forest**, or **Mountains** selected, choose a finish under **Material** in brush settings or open the material orbit on the canvas. Hover a swatch for its name. The gesture opens the picker without placing a dab. Choose a swatch to set the finish for subsequent strokes, or press Escape or click outside the orbit to dismiss it. Paint over an existing Land or Water stroke to change its finish. Forest and mountain finishes set the artwork of newly placed trees and peaks. Materials follow layer order and opacity and carry through to saves, shelf previews, and SVG exports. Water finishes apply to painted strokes. The ocean backdrop and Water strokes without a material use the washes for the atlas palette. See the [brush material manifest guide](../assets/brush-materials/README.md) to add another finish.
+
+## Biome packs
+
+Open the map actions menu and choose a **Biome pack**. **Desert** brings dune sand, oasis water, scrub and ochre escarpments into the brush pickers, with landmarks such as oases, dunes and canyons. **Alpine** brings alpine meadow, glacial water, firs and crags, with landmarks such as glaciers, waterfalls and caves. The River brush uses the pack’s Water finishes for its channel color, with the first finish selected by default.
+
+Switch packs as you paint different environments in the same atlas. The pack choice is remembered in your local atlas shelf. Existing terrain and landmarks keep their saved materials and artwork when you switch. Select **All Materials** to browse the complete brush catalog and all enabled landmark packs. For reference palettes and planned additions, see the [biome audit](biome-packs.md).
 
 ## Text and landmarks
 

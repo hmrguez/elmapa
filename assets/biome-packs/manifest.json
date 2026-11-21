@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "packs": [
+    {
+      "id": "desert",
+      "name": "Desert",
+      "description": "Wind-carved sand, mineral springs, low scrub and ochre cliffs.",
+      "materials": {
+        "land": ["dune-sand", "ochre-sands"],
+        "water": ["oasis-water", "shallow-ocean"],
+        "forest": ["desert-scrub"],
+        "mountain": ["ochre-escarpments", "weathered-highlands"]
+      },
+      "landmarks": [
+        "elmapa.nature:oasis",
+        "elmapa.nature:sand-dunes",
+        "elmapa.nature:canyon",
+        "elmapa.nature:hoodoos",
+        "elmapa.nature:saguaros"
+      ]
+    },
+    {
+      "id": "alpine",
+      "name": "Alpine",
+      "description": "High meadows, glacial lakes, fir groves and sharp peaks.",
+      "materials": {
+        "land": ["alpine-meadow", "weathered-shale"],
+        "water": ["glacial-water", "lake"],
+        "forest": ["fir-grove"],
+        "mountain": ["alpine-crags", "engraved-peaks"]
+      },
+      "landmarks": [
+        "elmapa.nature:glacier",
+        "elmapa.nature:waterfall",
+        "elmapa.nature:cave",
+        "brillanto.brilliant:observatory"
+      ]
+    }
+  ]
+}

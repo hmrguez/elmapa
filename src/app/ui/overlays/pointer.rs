@@ -139,7 +139,7 @@ pub(super) fn brush_orbit(b: &mut Builder, root: Entity, studio: &Studio) {
     let orbit = action_orbit(
         b,
         root,
-        &studio.brush_orbit.items(studio.brush),
+        &studio.brush_orbit.items(studio.brush, studio.biome_pack),
         &radial::Navigation::default(),
         &format!(
             "brush/{}/{}",

@@ -15,7 +15,7 @@ To add a Land or Water finish, put an opaque, tileable PNG beside the manifest a
 | `texture` | PNG filename beside the manifest |
 | `tile_size` | Edge length of one Land or Water texture repeat in map units |
 | `shoreline_ink` | Optional `#rrggbb` ink for intermittent ripples along the painted shoreline of a Water finish |
-| `forest` | Optional sprite family for the Forest brush. Supported families are `fir` and `oak` |
+| `forest` | Optional sprite family for the Forest brush. Supported families are `fir`, `oak`, and `scrub` |
 | `sprite_frames` | Number of equally sized frames laid out left to right in a transparent mountain PNG |
 | `source` | Optional source URL for attribution |
 
@@ -27,7 +27,7 @@ Mountain finishes use transparent sprites in a single horizontal PNG strip per f
 
 ## Texture sources
 
-Ocean, Shallow Ocean, and Lake use original procedural Elmapa tiles. The three Land texture PNGs are warm sepia, reduced-resolution adaptations of diffuse maps available under the [Poly Haven CC0 license](https://polyhaven.com/license).
+Ocean, Shallow Ocean, Lake, Dune Sand, Alpine Meadow, Oasis Water, and Glacial Water use original procedural Elmapa tiles. The Desert Scrub finish uses original vector specimens. Ochre Sands, Lichen Heath, and Weathered Shale are warm sepia, reduced-resolution adaptations of diffuse maps available under the [Poly Haven CC0 license](https://polyhaven.com/license).
 
 - Ochre Sands uses [Sand 01](https://polyhaven.com/a/sand_01).
 - Lichen Heath uses [Forest Ground 01](https://polyhaven.com/a/forrest_ground_01).

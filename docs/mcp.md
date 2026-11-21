@@ -32,7 +32,9 @@ an SVG.”
   river stroke’s `material` to a Water finish such as `lake` to match its channel
   color. A label accepts optional clockwise `rotation` in degrees from −180 to 180.
 - `inspect_map` returns layer IDs and anchors. Omit the map ID to discover
-  materials and landmark assets.
+  materials, landmark assets and biome packs. Each entry under `biome_packs`
+  lists recommended material IDs in brush order and landmark asset IDs. Use
+  those IDs on individual features to draw several biomes in the same atlas.
 - `preview_map` returns a PNG of the full map or an area around a chosen layer.
   `edit_map` applies a batch to the expected revision. To reroute after a move,
   replace the trail and reference the updated feature names.

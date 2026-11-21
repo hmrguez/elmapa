@@ -26,6 +26,71 @@ fn ui_app(studio: Studio) -> App {
 }
 
 #[test]
+fn map_menu_and_advanced_settings_show_biome_choices() {
+    use elmapa::{biome_packs, document::Brush};
+
+    let desert = biome_packs::find("desert").unwrap();
+    let alpine = biome_packs::find("alpine").unwrap();
+    let mut studio = Studio {
+        home: false,
+        menu: true,
+        advanced: true,
+        ..default()
+    };
+    studio.set_biome_pack(Some(desert));
+    let mut app = ui_app(studio);
+    app.update();
+
+    let buttons = |world: &mut World, filter: fn(Action) -> bool| {
+        let mut hits: Vec<_> = world
+            .query::<(&Hit, &Children)>()
+            .iter(world)
+            .filter_map(|(hit, children)| {
+                let action = hit.action.filter(|&action| filter(action))?;
+                let label = children.iter().find_map(|child| world.get::<Text>(child))?;
+                Some((hit.order, action, label.0.clone()))
+            })
+            .collect();
+        hits.sort_by_key(|(order, _, _)| *order);
+        hits.into_iter()
+            .map(|(_, action, label)| (action, label))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        buttons(app.world_mut(), |action| matches!(
+            action,
+            Action::BiomePack(_)
+        )),
+        [
+            (Action::BiomePack(None), "All Materials".into()),
+            (Action::BiomePack(Some(desert)), "Desert".into()),
+            (Action::BiomePack(Some(alpine)), "Alpine".into()),
+        ]
+    );
+    let material_buttons = |world: &mut World, brush| {
+        assert_eq!(
+            buttons(world, |action| matches!(
+                action,
+                Action::AdvancedBrushMaterial(_)
+            )),
+            biome_packs::materials(Some(desert), brush)
+                .map(|(index, finish)| (Action::AdvancedBrushMaterial(index), finish.name.clone()))
+                .collect::<Vec<_>>()
+        );
+    };
+    material_buttons(app.world_mut(), Brush::Land);
+    app.world_mut()
+        .resource_scope(|world, mut studio: Mut<Studio>| {
+            studio.act(
+                Action::Brush(Brush::Forest),
+                &mut world.resource_mut::<Jobs>(),
+            );
+        });
+    app.update();
+    material_buttons(app.world_mut(), Brush::Forest);
+}
+
+#[test]
 fn dark_shelf_chrome_matches_neutral_canvas_panels() {
     let mut library =
         elmapa::library::Library::load(std::env::temp_dir().join("elmapa-palette-test-no-files"))

@@ -1,5 +1,6 @@
 //! Elmapa's map model, transactional editor, procedural geometry, and persistence.
 //! These modules are independent of the Bevy presentation layer.
+pub mod biome_packs;
 pub mod brush_materials;
 pub mod document;
 pub mod editor;

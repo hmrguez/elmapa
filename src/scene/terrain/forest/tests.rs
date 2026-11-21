@@ -127,9 +127,14 @@ fn oblique_specimens_keep_a_visible_trunk_and_fit_the_shared_atlas() {
             &mut image.as_mut(),
         );
         let alpha = |x: usize, y: usize| image.data()[(y * 200 + x) * 4 + 3];
-        assert_eq!(alpha(100, 100), 255, "exposed trunk for variant {variant}");
-        assert!(alpha(120, 100) < 100, "canopy must clear the trunk sides");
-        assert_eq!(alpha(100, 54), 255, "retain a solid raised crown");
+        if SCRUB.contains(&variant) {
+            assert!(alpha(100, 100) > 128, "scrub anchors at its stems");
+            assert!((0..200).all(|x| alpha(x, 54) == 0), "scrub stays low");
+        } else {
+            assert_eq!(alpha(100, 100), 255, "exposed trunk for variant {variant}");
+            assert!(alpha(120, 100) < 100, "canopy must clear the trunk sides");
+            assert_eq!(alpha(100, 54), 255, "retain a solid raised crown");
+        }
         for edge in 0..200 {
             assert_eq!(alpha(edge, 0), 0, "crown clipped at the top");
             assert_eq!(alpha(edge, 199), 0);
@@ -203,7 +208,20 @@ fn forest_styles_survive_live_paint_save_reopen_and_svg_export() {
     let mut paint = forest();
     paint.points = vec![p(600., 400.), p(800., 400.)].into();
 
-    for (id, variants) in [("fir-grove", FIR), ("oak-grove", OAK)] {
+    let grown = |id| {
+        let mut layer = doc.layers[0].clone();
+        let mut stroke = paint.clone();
+        stroke.material = Some(Arc::from(id));
+        layer.strokes.push(stroke);
+        trees(&layer).iter().filter(|tree| tree.id.1 == 1).count()
+    };
+    assert!(grown("desert-scrub") < grown("oak-grove"));
+
+    for (id, variants) in [
+        ("fir-grove", FIR),
+        ("oak-grove", OAK),
+        ("desert-scrub", SCRUB),
+    ] {
         paint.material = Some(Arc::from(id));
         let live = cache.render(&doc, Some((layer, &paint)));
         assert!(

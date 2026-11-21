@@ -46,6 +46,7 @@ pub struct SpriteSheet {
 pub enum ForestStyle {
     Fir,
     Oak,
+    Scrub,
 }
 
 fn hex_color<'de, D: serde::Deserializer<'de>>(decoder: D) -> Result<u32, D::Error> {

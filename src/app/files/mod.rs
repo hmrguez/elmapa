@@ -8,6 +8,7 @@ use bevy::{
     tasks::{IoTaskPool, Task, block_on, poll_once},
 };
 use elmapa::{
+    biome_packs,
     document::Document,
     library::{AtlasRecord, Camera, Library},
     storage::{DocumentStore, LocalDocumentStore, export_svg},
@@ -128,8 +129,14 @@ pub fn poll(
                     if let Some(library) = &studio.library {
                         let dark = library.shelf.dark || studio.dark;
                         let reduced = library.shelf.reduced_motion;
+                        let pack = library
+                            .shelf
+                            .biome_pack
+                            .as_deref()
+                            .and_then(biome_packs::find);
                         studio.disabled_landmark_packs =
                             library.shelf.disabled_landmark_packs.clone();
+                        studio.set_biome_pack(pack);
                         studio.dark = dark;
                         studio.reduced = reduced;
                     }
@@ -199,6 +206,9 @@ pub fn poll(
             library.shelf.dark = studio.dark;
             library.shelf.reduced_motion = studio.reduced;
             library.shelf.disabled_landmark_packs = studio.disabled_landmark_packs.clone();
+            library.shelf.biome_pack = studio
+                .biome_pack
+                .map(|index| biome_packs::catalog()[index].id.clone());
             let external = matches!(request, Request::Save(_) | Request::Export(_));
             if !external {
                 jobs.preferences = false;

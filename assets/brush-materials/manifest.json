@@ -38,6 +38,24 @@
       "woodland_color": "#c8bba0"
     },
     {
+      "id": "dune-sand",
+      "brush": "land",
+      "name": "Dune Sand",
+      "color": "#e7cca0",
+      "woodland_color": "#e4c38e",
+      "texture": "dune-sand.png",
+      "tile_size": 244
+    },
+    {
+      "id": "alpine-meadow",
+      "brush": "land",
+      "name": "Alpine Meadow",
+      "color": "#caccaa",
+      "woodland_color": "#aab78d",
+      "texture": "alpine-meadow.png",
+      "tile_size": 224
+    },
+    {
       "id": "ocean",
       "brush": "water",
       "name": "Ocean",
@@ -69,6 +87,28 @@
       "woodland_shoreline_ink": "#5e7977"
     },
     {
+      "id": "oasis-water",
+      "brush": "water",
+      "name": "Oasis Water",
+      "color": "#adbba4",
+      "woodland_color": "#91ab8e",
+      "texture": "oasis-water.png",
+      "tile_size": 236,
+      "shoreline_ink": "#6e8065",
+      "woodland_shoreline_ink": "#607951"
+    },
+    {
+      "id": "glacial-water",
+      "brush": "water",
+      "name": "Glacial Water",
+      "color": "#b6c7ca",
+      "woodland_color": "#a4bcc9",
+      "texture": "glacial-water.png",
+      "tile_size": 264,
+      "shoreline_ink": "#718691",
+      "woodland_shoreline_ink": "#677d8d"
+    },
+    {
       "id": "mixed-woodland",
       "brush": "forest",
       "name": "Mixed Woodland",
@@ -90,6 +130,14 @@
       "color": "#e5d6b5",
       "forest": "oak",
       "woodland_color": "#969a70"
+    },
+    {
+      "id": "desert-scrub",
+      "brush": "forest",
+      "name": "Desert Scrub",
+      "color": "#c6a67c",
+      "forest": "scrub",
+      "woodland_color": "#96996b"
     },
     {
       "id": "engraved-peaks",

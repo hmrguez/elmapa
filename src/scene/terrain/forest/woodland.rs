@@ -2,6 +2,12 @@
 use std::fmt::Write;
 
 pub(super) fn specimen(variant: usize) -> String {
+    if super::SCRUB.contains(&variant) {
+        return super::specimens::scrub(variant)
+            .replace("#96805a", "#757950")
+            .replace("#c6a67c", "#96996b")
+            .replace("#e2c799", "#c3be8c");
+    }
     let fir = variant < 6 || super::FIR.contains(&variant);
     let height = if fir { 41 } else { 33 } + (variant % 4) * 2;
     let spread = if fir { 9 } else { 14 } + (variant % 3);

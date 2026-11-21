@@ -9,7 +9,7 @@ use crate::app::{
     },
 };
 use bevy::prelude::*;
-use elmapa::{brush_materials, document::Brush};
+use elmapa::{biome_packs, document::Brush};
 
 pub fn brush_icon(b: Brush) -> &'static str {
     match b {
@@ -81,8 +81,8 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
         b.button(buttons, "minus", "", Action::Strength(-0.1), false);
         b.button(buttons, "plus", "", Action::Strength(0.1), false);
 
-        let materials: Vec<_> = brush_materials::for_brush(s.brush).collect();
-        if materials.len() > 1 {
+        let materials: Vec<_> = biome_packs::materials(s.biome_pack, s.brush).collect();
+        if materials.len() > 1 || s.biome_pack.is_some() && !materials.is_empty() {
             b.text(advanced, "Material", 11., p.muted, false);
             let choices = b.node(
                 advanced,
@@ -92,7 +92,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
                     ..row(5.)
                 },
             );
-            let current = s.brush_orbit.current_index(s.brush);
+            let current = s.brush_orbit.current_index(s.brush, s.biome_pack);
             for (index, material) in materials {
                 let active = current == Some(index);
                 let button = b.button(
@@ -246,6 +246,19 @@ fn brush_button(b: &mut Builder, toolbar: Entity, s: &Studio, brush: Brush) {
         selected,
     );
     tool_surface(b, button, selected);
+    if biome_packs::materials(s.biome_pack, brush).nth(1).is_some() {
+        let modifier = if cfg!(target_os = "macos") {
+            "Option"
+        } else {
+            "Alt"
+        };
+        b.commands
+            .entity(button)
+            .entry::<Hover>()
+            .and_modify(move |mut hover| {
+                hover.tip = format!("{} · {modifier}-click or hold for materials", brush.label());
+            });
+    }
 }
 
 fn tool_surface(b: &mut Builder, button: Entity, selected: bool) {
