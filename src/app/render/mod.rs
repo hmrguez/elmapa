@@ -13,6 +13,7 @@ pub(super) mod terrain_tile;
 pub(super) mod tile_upload;
 pub(super) mod tree_leaves;
 pub(super) mod view_replay;
+pub(super) mod wet_edge;
 
 use super::river_material::RiverMaterial;
 use bevy::{

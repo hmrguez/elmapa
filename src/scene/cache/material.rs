@@ -26,6 +26,7 @@ pub(super) use live::LiveMaterial;
 mod tiles;
 pub(super) use tiles::TerrainIdentity;
 use tiles::TerrainTiles;
+pub use tiles::WetEdge;
 
 #[derive(Clone)]
 pub(super) struct MaterialLayer {

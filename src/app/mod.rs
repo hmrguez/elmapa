@@ -93,6 +93,7 @@ pub fn run() {
         .add_plugins(landmark_render::LandmarkPlugin)
         .add_plugins(render::ForestWindPlugin)
         .add_plugins(render::view_replay::InkRevealPlugin)
+        .add_plugins(render::wet_edge::WetEdgePlugin)
         .add_plugins(render::tree_leaves::TreeLeafPlugin)
         .insert_resource(WinitSettings::game())
         .insert_resource(ClearColor(ui::color(0xe6e5d3, 1.)))
@@ -119,6 +120,7 @@ pub fn run() {
                 (
                     scene_work::resolve_scene,
                     render::sync,
+                    render::wet_edge::sync,
                     scene_work::schedule_scene,
                 )
                     .chain(),
