@@ -217,6 +217,7 @@ impl MaterialLayer {
     pub(super) fn mountain_parts(&self, out: &mut HashMap<usize, crate::scene::MountainPart>) {
         for (index, ordinal, base, flanks) in self.mountain_peaks() {
             let stroke = &self.source.strokes[index];
+            let textured = matches!(flanks[1].as_slice(), [Shape::Sprite { .. }]);
             let bounds = flanks
                 .iter()
                 .flat_map(|batch| batch.iter())
@@ -235,7 +236,7 @@ impl MaterialLayer {
                     crate::scene::MountainPart {
                         id: (self.source.id, index, stroke.seed, ordinal),
                         base,
-                        side: if flanks[1].is_empty() {
+                        side: if textured {
                             0.
                         } else if side == 0 {
                             -1.

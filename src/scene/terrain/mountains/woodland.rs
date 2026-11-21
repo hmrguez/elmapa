@@ -1,5 +1,5 @@
 //! Pictorial relief with ledges, branching spurs and a broken ground wash.
-use super::{Point, Shape, curved, hash, line, mix, p, polygon};
+use super::{Point, Shape, curved, ground_wash, hash, line, mix, p, polygon};
 
 pub(super) fn peak(center: Point, size: f32, seed: u64, alpha: f32, shade: f32) -> [Vec<Shape>; 2] {
     let h = |n| hash(seed.wrapping_add(n));
@@ -37,24 +37,13 @@ pub(super) fn peak(center: Point, size: f32, seed: u64, alpha: f32, shade: f32) 
         let spur = flank(0.52 + rock(6) * 0.22, 0.13);
         let lower = flank(0.24 + rock(7) * 0.12, 0.095);
         let mut shapes = Vec::new();
-        // The last point of the first polygon is the relief and uplift pivot.
-        for (spread, depth, opacity) in [(1.18, 0.23, 0.15), (1.05, 0.15, 0.19)] {
-            polygon(
-                &mut shapes,
-                vec![
-                    flank(0.12, -0.27),
-                    flank(0.57, -0.16),
-                    flank(0.94, -0.12),
-                    flank(spread, toe_y + 0.04),
-                    flank(0.84, depth * 0.71),
-                    flank(0.55, depth),
-                    flank(0.21, depth * 0.68),
-                    center,
-                ],
-                0x9c8968,
-                alpha * shade * opacity,
-            );
-        }
+        ground_wash(
+            &mut shapes,
+            flank,
+            toe_y,
+            0x948061,
+            alpha * shade * if lit { 0.85 } else { 1. },
+        );
         let mut face = edge.to_vec();
         face.extend([spur, lower]);
         face.extend(crest.iter().rev().copied());
