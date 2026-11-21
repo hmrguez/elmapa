@@ -38,8 +38,8 @@ Define each palette once in the [biome pack manifest](../assets/biome-packs/mani
 
 | Pack | New artwork | Reused artwork |
 | --- | --- | --- |
-| Desert | Dune Sand, Oasis Water, Desert Scrub | Ochre Escarpments and Nature landmarks such as the oasis, dunes and canyon |
-| Alpine | Alpine Meadow, Glacial Water | Fir Grove, Alpine Crags and Nature landmarks such as the glacier and waterfall |
+| Desert | Dune Sand, Oasis Water, Desert Scrub | Ochre Escarpments and landmarks from HeRo's Nature pack, such as the oasis, dunes and canyon |
+| Alpine | Alpine Meadow, Glacial Water | Fir Grove, Alpine Crags and landmarks from HeRo's Nature pack, such as the glacier and waterfall |
 
 ## Art priorities
 

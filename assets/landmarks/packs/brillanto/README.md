@@ -1,6 +1,6 @@
-# Brillanto's Brilliant Pack
+# HeRo's Brilliant pack
 
-The observatory, market, fountain, and obelisk share Elmapa Basic’s parchment faces, sepia contours, and muted shadows. Faceted planes, straight folds, and selectively etched seams give the landmarks their geometric character. The fountain borrows the Basic pack’s sage water accents, and the monument’s diamond inlay echoes the pack glyph.
+The observatory, market, fountain, and obelisk share the Basic pack’s parchment faces, sepia contours, and muted shadows. Faceted planes, straight folds, and selectively etched seams give the landmarks their geometric character. The fountain borrows the Basic pack’s sage water accents, and the monument’s diamond inlay echoes the pack glyph.
 
 ## Visual references
 
