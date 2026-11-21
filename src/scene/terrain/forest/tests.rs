@@ -31,7 +31,7 @@ fn source_variants_keep_layered_crowns_and_use_only_parchment_ink() {
         for shape in shapes {
             let color = match shape {
                 Shape::Polygon { fill, .. } => *fill,
-                Shape::RegionSurface { .. } | Shape::Sprite { .. } => {
+                Shape::RegionSurface { .. } | Shape::Sprite { .. } | Shape::ShoreWash(_) => {
                     panic!("expected engraved vector shapes")
                 }
                 Shape::Line { color, .. } => *color,

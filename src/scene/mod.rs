@@ -31,6 +31,7 @@ pub use terrain::forest::{
     forest_specimen_tree, forest_swatch,
 };
 pub use terrain::rivers::{CURRENT_INK, RiverReach};
+pub use terrain::shore_wash::ShoreWash;
 
 #[cfg(test)]
 mod tests;

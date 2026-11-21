@@ -2,6 +2,7 @@
 use super::{
     contours::RegionGrid,
     materials::{self, Contours, Masks},
+    shore_wash,
 };
 use crate::{
     document::{AtlasStyle, Brush, ContentBounds},
@@ -11,24 +12,18 @@ use i_overlay::{
     core::{fill_rule::FillRule, overlay_rule::OverlayRule},
     float::single::SingleFloatOverlay,
     mesh::float::{
-        outline::offset::OutlineOffset,
         stroke::offset::StrokeOffset,
-        style::{LineJoin, OutlineStyle, StrokeStyle},
+        style::{LineJoin, StrokeStyle},
     },
 };
 use std::sync::Arc;
 
 pub(in crate::scene) const SHORE_INK: u32 = 0x777d65;
-pub(in crate::scene) const SHORE_WASH: [(f64, u32, f32); 2] =
-    [(17., 0xaaba9e, 0.28), (8., 0xf5ecd0, 0.62)];
 
-pub(in crate::scene) fn pigments(style: AtlasStyle) -> (u32, [(f64, u32, f32); 2]) {
+pub(in crate::scene) fn shore_ink(style: AtlasStyle) -> u32 {
     match style {
-        AtlasStyle::Classic => (SHORE_INK, SHORE_WASH),
-        AtlasStyle::Woodland => (
-            palette::SHORE,
-            [(17., 0x879f94, 0.25), (8., 0xe7e6cb, 0.58)],
-        ),
+        AtlasStyle::Classic => SHORE_INK,
+        AtlasStyle::Woodland => palette::SHORE,
     }
 }
 
@@ -49,6 +44,7 @@ pub(in crate::scene) fn build(
     brush: Brush,
     masks: &Masks,
     coast: Option<&Arc<RegionGrid>>,
+    water_finishes: &Masks,
     bounds: ContentBounds,
     style: AtlasStyle,
 ) -> (Contours, Vec<Vec<Shape>>) {
@@ -69,36 +65,9 @@ pub(in crate::scene) fn build(
     } else {
         palette::water(style)
     };
-    let (shore_ink, shore_wash) = pigments(style);
-    let (finishes, mut details) = materials::partition(&regions, masks, fallback);
+    let (finishes, details) = materials::partition(&regions, masks, fallback);
     let surface: Contours = regions.into_iter().flatten().collect();
     let frame = rectangle(bounds);
-    if brush == Brush::Land {
-        for (width, color, opacity) in shore_wash {
-            if generation::stopped() {
-                break;
-            }
-            let expanded: Contours = surface
-                .outline_as::<i64>(&OutlineStyle::new(width))
-                .into_iter()
-                .flatten()
-                .collect();
-            let water_side: Contours = expanded
-                .overlay_as::<i64>(&surface, OverlayRule::Difference, FillRule::EvenOdd)
-                .into_iter()
-                .flatten()
-                .collect();
-            materials::surface(&mut details, water_side, None, color, opacity);
-        }
-        // Expand ink before clipping so a real shoreline crossing the tile
-        // edge keeps its full width and receives no artificial line cap.
-        let ink = surface
-            .stroke_as::<i64>(ink_style(1.5), true)
-            .into_iter()
-            .flatten()
-            .collect();
-        materials::surface(&mut details, ink, None, shore_ink, 0.78);
-    }
     let finishes = finishes.into_iter().filter_map(|shape| {
         let mut batch = Vec::new();
         clip_shape(&mut batch, shape, &frame);
@@ -107,6 +76,29 @@ pub(in crate::scene) fn build(
     let mut clipped_details = Vec::new();
     for shape in details {
         clip_shape(&mut clipped_details, shape, &frame);
+    }
+    if brush == Brush::Land {
+        clipped_details.extend(shore_wash::build(
+            &surface,
+            &frame,
+            bounds,
+            water_finishes,
+            style,
+        ));
+        // Expand ink before clipping so a real shoreline crossing the tile
+        // edge keeps its full width and receives no artificial line cap.
+        let ink = surface
+            .stroke_as::<i64>(ink_style(1.5), true)
+            .into_iter()
+            .flatten()
+            .collect();
+        materials::surface(
+            &mut clipped_details,
+            clip(&ink, &frame),
+            None,
+            shore_ink(style),
+            0.78,
+        );
     }
     let batches = finishes
         .chain((!clipped_details.is_empty()).then_some(clipped_details))
@@ -154,7 +146,9 @@ fn clip_shape(out: &mut Vec<Shape>, shape: Shape, frame: &Contours) {
             color,
             opacity,
         ),
-        Shape::Sprite { .. } => unreachable!("terrain tiles contain vector geometry"),
+        Shape::Sprite { .. } | Shape::ShoreWash(_) => {
+            unreachable!("clip only terrain fills and ink")
+        }
     };
     materials::surface(out, clip(&contours, frame), material, fill, opacity);
 }
