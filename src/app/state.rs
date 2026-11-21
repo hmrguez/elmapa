@@ -94,6 +94,7 @@ pub enum Action {
     Enter(u64),
     Settings,
     Motion,
+    ShaderEffects,
     Quit,
     CloseSettings,
 }
@@ -105,6 +106,14 @@ pub enum Tool {
     Select,
     Text,
     Landmarks,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
+pub enum ShaderMode {
+    Off = 0,
+    Still = 1,
+    Animated = 2,
 }
 
 #[derive(Resource)]
@@ -124,6 +133,7 @@ pub struct Studio {
     pub biome_pack: Option<usize>,
     pub dark: bool,
     pub reduced: bool,
+    pub shader_effects_disabled: bool,
     pub disabled_landmark_packs: HashSet<String>,
     pub home: bool,
     pub installing: bool,
@@ -179,6 +189,7 @@ impl Default for Studio {
             biome_pack: None,
             dark: std::env::args().any(|a| a == "--dark"),
             reduced: false,
+            shader_effects_disabled: false,
             disabled_landmark_packs: HashSet::new(),
             home: true,
             installing: false,
@@ -217,6 +228,20 @@ impl Default for Studio {
     }
 }
 impl Studio {
+    pub fn shader_mode(&self) -> ShaderMode {
+        if self.shader_effects_disabled {
+            ShaderMode::Off
+        } else if self.reduced {
+            ShaderMode::Still
+        } else {
+            ShaderMode::Animated
+        }
+    }
+
+    pub fn shader_motion(&self) -> bool {
+        self.shader_mode() == ShaderMode::Animated
+    }
+
     pub fn set_biome_pack(&mut self, pack: Option<usize>) -> bool {
         let pack = pack.filter(|&index| biome_packs::catalog().get(index).is_some());
         if self.biome_pack == pack {

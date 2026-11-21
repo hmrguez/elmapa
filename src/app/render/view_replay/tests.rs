@@ -79,6 +79,7 @@ fn replay_keeps_stroke_timing_and_sorts_trees_and_peaks_by_ground_depth() {
             max: Point::new(450., 300.),
         },
         &mut Assets::default(),
+        true,
     );
     let peaks: Vec<_> = cues
         .iter()
@@ -160,16 +161,11 @@ fn ordered_water_shares_one_reveal_across_terrain_tiles() {
         );
     }
     let mut images = Assets::default();
-    let cues = timeline(
-        &scene,
-        &canvas,
-        &doc,
-        ContentBounds {
-            min: Point::new(-40., 0.),
-            max: Point::new(740., 230.),
-        },
-        &mut images,
-    );
+    let frame = ContentBounds {
+        min: Point::new(-40., 0.),
+        max: Point::new(740., 230.),
+    };
+    let cues = timeline(&scene, &canvas, &doc, frame, &mut images, true);
     let washes: Vec<_> = cues
         .iter()
         .filter(|c| matches!(&c.entrance, Entrance::Wash { .. }))
@@ -204,4 +200,18 @@ fn ordered_water_shares_one_reveal_across_terrain_tiles() {
     };
     assert!(sample(350.) < sample(150.) && sample(350.) < sample(550.));
     assert!((sample(573.) as i16 - sample(579.) as i16).abs() < 12);
+
+    let mut images = Assets::default();
+    let cues = timeline(&scene, &canvas, &doc, frame, &mut images, false);
+    assert_eq!(
+        cues.iter()
+            .filter(|cue| matches!(cue.entrance, Entrance::Instant))
+            .count(),
+        washes.len()
+    );
+    assert!(
+        cues.iter()
+            .any(|cue| matches!(cue.entrance, Entrance::Label(_)))
+    );
+    assert_eq!(images.len(), 0);
 }

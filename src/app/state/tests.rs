@@ -88,6 +88,30 @@ fn wet_paint_follows_the_gesture_and_clears_on_edit_or_reduced_motion() {
     assert!(studio.wet_paint().is_none());
 }
 #[test]
+fn shader_toggle_suppresses_wet_paint_without_changing_reduced_motion() {
+    let mut studio = editor();
+    let mut jobs = files::Jobs::default();
+    let point = Vec2::new(300., 300.);
+    studio.down(point);
+    studio.up(point, false);
+    assert!(studio.wet_paint().is_some());
+
+    studio.act(Action::ShaderEffects, &mut jobs);
+    assert!(jobs.preferences);
+    assert!(!studio.reduced);
+    assert!(studio.wet_paint().is_none());
+
+    studio.down(point);
+    assert!(studio.wet_paint().is_none());
+    studio.up(point, false);
+    assert_eq!(studio.editor.stroke_count(), 2);
+
+    studio.act(Action::ShaderEffects, &mut jobs);
+    studio.down(point);
+    assert!(studio.wet_paint().is_some());
+}
+
+#[test]
 fn advanced_materials_share_selection_with_the_orbit_and_next_stroke() {
     let mut studio = editor();
     let mut jobs = files::Jobs::default();

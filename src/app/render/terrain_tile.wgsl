@@ -6,9 +6,13 @@
 #import elmapa::grass_wind::grass_shade
 #import elmapa::water_surface
 
+// ShaderMode in state.rs
+const SHADER_OFF = 0u;
+const SHADER_ANIMATED = 2u;
+
 struct Tile {
     opacity: f32,
-    motion: u32,
+    shader_mode: u32,
     profile: u32,
 };
 
@@ -20,8 +24,9 @@ struct Tile {
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     let ink = textureSample(pigment, pigment_sampler, mesh.uv) * mesh.color;
     var color = ink.rgb;
-    let moving = tile.motion != 0u;
-    if tile.profile != 0u && (moving || tile.profile == 101u || tile.profile == 103u) {
+    let moving = tile.shader_mode == SHADER_ANIMATED;
+    if tile.shader_mode != SHADER_OFF && tile.profile != 0u
+        && (moving || tile.profile == 101u || tile.profile == 103u) {
         let point = mesh.world_position.xy * vec2(1.0, -1.0);
         let footprint = max(length(dpdx(point)), length(dpdy(point)));
         if tile.profile >= 1u && tile.profile <= 5u {

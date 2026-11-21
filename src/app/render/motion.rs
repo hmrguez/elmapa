@@ -112,7 +112,7 @@ pub fn flow(
     mut materials: ResMut<Assets<RiverMaterial>>,
     query: Query<(Entity, &Flowing)>,
 ) {
-    if studio.reduced {
+    if !studio.shader_motion() {
         studio.river_motion.reset();
     }
     if studio.home {

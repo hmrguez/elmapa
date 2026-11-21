@@ -84,6 +84,23 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, p: Palette, pack_
         Action::Motion,
         dark,
     );
+    let shader_effects = b.node(
+        settings,
+        Node {
+            width: percent(100.),
+            justify_content: JustifyContent::SpaceBetween,
+            ..row(0.)
+        },
+    );
+    let enabled = !s.shader_effects_disabled;
+    b.text(shader_effects, "Shader effects", 12., ink, false);
+    b.shelf_button(
+        shader_effects,
+        if enabled { "check" } else { "minus" },
+        if enabled { "On" } else { "Off" },
+        Action::ShaderEffects,
+        dark,
+    );
     let catalog = elmapa::scene::landmark_catalog();
     let title = b.node(settings, column(3.));
     b.text(title, "Landmark packs", 19., ink, true);
@@ -98,7 +115,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, p: Palette, pack_
         settings,
         Node {
             width: percent(100.),
-            max_height: px((s.bounds.size.y * 0.9 - 320.).max(100.)),
+            min_height: px(0.),
             overflow: Overflow::scroll_y(),
             ..column(10.)
         },

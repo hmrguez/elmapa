@@ -246,7 +246,7 @@ pub fn resolve_scene(
                     &mut canvas,
                     &mut mesh_assets,
                     &mut materials,
-                    studio.reduced,
+                    studio.shader_mode(),
                 );
                 studio.scene.staged = Some(StagedScene {
                     epoch: studio.scene.epoch,
@@ -291,7 +291,8 @@ fn publish_ready(studio: &mut Studio, now: f32) -> bool {
     studio.motion.sync(&staged.scene, animate, now);
     studio.mountain_motion.sync(&staged.scene, animate, now);
     studio.path_motion.sync(&staged.scene, animate, now);
-    studio.river_motion.sync(&staged.scene, animate, now);
+    let animate_rivers = staged.animate && studio.shader_motion();
+    studio.river_motion.sync(&staged.scene, animate_rivers, now);
     studio.scene.wet = staged.wet;
     studio.scene.publish(staged.scene, staged.meshes);
     true
