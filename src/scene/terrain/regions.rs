@@ -119,6 +119,7 @@ fn ink_style(width: f64) -> StrokeStyle<[f64; 2]> {
 }
 
 fn clip_shape(out: &mut Vec<Shape>, shape: Shape, frame: &Contours) {
+    let granulated = shape.granulated();
     let (contours, material, fill, opacity) = match shape {
         Shape::Polygon {
             points,
@@ -130,6 +131,7 @@ fn clip_shape(out: &mut Vec<Shape>, shape: Shape, frame: &Contours) {
             material,
             fill,
             opacity,
+            ..
         } => (
             contours
                 .iter()
@@ -156,7 +158,12 @@ fn clip_shape(out: &mut Vec<Shape>, shape: Shape, frame: &Contours) {
         ),
         Shape::Sprite { .. } => unreachable!("terrain tiles contain vector geometry"),
     };
-    materials::surface(out, clip(&contours, frame), material, fill, opacity);
+    let clipped = clip(&contours, frame);
+    if granulated {
+        materials::granulated_surface(out, clipped, fill, opacity);
+    } else {
+        materials::surface(out, clipped, material, fill, opacity);
+    }
 }
 
 fn clip(contours: &Contours, frame: &Contours) -> Contours {

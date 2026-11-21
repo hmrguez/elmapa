@@ -10,6 +10,7 @@ pub enum Shape {
     RegionSurface {
         contours: Vec<Vec<Point>>,
         material: Option<usize>,
+        granulated: bool,
         fill: u32,
         opacity: f32,
     },
@@ -63,6 +64,16 @@ impl Shape {
             Self::RegionSurface { material, .. } => *material,
             _ => None,
         }
+    }
+
+    pub fn granulated(&self) -> bool {
+        matches!(
+            self,
+            Self::RegionSurface {
+                granulated: true,
+                ..
+            }
+        )
     }
 
     pub fn opacity_mut(&mut self) -> &mut f32 {

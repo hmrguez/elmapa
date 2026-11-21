@@ -53,7 +53,7 @@ pub(super) fn partition(
         surface(&mut fills, textured, Some(*material), fallback, 1.);
     }
     let mut details = Vec::new();
-    surface(&mut details, available, None, fallback, 1.);
+    granulated_surface(&mut details, available, fallback, 1.);
     details.extend(ripples);
     (fills, details)
 }
@@ -75,10 +75,33 @@ pub(in crate::scene) fn surface(
         && let [ring] = contours.as_slice()
     {
         polygon(out, points(ring), fill, opacity);
-    } else if !contours.is_empty() && generation::vertices(contours.iter().map(Vec::len).sum()) {
+    } else {
+        region_surface(out, contours, material, false, fill, opacity);
+    }
+}
+
+pub(in crate::scene) fn granulated_surface(
+    out: &mut Vec<Shape>,
+    contours: Contours,
+    fill: u32,
+    opacity: f32,
+) {
+    region_surface(out, contours, None, true, fill, opacity);
+}
+
+fn region_surface(
+    out: &mut Vec<Shape>,
+    contours: Contours,
+    material: Option<usize>,
+    granulated: bool,
+    fill: u32,
+    opacity: f32,
+) {
+    if !contours.is_empty() && generation::vertices(contours.iter().map(Vec::len).sum()) {
         out.push(Shape::RegionSurface {
             contours: contours.iter().map(|ring| points(ring)).collect(),
             material,
+            granulated,
             fill,
             opacity,
         });

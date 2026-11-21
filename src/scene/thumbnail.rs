@@ -34,7 +34,7 @@ pub fn thumbnail_from_scene(scene: &super::Scene, camera: Camera) -> Result<Vec<
     // Large forests reuse the same rasterized specimens, as on the native canvas.
     let raster_trees = scene.forest_trees().nth(511).is_some();
     let mut specimens = HashMap::new();
-    super::svg::render_preview_parts(scene, bounds, raster_trees, |part| {
+    super::svg::render_preview_parts(scene, bounds, raster_trees, scale, |part| {
         match part {
             PreviewPart::Svg(svg) => {
                 let tree = usvg::Tree::from_str(svg, &options).map_err(|e| e.to_string())?;

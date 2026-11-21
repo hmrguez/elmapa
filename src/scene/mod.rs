@@ -3,6 +3,7 @@ mod builder;
 mod cache;
 mod forest_animation;
 mod geometry;
+pub mod granulation;
 mod mountain_animation;
 mod noise;
 mod palette;

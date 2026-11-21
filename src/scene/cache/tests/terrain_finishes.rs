@@ -119,12 +119,15 @@ fn water_finishes_survive_overlap_erasing_history_and_round_trips() {
     };
     let legacy = paint(&mut editor, Brush::Water, None, 370.);
     let legacy_svg = to_svg(editor.document());
-    assert!(legacy_svg.contains("fill=\"#e6e5d3\""));
-    assert!(
-        legacy
-            .shapes()
-            .any(|s| matches!(s, Shape::Polygon { fill: 0xe6e5d3, .. }))
-    );
+    assert!(legacy_svg.contains("fill=\"url(#pigment-e6e5d3)\""));
+    assert!(legacy.shapes().any(|s| matches!(
+        s,
+        Shape::RegionSurface {
+            fill: 0xe6e5d3,
+            granulated: true,
+            ..
+        }
+    )));
     assert!(!legacy_svg.contains("water-material-"));
 
     paint(&mut editor, Brush::Water, Some("ocean"), 310.);
@@ -161,17 +164,21 @@ fn water_finishes_survive_overlap_erasing_history_and_round_trips() {
         s,
         Shape::Polygon { fill: 0x897e69, .. } | Shape::RegionSurface { fill: 0x897e69, .. }
     )));
-    assert!(
-        !erased
-            .shapes()
-            .any(|s| matches!(s, Shape::Polygon { fill: 0xf4ecd5, .. }))
-    );
+    assert!(!erased.shapes().any(|s| matches!(
+        s,
+        Shape::RegionSurface {
+            fill: 0xf4ecd5,
+            granulated: true,
+            ..
+        }
+    )));
 
     let svg = to_svg(editor.document());
     for material in ["ocean", "shallow-ocean", "lake"] {
         assert!(svg.contains(&format!("fill=\"url(#water-material-{material})\"")));
     }
-    assert_eq!(svg.matches("data:image/png;base64,").count(), 3);
+    assert_eq!(svg.matches("data:image/png;base64,").count(), 4);
+    assert_eq!(svg.matches("id=\"pigment-granulation\"").count(), 1);
     assert!(editor.undo());
     assert_eq!(editor.document(), &before_erase);
     let undone = SceneCache::default().render(editor.document(), None);
