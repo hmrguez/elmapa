@@ -1,8 +1,8 @@
 //! Selection frame and action orbit for a placed landmark.
 use super::orbit::{Orbit, action_orbit};
 use crate::app::{
-    state::{Action, Studio, Tool},
-    ui::widgets::{Builder, color},
+    state::{Action, Studio},
+    ui::widgets::{Builder, color, row},
 };
 use bevy::prelude::*;
 
@@ -10,10 +10,12 @@ use bevy::prelude::*;
 pub struct LandmarkOrbit;
 #[derive(Component)]
 pub struct LandmarkSelection;
+#[derive(Component)]
+pub struct LandmarkNamePrompt;
 pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
-    if s.tool != Tool::Select || s.current_landmark().is_none() {
+    let Some(landmark) = s.name_landmark() else {
         return;
-    }
+    };
     let frame = b.node(
         root,
         Node {
@@ -26,6 +28,25 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
     b.commands
         .entity(frame)
         .insert((LandmarkSelection, BorderColor::all(color(b.p.accent, 0.45))));
+    if s.text.landmark_name {
+        return;
+    }
+    if landmark.name.is_none() {
+        let prompt = b.node(
+            root,
+            Node {
+                position_type: PositionType::Absolute,
+                width: px(108.),
+                height: px(23.),
+                justify_content: JustifyContent::Center,
+                ..row(6.)
+            },
+        );
+        b.commands.entity(prompt).insert(LandmarkNamePrompt);
+        b.icon(prompt, "text", b.p.accent, 12.);
+        b.text(prompt, "Type a name", 12., b.p.text, true);
+        b.hit(prompt, Some(Action::LandmarkName));
+    }
     let orbit = action_orbit(
         b,
         root,
@@ -39,13 +60,14 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
 }
 pub fn landmark_selection_follow(
     studio: Res<Studio>,
-    mut frames: Query<&mut Node, With<LandmarkSelection>>,
+    mut frames: Query<&mut Node, (With<LandmarkSelection>, Without<LandmarkNamePrompt>)>,
     mut orbits: Query<&mut Orbit, With<LandmarkOrbit>>,
+    mut prompts: Query<&mut Node, (With<LandmarkNamePrompt>, Without<LandmarkSelection>)>,
 ) {
     let Some(p) = studio.current_landmark() else {
         return;
     };
-    let bounds = p.bounds();
+    let bounds = elmapa::scene::landmark_bounds(&p);
     let view = studio.viewport.transform(studio.bounds);
     let a = view.origin + Vec2::new(bounds.min.x, bounds.min.y) * view.scale;
     let size = Vec2::new(bounds.width(), bounds.height()) * view.scale;
@@ -54,6 +76,19 @@ pub fn landmark_selection_follow(
         frame.top = px(a.y - 6.);
         frame.width = px(size.x + 12.);
         frame.height = px(size.y + 12.);
+    }
+    if !prompts.is_empty() {
+        let label = Studio::landmark_name_label(&p);
+        let anchor = view.origin + Vec2::new(label.position.x, label.position.y) * view.scale;
+        for mut node in &mut prompts {
+            node.left = px(anchor.x - 54.);
+            node.top = px(anchor.y - 11.5);
+            node.display = if studio.landmarks.moving.is_some() {
+                Display::None
+            } else {
+                Display::Flex
+            };
+        }
     }
     for mut orbit in &mut orbits {
         orbit.center = a + size / 2.;

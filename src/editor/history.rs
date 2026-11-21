@@ -57,6 +57,13 @@ impl Editor {
                     .iter()
                     .map(|l| l.text.capacity())
                     .sum::<usize>();
+                bytes +=
+                    layer.landmarks.capacity() * std::mem::size_of::<crate::document::Landmark>();
+                bytes += layer
+                    .landmarks
+                    .iter()
+                    .map(|mark| mark.name.as_ref().map_or(0, |label| label.text.capacity()))
+                    .sum::<usize>();
                 if let Some(regions) = &layer.territories
                     && seen.insert(std::sync::Arc::as_ptr(regions) as usize)
                 {

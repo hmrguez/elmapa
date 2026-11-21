@@ -118,7 +118,8 @@ fn landmark_orbit_flattens_one_pack_and_nests_multiple_packs() {
         .filter(|item| item.pack == basic_pack)
         .count();
     let visible = landmark_bubbles(&mut app);
-    assert_eq!(visible.len(), basic_count + 4);
+    assert_eq!(visible.len(), basic_count + 5);
+    assert!(visible.contains(&(0, Action::LandmarkName)));
     assert_eq!(
         visible
             .iter()
@@ -132,7 +133,7 @@ fn landmark_orbit_flattens_one_pack_and_nests_multiple_packs() {
         .unwrap();
     act(&mut app, Action::LandmarkPack(other_pack));
     let visible = landmark_bubbles(&mut app);
-    assert_eq!(visible.len(), 6);
+    assert_eq!(visible.len(), 7);
     assert!(
         !visible
             .iter()
@@ -176,7 +177,7 @@ fn landmark_orbit_flattens_one_pack_and_nests_multiple_packs() {
         catalog.items[options[0]].kind,
     );
     act(&mut app, Action::LandmarkBack);
-    assert_eq!(landmark_bubbles(&mut app).len(), 6);
+    assert_eq!(landmark_bubbles(&mut app).len(), 7);
 }
 
 #[test]

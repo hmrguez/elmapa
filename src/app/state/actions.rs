@@ -124,6 +124,9 @@ impl Studio {
             | Action::CloseTextStyle
             | Action::TextStyleDetails
             | Action::TextReuseStyle
+            | Action::LandmarkName
+            | Action::LandmarkNameAbove(_)
+            | Action::LandmarkIcon
             | Action::TextField(_)
             | Action::TextFont(_)
             | Action::TextInk(_)
@@ -311,7 +314,7 @@ impl Studio {
                 .iter()
                 .any(|l| l.visible && l.opacity > 0. && l.landmarks.iter().any(|p| p.id == id))
         {
-            self.landmarks.selected = None;
+            self.cancel_landmark();
         }
         if self
             .landmarks

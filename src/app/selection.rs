@@ -91,7 +91,11 @@ impl Studio {
     }
 
     fn select_press(&mut self, point: Point, shift: bool) {
-        if !shift && (self.begin_path_drag(point) || self.begin_text_transform(point)) {
+        if !shift
+            && (self.begin_path_drag(point)
+                || self.begin_text_transform(point)
+                || self.begin_landmark_name_move(point))
+        {
             return;
         }
         if !shift
@@ -271,7 +275,7 @@ impl Studio {
             ] => {
                 self.cancel_text();
                 self.select_landmark(point, *layer, *id);
-                if !moving {
+                if !moving || self.begin_landmark_name_move(point) {
                     self.landmarks.moving = None;
                 }
             }
@@ -339,6 +343,13 @@ impl Studio {
                     .editor
                     .linear_stroke(id)
                     .and_then(|stroke| stroke.points.point_bounds()),
+                SelectionId::Landmark { id, .. } => Some(frame(
+                    item.anchor,
+                    self.editor
+                        .landmark(id)
+                        .and_then(|mark| mark.name_label())
+                        .map_or(item.anchor, |name| name.position),
+                )),
                 _ => Some(frame(item.anchor, item.anchor)),
             };
             if let Some(bounds) = bounds {

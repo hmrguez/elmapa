@@ -13,7 +13,7 @@ use bevy::{
     sprite_render::{AlphaMode2d, Material2d, Material2dPlugin},
 };
 use elmapa::{
-    document::{ContentBounds, Landmark, Point},
+    document::{ContentBounds, Label, Landmark, Point},
     scene::{
         LandmarkMotion, LandmarkPart, LandmarkStep, Shape, landmark_definition, landmark_pose,
     },
@@ -68,6 +68,7 @@ pub struct Assembling {
 pub(super) struct PartPosition {
     id: u64,
     baked: Point,
+    name: bool,
     translated: bool,
 }
 
@@ -76,7 +77,29 @@ impl PartPosition {
         Self {
             id: landmark.id,
             baked: landmark.position,
+            name: false,
             translated: false,
+        }
+    }
+
+    pub(super) fn for_name(label: &Label) -> Self {
+        Self {
+            id: label.id,
+            baked: label.position,
+            name: true,
+            translated: false,
+        }
+    }
+
+    fn anchor(&self, landmark: &Landmark) -> Option<Point> {
+        if self.name {
+            let name = landmark.name.as_ref()?;
+            Some(Point::new(
+                landmark.position.x + name.position.x,
+                landmark.position.y + name.position.y,
+            ))
+        } else {
+            Some(landmark.position)
         }
     }
 }
@@ -101,11 +124,10 @@ pub(super) fn follow_drag(
                     .then(|| studio.editor.landmark(part.id))
                     .flatten()
             });
-        let Some(landmark) = position else { continue };
-        let offset = Vec2::new(
-            landmark.position.x - part.baked.x,
-            part.baked.y - landmark.position.y,
-        );
+        let Some(anchor) = position.and_then(|landmark| part.anchor(landmark)) else {
+            continue;
+        };
+        let offset = Vec2::new(anchor.x - part.baked.x, part.baked.y - anchor.y);
         let translated = offset != Vec2::ZERO;
         if part.translated != translated {
             part.translated = translated;
@@ -388,19 +410,29 @@ mod tests {
     fn dragged_parts_follow_each_move_and_hold_the_commit_until_the_scene_catches_up() {
         let mut studio = Studio::default();
         let start = Point::new(210., 340.);
-        let id = studio
-            .editor
-            .add_landmark(Landmark {
-                position: start,
-                ..default()
-            })
-            .unwrap();
+        let mut landmark = Landmark {
+            position: start,
+            ..default()
+        };
+        landmark.set_name_label(Label {
+            text: "Harbour".into(),
+            position: Point::new(start.x, start.y + 24.),
+            ..default()
+        });
+        let id = studio.editor.add_landmark(landmark).unwrap();
         let layer = studio.editor.active_layer();
         let original = studio.editor.landmark(id).unwrap();
         let mut app = App::new();
         let entity = app
             .world_mut()
             .spawn((PartPosition::new(original), Transform::from_xyz(0., 0., 2.)))
+            .id();
+        let name = app
+            .world_mut()
+            .spawn((
+                PartPosition::for_name(&original.name_label().unwrap()),
+                Transform::from_xyz(0., 0., 3.),
+            ))
             .id();
         let other = app
             .world_mut()
@@ -425,6 +457,10 @@ mod tests {
                 Vec3::new(offset.x, -offset.y, 2.),
             );
             assert_eq!(
+                app.world().get::<Transform>(name).unwrap().translation,
+                Vec3::new(offset.x, -offset.y, 3.),
+            );
+            assert_eq!(
                 app.world().get::<Transform>(other).unwrap().translation,
                 Vec3::new(0., 0., 3.),
             );
@@ -437,6 +473,11 @@ mod tests {
         assert_eq!(
             app.world().get::<Transform>(entity).unwrap().translation,
             Vec3::new(35., 16., 2.),
+        );
+
+        assert_eq!(
+            app.world().get::<Transform>(name).unwrap().translation,
+            Vec3::new(35., 16., 3.),
         );
 
         // Switch to mesh geometry baked at the committed position.

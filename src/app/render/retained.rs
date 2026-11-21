@@ -340,6 +340,12 @@ pub fn sync(
                     commands
                         .entity(entity)
                         .insert(landmark_render::PartPosition::new(&part.landmark));
+                } else if let Some(label) = scene.label(source)
+                    && studio.editor.landmark(label.id).is_some()
+                {
+                    commands
+                        .entity(entity)
+                        .insert(landmark_render::PartPosition::for_name(label));
                 }
                 if let Some(part) = landmark_part
                     && let Some(Some(started)) = studio.landmarks.arrivals.get(&part.landmark.id)

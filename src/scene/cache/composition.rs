@@ -94,7 +94,12 @@ impl Composition {
             let parts = cache
                 .landmarks
                 .iter()
-                .find(|(old, _)| old == landmark)
+                .find(|(old, _)| {
+                    old.id == landmark.id
+                        && old.kind == landmark.kind
+                        && old.position == landmark.position
+                        && old.size == landmark.size
+                })
                 .map(|(_, parts)| parts.clone())
                 .unwrap_or_else(|| landmark_batches_in(landmark, style));
             for batch in &parts {
@@ -110,14 +115,19 @@ impl Composition {
             }
         }
 
-        for label in &layer.labels {
+        for label in layer
+            .landmarks
+            .iter()
+            .filter_map(Landmark::name_label)
+            .chain(layer.labels.iter().cloned())
+        {
             let batch = cache
                 .labels
                 .iter()
-                .find(|(old, _)| old == label)
+                .find(|(old, _)| old == &label)
                 .map(|(_, batch)| batch.clone())
                 .unwrap_or_else(|| {
-                    let mut glyphs = label_shapes(label);
+                    let mut glyphs = label_shapes(&label);
                     if !style.is_classic() {
                         super::super::palette::recolor(
                             Arc::make_mut(&mut glyphs).as_mut_slice(),
@@ -132,7 +142,7 @@ impl Composition {
             self.labels
                 .insert(Arc::as_ptr(&batch) as usize, label.clone());
             if let AnnotationSource::Current { updated, .. } = source {
-                updated.labels.push((label.clone(), batch.clone()));
+                updated.labels.push((label, batch.clone()));
             }
             self.push(batch, layer.opacity);
         }

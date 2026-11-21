@@ -10,10 +10,44 @@ impl Studio {
             return self.region_style_key(event, command, shift);
         }
         let placing = self.text.draft.is_some() && !self.text.style_open;
-        if !placing && self.selected_label().is_none() {
+        if !placing && self.selected_label().is_none() && self.name_landmark().is_none() {
             return false;
         }
         let key = event.key_code;
+        let text_command = matches!(
+            key,
+            KeyCode::KeyA
+                | KeyCode::KeyC
+                | KeyCode::KeyX
+                | KeyCode::KeyV
+                | KeyCode::ArrowLeft
+                | KeyCode::ArrowRight
+        );
+        if self.name_landmark().is_some() {
+            if command && !text_command {
+                return false;
+            }
+            if self.landmarks.moving.is_some() {
+                return false;
+            }
+            if !self.text.landmark_name {
+                let typing = !matches!(key, KeyCode::BracketLeft | KeyCode::BracketRight)
+                    && event
+                        .text
+                        .as_ref()
+                        .is_some_and(|value| value.chars().any(|c| !c.is_control()));
+                let starts_name = if command { text_command } else { typing };
+                if !starts_name {
+                    return false;
+                }
+                self.enter_landmark_name();
+            }
+            if !self.text.composition.is_empty()
+                && matches!(key, KeyCode::Enter | KeyCode::NumpadEnter)
+            {
+                return true;
+            }
+        }
         if placing {
             match key {
                 KeyCode::Escape => {
@@ -53,7 +87,7 @@ impl Studio {
                 self.text.composition.clear();
                 self.dismiss_text_control();
             } else {
-                if !dragging {
+                if !dragging && !self.text.landmark_name {
                     self.commit_text_field();
                 }
                 self.cancel_text();
@@ -84,15 +118,7 @@ impl Studio {
             // Begin only on text input or a text-editing key. A modifier key
             // alone must leave the selection and its controls as they are.
             let starts_edit = if command {
-                matches!(
-                    key,
-                    KeyCode::KeyA
-                        | KeyCode::KeyC
-                        | KeyCode::KeyX
-                        | KeyCode::KeyV
-                        | KeyCode::ArrowLeft
-                        | KeyCode::ArrowRight
-                )
+                text_command
             } else {
                 matches!(
                     key,
@@ -126,7 +152,7 @@ impl Studio {
             self.invalidate_preview();
             return;
         }
-        if edit.kind != Field::Name || self.text.selected.is_none() {
+        if edit.kind != Field::Name || !self.has_text_selection() {
             return;
         }
         let mut label = self.current_label();
@@ -158,16 +184,26 @@ impl Studio {
             false,
         )
     }
+    fn accept_text_ime(&mut self, value: &str) -> bool {
+        if self.text.moving.is_some()
+            || self.text.transforming.is_some()
+            || self.landmarks.moving.is_some()
+        {
+            return false;
+        }
+        if self.name_landmark().is_some() && !value.is_empty() {
+            self.enter_landmark_name();
+        }
+        self.has_text_selection() || self.text.draft.is_some()
+    }
+
     pub fn text_preedit(&mut self, value: &str) {
         if self.regions.style.edit.is_some() {
             self.regions.style.composition = value.into();
             self.ui_dirty = true;
             return;
         }
-        if (self.selected_label().is_none() && self.text.draft.is_none())
-            || self.text.moving.is_some()
-            || self.text.transforming.is_some()
-        {
+        if !self.accept_text_ime(value) {
             return;
         }
         if self.text.edit.is_none() && !value.is_empty() {
@@ -186,10 +222,7 @@ impl Studio {
             self.ui_dirty = true;
             return;
         }
-        if (self.selected_label().is_none() && self.text.draft.is_none())
-            || self.text.moving.is_some()
-            || self.text.transforming.is_some()
-        {
+        if !self.accept_text_ime(value) {
             return;
         }
         let value: String = value.chars().filter(|c| !c.is_control()).collect();
