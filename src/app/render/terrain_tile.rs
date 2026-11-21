@@ -14,6 +14,7 @@ impl Plugin for TerrainTilePlugin {
     fn build(&self, app: &mut App) {
         load_shader_library!(app, "grass_wind.wgsl");
         embedded_asset!(app, "terrain_tile.wgsl");
+        load_shader_library!(app, "water_surface.wgsl");
         app.add_plugins(Material2dPlugin::<TerrainTile>::default())
             .add_systems(PostUpdate, sync_motion);
     }
@@ -63,9 +64,11 @@ fn sync_motion(
     }
     *previous = studio.reduced;
     let motion = u32::from(!studio.reduced);
-    for (_, tile) in tiles.iter_mut() {
-        if tile.profile != 0 {
-            tile.motion = motion;
-        }
+    let animated: Vec<_> = tiles
+        .iter()
+        .filter_map(|(id, tile)| (tile.profile != 0).then_some(id))
+        .collect();
+    for id in animated {
+        tiles.get_mut(id).expect("animated tile").motion = motion;
     }
 }
