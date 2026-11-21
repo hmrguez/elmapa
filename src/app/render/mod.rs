@@ -2,6 +2,7 @@
 mod camera;
 mod forest_atlas;
 mod forest_wind;
+mod grass_wind;
 mod mesh;
 mod motion;
 mod opening;
@@ -79,7 +80,9 @@ impl Canvas {
         self.tile_materials
             .retain(|_, handle| handle.strong_count() != 0);
         let image = texture.and_then(|index| self.brush_textures.get(&index).cloned());
-        let handle = materials.add(TerrainTile::new(image, opacity, reduced));
+        let mut material = TerrainTile::new(image, opacity, reduced);
+        material.profile = grass_wind::profile(texture).unwrap_or_default();
+        let handle = materials.add(material);
         if let Handle::Strong(strong) = &handle {
             self.tile_materials.insert(key, Arc::downgrade(strong));
         }
@@ -125,6 +128,7 @@ pub struct Graphics<'w, 's> {
     images: ResMut<'w, Assets<Image>>,
     meshes: ResMut<'w, Assets<Mesh>>,
     materials: ResMut<'w, Assets<ColorMaterial>>,
+    tiles: ResMut<'w, Assets<TerrainTile>>,
     rivers: ResMut<'w, Assets<RiverMaterial>>,
     forest_materials: ResMut<'w, Assets<ForestWind>>,
 }

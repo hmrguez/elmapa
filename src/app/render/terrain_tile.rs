@@ -4,7 +4,7 @@ use bevy::{
     asset::embedded_asset,
     prelude::*,
     render::render_resource::AsBindGroup,
-    shader::ShaderRef,
+    shader::{ShaderRef, load_shader_library},
     sprite_render::{AlphaMode2d, Material2d, Material2dPlugin},
 };
 
@@ -12,6 +12,7 @@ pub(super) struct TerrainTilePlugin;
 
 impl Plugin for TerrainTilePlugin {
     fn build(&self, app: &mut App) {
+        load_shader_library!(app, "grass_wind.wgsl");
         embedded_asset!(app, "terrain_tile.wgsl");
         app.add_plugins(Material2dPlugin::<TerrainTile>::default())
             .add_systems(PostUpdate, sync_motion);
