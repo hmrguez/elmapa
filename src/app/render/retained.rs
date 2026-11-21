@@ -5,6 +5,7 @@ use super::{
         Dropping, Flowing, Growing, OpeningPath, Rising, label_transform, mountain_transform,
         path_transform, tree_transform,
     },
+    terrain_tile::TerrainTile,
 };
 use crate::app::{landmark_render, river_material::RiverMaterial, state::Studio};
 use bevy::prelude::*;
@@ -16,7 +17,7 @@ use std::{
 
 pub(super) enum TerrainMaterial {
     Tile {
-        handle: Handle<ColorMaterial>,
+        handle: Handle<TerrainTile>,
         opacity: f32,
     },
     Ink(Handle<ColorMaterial>),
@@ -38,6 +39,7 @@ pub fn sync(
     mut studio: ResMut<Studio>,
     mut canvas: ResMut<Canvas>,
     time: Res<Time<Real>>,
+    mut tiles: ResMut<Assets<TerrainTile>>,
     window: Single<&Window>,
     mut transforms: Query<&mut Transform, With<WorldContent>>,
     mut visibility: Query<&mut Visibility, With<WorldContent>>,
@@ -164,7 +166,8 @@ pub fn sync(
                         Some(canvas.tile_material(
                             texture,
                             scene.batch_opacity(source),
-                            &mut materials,
+                            &mut tiles,
+                            studio.reduced,
                         ))
                     }
                     _ => None,

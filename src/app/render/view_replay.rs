@@ -8,6 +8,7 @@ pub(in crate::app) mod video;
 use super::{
     Canvas, WorldCamera, WorldContent,
     motion::{drop_transform, mountain_transform, path_transform, tree_transform},
+    terrain_tile::TerrainTile,
 };
 use crate::app::{
     landmark_render,
@@ -78,7 +79,7 @@ enum Entrance {
     Label(Point),
     Landmark(LandmarkPart, Handle<ColorMaterial>, f32),
     Wash {
-        original: Handle<ColorMaterial>,
+        original: Handle<TerrainTile>,
         material: Option<Handle<InkReveal>>,
         order: Option<PaintOrder>,
     },
@@ -148,6 +149,7 @@ impl Canvas {
 pub struct PlaybackGraphics<'w, 's> {
     commands: Commands<'w, 's>,
     ink: ResMut<'w, Assets<ColorMaterial>>,
+    tiles: Res<'w, Assets<TerrainTile>>,
     rivers: ResMut<'w, Assets<RiverMaterial>>,
     washes: ResMut<'w, Assets<InkReveal>>,
     images: ResMut<'w, Assets<Image>>,
@@ -205,20 +207,15 @@ impl PlaybackGraphics<'_, '_> {
                     if let Some(mut material) = self.washes.get_mut(handle) {
                         material.wash.x = age / duration;
                     }
-                } else if let Some(material) = self.ink.get(original) {
+                } else if let Some(material) = self.tiles.get(original) {
                     let handle = self.washes.add(InkReveal {
-                        wash: Vec4::new(
-                            age / duration,
-                            material.color.alpha(),
-                            cue.span.0,
-                            cue.span.1,
-                        ),
+                        wash: Vec4::new(age / duration, material.opacity, cue.span.0, cue.span.1),
                         placement: order.as_ref().map_or(Vec4::ZERO, |order| order.position),
                         texture: material.texture.clone(),
                         arrival: order.as_ref().map(|order| order.texture.clone()),
                     });
                     entity
-                        .remove::<MeshMaterial2d<ColorMaterial>>()
+                        .remove::<MeshMaterial2d<TerrainTile>>()
                         .insert(MeshMaterial2d(handle.clone()));
                     *wash = Some(handle);
                 }

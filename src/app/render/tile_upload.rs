@@ -1,6 +1,9 @@
 //! Retain the displayed terrain until all its replacement buffers and materials
 //! have been prepared by the render world.
-use super::{Canvas, CpuMesh};
+use super::{
+    Canvas, CpuMesh,
+    terrain_tile::{TerrainTile, TerrainTilePlugin},
+};
 use bevy::{
     camera::primitives::{Aabb, MeshAabb},
     prelude::*,
@@ -21,7 +24,7 @@ use std::sync::{
 pub(in crate::app) struct TileUploads(Arc<Mutex<Option<Upload>>>);
 
 struct Upload {
-    assets: Vec<(AssetId<Mesh>, AssetId<ColorMaterial>)>,
+    assets: Vec<(AssetId<Mesh>, AssetId<TerrainTile>)>,
     ready: Weak<AtomicBool>,
 }
 
@@ -29,10 +32,11 @@ pub(in crate::app) struct SceneMesh {
     pub source: Arc<Vec<Shape>>,
     pub mesh: Handle<Mesh>,
     pub bounds: Option<Aabb>,
-    pub tile: Option<Handle<ColorMaterial>>,
+    pub tile: Option<Handle<TerrainTile>>,
 }
 
 pub(in crate::app) fn install(app: &mut App) {
+    app.add_plugins(TerrainTilePlugin);
     let uploads = TileUploads::default();
     app.sub_app_mut(RenderApp)
         .insert_resource(uploads.clone())
@@ -47,7 +51,8 @@ impl TileUploads {
         prepared: Vec<CpuMesh>,
         canvas: &mut Canvas,
         meshes: &mut Assets<Mesh>,
-        materials: &mut Assets<ColorMaterial>,
+        materials: &mut Assets<TerrainTile>,
+        reduced: bool,
     ) -> (Vec<SceneMesh>, Arc<AtomicBool>) {
         let mut assets = Vec::new();
         let mut bytes = 0;
@@ -64,8 +69,12 @@ impl TileUploads {
                     * std::mem::size_of::<u32>();
                 let mesh = meshes.add(cpu.mesh);
                 let tile = scene.region(&cpu.source).map(|_| {
-                    let material =
-                        canvas.tile_material(key, scene.batch_opacity(&cpu.source), materials);
+                    let material = canvas.tile_material(
+                        key,
+                        scene.batch_opacity(&cpu.source),
+                        materials,
+                        reduced,
+                    );
                     assets.push((mesh.id(), material.id()));
                     bytes += size;
                     material
@@ -95,7 +104,7 @@ fn check(
     uploads: Res<TileUploads>,
     meshes: Res<RenderAssets<RenderMesh>>,
     allocator: Res<MeshAllocator>,
-    materials: Res<RenderAssets<PreparedMaterial2d<ColorMaterial>>>,
+    materials: Res<RenderAssets<PreparedMaterial2d<TerrainTile>>>,
 ) {
     let mut request = uploads.0.lock().expect("tile upload mailbox");
     let Some(upload) = &*request else { return };

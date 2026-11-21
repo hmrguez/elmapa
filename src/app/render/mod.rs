@@ -8,6 +8,7 @@ mod opening;
 mod path_guide;
 mod regions;
 mod retained;
+pub(super) mod terrain_tile;
 pub(super) mod tile_upload;
 pub(super) mod tree_leaves;
 pub(super) mod view_replay;
@@ -29,6 +30,7 @@ use std::{
     collections::{HashMap, HashSet},
     sync::{Arc, Weak},
 };
+use terrain_tile::TerrainTile;
 
 pub use camera::camera;
 pub use forest_wind::ForestWindPlugin;
@@ -67,21 +69,17 @@ impl Canvas {
         &mut self,
         texture: Option<usize>,
         opacity: f32,
-        materials: &mut Assets<ColorMaterial>,
-    ) -> Handle<ColorMaterial> {
+        materials: &mut Assets<TerrainTile>,
+        reduced: bool,
+    ) -> Handle<TerrainTile> {
         let key = (texture, opacity.to_bits());
         if let Some(handle) = self.tile_materials.get(&key).and_then(Weak::upgrade) {
             return Handle::Strong(handle);
         }
         self.tile_materials
             .retain(|_, handle| handle.strong_count() != 0);
-        let handle = materials.add(ColorMaterial {
-            color: Color::srgba(1., 1., 1., opacity),
-            texture: texture
-                .and_then(|index| self.brush_textures.get(&index))
-                .cloned(),
-            ..default()
-        });
+        let image = texture.and_then(|index| self.brush_textures.get(&index).cloned());
+        let handle = materials.add(TerrainTile::new(image, opacity, reduced));
         if let Handle::Strong(strong) = &handle {
             self.tile_materials.insert(key, Arc::downgrade(strong));
         }
