@@ -3,6 +3,7 @@ use super::{
     render::{
         self,
         tile_upload::{SceneMesh, TileUploads},
+        wet_edge::WetMeshes,
     },
     state::Studio,
 };
@@ -12,10 +13,10 @@ use bevy::{
 };
 use elmapa::{
     document::{Document, Stroke},
-    scene::{Scene, SceneCache, generation},
+    scene::{Scene, SceneCache, WetEdge, generation},
 };
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
@@ -25,6 +26,7 @@ use std::{
 struct PreparedScene {
     scene: Scene,
     meshes: Vec<render::CpuMesh>,
+    wet: Option<WetMeshes>,
     animate: bool,
 }
 
@@ -32,6 +34,7 @@ struct StagedScene {
     epoch: u64,
     scene: Scene,
     meshes: Vec<SceneMesh>,
+    wet: Option<WetMeshes>,
     animate: bool,
     ready: Arc<AtomicBool>,
 }
@@ -45,6 +48,7 @@ struct Generated {
 pub(super) struct SceneWork {
     snapshot: Scene,
     meshes: Vec<SceneMesh>,
+    pub(super) wet: Option<WetMeshes>,
     staged: Option<StagedScene>,
     cache: Option<SceneCache>,
     task: Option<Task<Generated>>,
@@ -58,6 +62,7 @@ impl Default for SceneWork {
         Self {
             snapshot: Scene::default(),
             meshes: Vec::new(),
+            wet: None,
             staged: None,
             cache: Some(SceneCache::default()),
             task: None,
@@ -133,6 +138,7 @@ impl SceneWork {
         document: Document,
         live: Option<(u64, Stroke)>,
         animate: bool,
+        wet_paint: Option<(u64, u64)>,
         known: HashSet<usize>,
     ) {
         let mut cache = self.cache.take().expect("ready scene worker");
@@ -142,10 +148,14 @@ impl SceneWork {
             let _span = elmapa::performance::Span::new("scene_job");
             cache.begin_generation();
             let result = generation::bounded(generation::Limits::INTERACTIVE, None, || {
-                let scene = cache.render(
-                    &document,
-                    live.as_ref().map(|(layer, stroke)| (*layer, stroke)),
-                );
+                let live = live.as_ref().map(|(layer, stroke)| (*layer, stroke));
+                let (scene, wet) = if let Some((layer, id)) = wet_paint {
+                    let (scene, edges) = cache.render_with_wet_edges(&document, live, layer);
+                    let wet = prepare_wet(&scene, edges, (layer, id));
+                    (scene, Some(wet))
+                } else {
+                    (cache.render(&document, live), None)
+                };
                 let meshes = scene
                     .batches()
                     .filter(|batch| {
@@ -164,6 +174,7 @@ impl SceneWork {
                 Ok(PreparedScene {
                     scene,
                     meshes,
+                    wet,
                     animate,
                 })
             })
@@ -177,6 +188,35 @@ impl SceneWork {
             }
         }));
     }
+}
+
+fn prepare_wet(scene: &Scene, edges: Vec<WetEdge>, paint: (u64, u64)) -> WetMeshes {
+    let mut placements: HashMap<_, _> = edges.iter().map(|edge| (edge.region, None)).collect();
+    if !placements.is_empty() {
+        for (order, batch) in scene.batches().enumerate() {
+            if let Some(region) = scene.region(batch)
+                && let Some(place) = placements.get_mut(&region)
+            {
+                *place = Some((order, scene.batch_opacity(batch)));
+            }
+        }
+    }
+    let meshes = edges
+        .into_iter()
+        .filter_map(|edge| {
+            let (order, opacity) = placements[&edge.region]?;
+            let mut cpu = render::tessellate_material(Arc::new(edge.shapes), None, None).ok()?;
+            if let Some(bevy::mesh::VertexAttributeValues::Float32x4(colors)) =
+                cpu.mesh.attribute_mut(Mesh::ATTRIBUTE_COLOR)
+            {
+                for color in colors {
+                    color[3] *= opacity;
+                }
+            }
+            Some((order, cpu.mesh))
+        })
+        .collect();
+    WetMeshes { paint, meshes }
 }
 
 pub fn resolve_scene(
@@ -196,6 +236,7 @@ pub fn resolve_scene(
             Ok(PreparedScene {
                 scene,
                 meshes,
+                wet,
                 animate,
             }) => {
                 let (meshes, ready) = uploads.stage(
@@ -209,6 +250,7 @@ pub fn resolve_scene(
                     epoch: studio.scene.epoch,
                     scene,
                     meshes,
+                    wet,
                     animate,
                     ready,
                 });
@@ -248,6 +290,7 @@ fn publish_ready(studio: &mut Studio, now: f32) -> bool {
     studio.mountain_motion.sync(&staged.scene, animate, now);
     studio.path_motion.sync(&staged.scene, animate, now);
     studio.river_motion.sync(&staged.scene, animate, now);
+    studio.scene.wet = staged.wet;
     studio.scene.publish(staged.scene, staged.meshes);
     true
 }
@@ -275,7 +318,10 @@ pub fn schedule_scene(mut studio: ResMut<Studio>, canvas: Res<render::Canvas>) {
         .clone()
         .map(|stroke| (studio.editor.active_layer(), stroke));
     let animate = studio.animate_new;
-    studio.scene.start(document, live, animate, known);
+    let wet_paint = studio.wet_paint();
+    studio
+        .scene
+        .start(document, live, animate, wet_paint, known);
 }
 
 fn preview_document(studio: &Studio) -> Document {

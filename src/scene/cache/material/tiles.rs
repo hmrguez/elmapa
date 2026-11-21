@@ -1,4 +1,8 @@
 //! Sparse world-aligned terrain, shared by live painting, reopen and export.
+mod wet_edge;
+
+pub use wet_edge::WetEdge;
+
 use super::{Batch, REGIONS};
 use crate::{
     brush_materials,

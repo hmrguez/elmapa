@@ -56,6 +56,37 @@ fn toolbar_action_commits_once_and_hidden_layers_reject_paint() {
     s.down(Vec2::new(300., 300.));
     assert!(s.stroke.is_none());
 }
+
+#[test]
+fn wet_paint_follows_the_gesture_and_clears_on_edit_or_reduced_motion() {
+    let mut studio = editor();
+    let mut jobs = files::Jobs::default();
+    let point = Vec2::new(300., 300.);
+
+    studio.down(point);
+    let live = studio.wet_paint();
+    assert!(live.is_some());
+    studio.up(point, false);
+    assert_eq!(studio.wet_paint(), live);
+    studio.act(Action::Undo, &mut jobs);
+    assert!(studio.wet_paint().is_none());
+    studio.act(Action::Redo, &mut jobs);
+    assert!(studio.wet_paint().is_none());
+
+    studio.act(Action::Brush(Brush::Water), &mut jobs);
+    studio.down(point);
+    assert!(studio.wet_paint().is_some());
+    studio.cancel_canvas_interaction();
+    assert!(studio.wet_paint().is_none());
+    studio.down(point);
+    studio.up(point, false);
+    assert!(studio.wet_paint().is_some());
+    studio.act(Action::Motion, &mut jobs);
+    assert!(studio.wet_paint().is_none());
+    studio.down(point);
+    assert!(studio.stroke.is_some());
+    assert!(studio.wet_paint().is_none());
+}
 #[test]
 fn advanced_materials_share_selection_with_the_orbit_and_next_stroke() {
     let mut studio = editor();
