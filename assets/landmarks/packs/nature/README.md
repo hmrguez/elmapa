@@ -1,4 +1,4 @@
-# Nature Landmarks
+# HeRo's Nature pack
 
 Sixteen original sepia vignettes for coastlines, deserts, forests, glacial waters, and exposed rock. Stable specimen IDs have the prefix `elmapa.nature:`. The cenote and waterfall use high-contrast previews in the orbit.
 

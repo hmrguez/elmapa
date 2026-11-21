@@ -2,7 +2,9 @@
 
 Original, project-authored vector illustrations for Elmapa. Historical scans are references only; no third-party artwork is bundled.
 
-Landmarks are loaded from **JSON/SVG packs**. `build.rs` discovers bundled pack folders automatically and embeds their JSON/SVG files in the executable. [Elmapa Basic Landmarks](packs/elmapa-basic/manifest.json) uses sepia engraving and parchment washes. [Brillanto's Brilliant Pack](packs/brillanto/README.md) shares that palette and uses flatter planes and geometric silhouettes inspired by wayfinding graphics.
+Landmarks are loaded from **JSON/SVG packs**. `build.rs` discovers bundled pack folders automatically and embeds their JSON/SVG files in the executable. HeRo's Basic pack uses sepia engraving and parchment washes. [Basic pack manifest](packs/elmapa-basic/manifest.json)
+
+HeRo's Brilliant pack shares that palette and uses flatter planes and geometric silhouettes inspired by wayfinding graphics. HeRo's Nature pack covers landforms, wild groves, and coastal features. [Brilliant pack notes](packs/brillanto/README.md), [Nature pack notes](packs/nature/README.md)
 
 To install another pack, put its folder, containing `manifest.json` and the SVG files, in the `landmark-packs/` directory of your [local atlas library](../../docs/user-guide.md) and restart Elmapa. With `ELMAPA_LIBRARY_DIR`, use that library's `landmark-packs/` directory instead. Packs are loaded once, including their validated, tessellated geometry. Invalid packs appear as unavailable in Settings and do not prevent valid packs from loading. Folder names do not define identity; the manifest ID does.
 
