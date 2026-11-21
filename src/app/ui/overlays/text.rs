@@ -1,5 +1,5 @@
 //! Label selection handles and contextual text controls.
-use super::orbit::{Orbit, RadialElement, action_orbit};
+use super::orbit::{Orbit, OrbitResize, RadialElement, action_orbit};
 use crate::app::{
     lettering::{Edit, Field, LabelStyle, selection_size},
     state::{Action, Studio, Tool},
@@ -366,14 +366,19 @@ type SelectionNodes<'w, 's> = Query<
 
 pub fn text_selection_follow(
     studio: Res<Studio>,
+    time: Res<Time<Real>>,
+    mut resize: Local<OrbitResize>,
     mut nodes: SelectionNodes,
     mut orbits: Query<&mut Orbit, With<TextOrbit>>,
 ) {
+    if orbits.is_empty() {
+        *resize = default();
+    }
     if nodes.is_empty() && orbits.is_empty() {
         return;
     }
     let view = studio.viewport.transform(studio.bounds);
-    let label = studio
+    let mut label = studio
         .draft_preview_label()
         .unwrap_or_else(|| studio.current_label());
     let center = view.origin + Vec2::new(label.position.x, label.position.y) * view.scale;
@@ -405,23 +410,27 @@ pub fn text_selection_follow(
         node.height = px(size.y);
         transform.rotation = Rot2::degrees(label.rotation);
     }
-    let label_bounds = label.bounds();
-    let (orbit_center, orbit_bounds) = if studio.text.landmark_name
-        && let Some(landmark) = studio.name_landmark()
-    {
-        let bounds = label_bounds.union(elmapa::scene::landmark_bounds(landmark));
-        let middle = Vec2::new(bounds.min.x + bounds.max.x, bounds.min.y + bounds.max.y) * 0.5;
-        (view.origin + middle * view.scale, bounds)
-    } else {
-        (center, label_bounds)
-    };
+    let landmark_bounds = studio
+        .name_landmark()
+        .filter(|_| studio.text.landmark_name)
+        .map(elmapa::scene::landmark_bounds);
     let vertical_gap = if studio.text.landmark_name { 64. } else { 58. };
+    let target_size = label.size;
     for mut orbit in &mut orbits {
+        orbit.hidden = studio.text.moving.is_some() || studio.text.transforming.is_some();
+        label.size = resize.displayed_size(&orbit, target_size, time.elapsed());
+        let label_bounds = label.bounds();
+        let (orbit_center, bounds) = if let Some(landmark_bounds) = landmark_bounds {
+            let bounds = label_bounds.union(landmark_bounds);
+            let middle = Vec2::new(bounds.min.x + bounds.max.x, bounds.min.y + bounds.max.y) * 0.5;
+            (view.origin + middle * view.scale, bounds)
+        } else {
+            (center, label_bounds)
+        };
         orbit.center = orbit_center;
-        orbit.radius = (Vec2::new(orbit_bounds.width(), orbit_bounds.height()) * view.scale / 2.
+        orbit.radius = (Vec2::new(bounds.width(), bounds.height()) * view.scale / 2.
             + Vec2::new(48., vertical_gap))
         .max(Vec2::new(84., 76.));
-        orbit.hidden = studio.text.moving.is_some() || studio.text.transforming.is_some();
         orbit.card_height = if studio.text.control.is_some() && studio.text.draft.is_none() {
             105.
         } else {

@@ -7,6 +7,7 @@ use crate::app::{
         text_selection_follow,
     },
 };
+use std::time::Duration;
 
 fn app() -> App {
     let mut app = App::new();
@@ -81,6 +82,121 @@ fn act(app: &mut App, action: Action) {
         .resource_mut::<Studio>()
         .act(action, &mut Jobs::default());
     app.update();
+}
+
+fn tick(app: &mut App, milliseconds: u64) {
+    app.world_mut()
+        .resource_mut::<Time<Real>>()
+        .advance_by(Duration::from_millis(milliseconds));
+    app.update();
+}
+
+fn orbit_position(app: &mut App, action: Action) -> Vec2 {
+    let world = app.world_mut();
+    let position = |node: &Node| {
+        let (Val::Px(x), Val::Px(y)) = (node.left, node.top) else {
+            panic!("Orbit must have a screen position");
+        };
+        Vec2::new(x, y)
+    };
+    let (element, node, _) = world
+        .query::<(&RadialElement, &Node, &Hit)>()
+        .iter(world)
+        .find(|(_, _, hit)| hit.action == Some(action))
+        .unwrap();
+    position(node) + position(world.get::<Node>(element.orbit).unwrap())
+}
+
+#[test]
+fn landmark_resize_holds_buttons_until_the_last_step_settles() {
+    let mut app = app();
+    act(&mut app, Action::LandmarkTool);
+    let point = Vec2::new(700., 510.);
+    {
+        let mut studio = app.world_mut().resource_mut::<Studio>();
+        studio.down(point);
+        studio.up(point, false);
+    }
+    app.update();
+    for step in [16., -16.] {
+        let action = Action::LandmarkSize(step);
+        let button = orbit_position(&mut app, action);
+        let initial = app
+            .world()
+            .resource::<Studio>()
+            .current_landmark()
+            .unwrap()
+            .size;
+        act(&mut app, action);
+        assert_eq!(orbit_position(&mut app, action), button);
+        tick(&mut app, 500);
+        act(&mut app, action);
+        assert_eq!(
+            app.world()
+                .resource::<Studio>()
+                .current_landmark()
+                .unwrap()
+                .size,
+            initial + step * 2.
+        );
+        tick(&mut app, 749);
+        assert_eq!(orbit_position(&mut app, action), button);
+        tick(&mut app, 1);
+        assert_ne!(orbit_position(&mut app, action), button);
+    }
+
+    let action = Action::LandmarkSize(16.);
+    let button = orbit_position(&mut app, action);
+    act(&mut app, action);
+    let point = {
+        let studio = app.world().resource::<Studio>();
+        let bounds = studio.current_landmark().unwrap().bounds();
+        let center = Vec2::new(
+            (bounds.min.x + bounds.max.x) / 2.,
+            (bounds.min.y + bounds.max.y) / 2.,
+        );
+        let view = studio.viewport.transform(studio.bounds);
+        view.origin + center * view.scale
+    };
+    act(&mut app, Action::ClearSelection);
+    assert!(bubbles(&mut app).is_empty());
+    {
+        let mut studio = app.world_mut().resource_mut::<Studio>();
+        studio.down(point);
+        studio.up(point, false);
+    }
+    app.update();
+    assert_ne!(orbit_position(&mut app, action), button);
+}
+
+#[test]
+fn text_resize_holds_the_size_card_while_the_label_grows() {
+    use crate::app::ui::TextCard;
+
+    let mut app = app();
+    app.world_mut()
+        .resource_mut::<Studio>()
+        .viewport
+        .zoom_by(3.);
+    let card_top = |app: &mut App| {
+        let world = app.world_mut();
+        world
+            .query_filtered::<&Node, With<TextCard>>()
+            .single(world)
+            .unwrap()
+            .top
+    };
+    act(&mut app, Action::TextField(Field::Size));
+    let top = card_top(&mut app);
+
+    act(&mut app, Action::TextStep(Field::Size, 4.));
+    tick(&mut app, 500);
+    act(&mut app, Action::TextStep(Field::Size, 4.));
+    assert_eq!(app.world().resource::<Studio>().current_label().size, 40.);
+    tick(&mut app, 749);
+    assert_eq!(card_top(&mut app), top);
+    tick(&mut app, 1);
+    assert_ne!(card_top(&mut app), top);
 }
 #[test]
 fn landmark_orbit_flattens_one_pack_and_nests_multiple_packs() {

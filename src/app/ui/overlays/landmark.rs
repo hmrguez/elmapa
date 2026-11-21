@@ -1,5 +1,5 @@
 //! Selection frame and action orbit for a placed landmark.
-use super::orbit::{Orbit, action_orbit};
+use super::orbit::{Orbit, OrbitResize, action_orbit};
 use crate::app::{
     state::{Action, Studio},
     ui::widgets::{Builder, color, row},
@@ -60,11 +60,16 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
 }
 pub fn landmark_selection_follow(
     studio: Res<Studio>,
+    time: Res<Time<Real>>,
+    mut resize: Local<OrbitResize>,
     mut frames: Query<&mut Node, (With<LandmarkSelection>, Without<LandmarkNamePrompt>)>,
     mut orbits: Query<&mut Orbit, With<LandmarkOrbit>>,
     mut prompts: Query<&mut Node, (With<LandmarkNamePrompt>, Without<LandmarkSelection>)>,
 ) {
-    let Some(p) = studio.current_landmark() else {
+    if orbits.is_empty() {
+        *resize = default();
+    }
+    let Some(mut p) = studio.current_landmark() else {
         return;
     };
     let bounds = elmapa::scene::landmark_bounds(&p);
@@ -90,10 +95,19 @@ pub fn landmark_selection_follow(
             };
         }
     }
+    let target_size = p.size;
     for mut orbit in &mut orbits {
+        orbit.hidden = studio.landmarks.moving.is_some();
+        p.size = resize.displayed_size(&orbit, target_size, time.elapsed());
+        let bounds = if p.size == target_size {
+            bounds
+        } else {
+            elmapa::scene::landmark_bounds(&p)
+        };
+        let a = view.origin + Vec2::new(bounds.min.x, bounds.min.y) * view.scale;
+        let size = Vec2::new(bounds.width(), bounds.height()) * view.scale;
         orbit.center = a + size / 2.;
         orbit.radius = (size / 2. + Vec2::new(42., 46.)).max(Vec2::new(84., 76.));
         orbit.fit_single_ring(studio.bounds.size);
-        orbit.hidden = studio.landmarks.moving.is_some();
     }
 }
