@@ -517,7 +517,7 @@ mod tests {
         {
             let c = match shape {
                 Shape::Polygon { fill, .. } => fill,
-                Shape::RegionSurface { .. } | Shape::Sprite { .. } => {
+                Shape::RegionSurface { .. } | Shape::Sprite { .. } | Shape::ShoreWash(_) => {
                     panic!("expected engraved vector shapes")
                 }
                 Shape::Line { color, .. } => color,

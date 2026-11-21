@@ -138,13 +138,25 @@ impl MaterialLayer {
         let shapes = self
             .batches()
             .map(|batch| {
-                batch
+                let wash_segments = batch
                     .iter()
-                    .map(|shape| {
-                        shape.points().count() * std::mem::size_of::<crate::document::Point>()
-                            + std::mem::size_of::<Shape>()
+                    .find_map(|shape| match shape {
+                        Shape::ShoreWash(wash) => Some(wash.segment_bytes()),
+                        _ => None,
                     })
-                    .sum::<usize>()
+                    .unwrap_or(0);
+                wash_segments
+                    + batch
+                        .iter()
+                        .map(|shape| {
+                            shape.points().count() * std::mem::size_of::<crate::document::Point>()
+                                + std::mem::size_of::<Shape>()
+                                + match shape {
+                                    Shape::ShoreWash(wash) => std::mem::size_of_val(wash.as_ref()),
+                                    _ => 0,
+                                }
+                        })
+                        .sum::<usize>()
             })
             .sum::<usize>();
         shapes

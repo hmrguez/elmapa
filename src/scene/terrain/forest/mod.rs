@@ -414,7 +414,7 @@ pub(in crate::scene) fn tree_shapes(tree: &ForestTree, style: AtlasStyle) -> Vec
     vector::specimens(style)[tree.variant]
         .iter()
         .map(|shape| match shape {
-            Shape::RegionSurface { .. } | Shape::Sprite { .. } => {
+            Shape::RegionSurface { .. } | Shape::Sprite { .. } | Shape::ShoreWash(_) => {
                 unreachable!("forest specimens contain vector shapes only")
             }
             Shape::Polygon {

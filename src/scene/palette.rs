@@ -13,7 +13,7 @@ pub(super) fn recolor(shapes: &mut [Shape], palette: impl Fn(u32) -> u32) {
         let ink = match shape {
             Shape::Polygon { fill, .. } | Shape::RegionSurface { fill, .. } => fill,
             Shape::Line { color, .. } => color,
-            Shape::Sprite { .. } => continue,
+            Shape::Sprite { .. } | Shape::ShoreWash(_) => continue,
         };
         *ink = palette(*ink);
     }
