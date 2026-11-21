@@ -81,11 +81,11 @@ impl Studio {
     }
 
     pub fn landmark_actions(&self) -> Vec<Item<Action>> {
-        let current = self.current_landmark().map(|mark| mark.kind);
+        let current = self.current_landmark();
         let mut items = landmark_picker(
             landmark_catalog(),
             &self.disabled_landmark_packs,
-            current.as_ref(),
+            current.as_ref().map(|mark| &mark.kind),
         );
         items.extend([
             Item::action("Smaller · [", "minus", Action::LandmarkSize(-16.)),
@@ -99,6 +99,15 @@ impl Studio {
                 "Delete landmark · Backspace",
                 "delete",
                 Action::LandmarkDelete,
+            ),
+            Item::action(
+                if current.is_some_and(|mark| mark.name.is_some()) {
+                    "Edit name · type"
+                } else {
+                    "Name landmark · type"
+                },
+                "text",
+                Action::LandmarkName,
             ),
         ]);
         items
@@ -197,6 +206,9 @@ impl Studio {
     }
 
     pub(super) fn select_landmark(&mut self, point: Point, layer: u64, id: u64) {
+        if self.text.landmark_name {
+            self.cancel_text();
+        }
         self.editor.select_layer(layer);
         if self.landmarks.selected != Some(id) {
             self.landmarks.radial.reset();
@@ -234,6 +246,9 @@ impl Studio {
         }
     }
     pub fn cancel_landmark(&mut self) {
+        if self.text.landmark_name {
+            self.cancel_text();
+        }
         self.landmarks.radial.reset();
         self.landmarks.preview = None;
         self.landmarks.moving = None;

@@ -394,6 +394,7 @@ fn put(
                 kind,
                 position: point(at)?,
                 size: size.unwrap_or(92.),
+                name: None,
             };
             landmark.validate()?;
             layer.landmarks.push(landmark);

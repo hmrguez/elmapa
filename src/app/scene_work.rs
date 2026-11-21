@@ -285,7 +285,12 @@ fn preview_document(studio: &Studio) -> Document {
     studio.preview_path(&mut document);
     if let Some(label) = &studio.text.preview {
         for layer in &mut document.layers {
-            if let Some(target) = layer.labels.iter_mut().find(|l| l.id == label.id) {
+            if studio.text.landmark_name {
+                if let Some(mark) = layer.landmarks.iter_mut().find(|mark| mark.id == label.id) {
+                    mark.set_name_label(label.clone());
+                    break;
+                }
+            } else if let Some(target) = layer.labels.iter_mut().find(|l| l.id == label.id) {
                 *target = label.clone();
                 break;
             }

@@ -1,5 +1,5 @@
 use super::{
-    ContentBounds, Point,
+    ContentBounds, Label, Point,
     limits::{MAX_LANDMARK_SIZE, MIN_LANDMARK_SIZE},
 };
 use serde::{Deserialize, Serialize};
@@ -54,6 +54,9 @@ pub struct Landmark {
     pub kind: LandmarkKind,
     pub position: Point,
     pub size: f32,
+    /// Attached lettering with a position relative to the landmark anchor.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<Label>,
 }
 impl Default for Landmark {
     fn default() -> Self {
@@ -62,6 +65,7 @@ impl Default for Landmark {
             kind: LandmarkKind::default(),
             position: Point::new(0., 0.),
             size: 144.,
+            name: None,
         }
     }
 }
@@ -73,14 +77,40 @@ impl Landmark {
         {
             return Err("A landmark has an invalid position or size.".into());
         }
+        if let Some(label) = self.name_label() {
+            label.validate()?;
+        }
         Ok(())
     }
+
+    pub fn name_label(&self) -> Option<Label> {
+        let mut label = self.name.clone()?;
+        label.id = self.id;
+        label.position.x += self.position.x;
+        label.position.y += self.position.y;
+        Some(label)
+    }
+
+    /// Set the name using its map position. Empty lettering removes the name.
+    pub fn set_name_label(&mut self, mut label: Label) {
+        label.id = 0;
+        label.position.x -= self.position.x;
+        label.position.y -= self.position.y;
+        self.name = (!label.text.trim().is_empty()).then_some(label);
+    }
+
     pub fn bounds(&self) -> ContentBounds {
-        crate::scene::landmark_bounds(self)
+        let icon = crate::scene::landmark_bounds(self);
+        self.name_label()
+            .filter(|label| label.opacity > 0.)
+            .map_or(icon, |label| icon.union(label.bounds()))
     }
     pub fn contains(&self, point: Point, tolerance: f32) -> bool {
-        let b = self.bounds().padded(tolerance);
-        point.x >= b.min.x && point.x <= b.max.x && point.y >= b.min.y && point.y <= b.max.y
+        let b = crate::scene::landmark_bounds(self).padded(tolerance);
+        (point.x >= b.min.x && point.x <= b.max.x && point.y >= b.min.y && point.y <= b.max.y)
+            || self
+                .name_label()
+                .is_some_and(|label| label.opacity > 0. && label.contains(point, tolerance))
     }
 }
 
@@ -103,5 +133,47 @@ mod tests {
         assert!(landmark.validate().is_ok());
         assert!(landmark.bounds().width() > 0.);
         assert!(serde_json::from_str::<LandmarkKind>(r#""../bad:thing""#).is_err());
+    }
+}
+
+#[cfg(test)]
+mod names {
+    use super::*;
+    use crate::{
+        editor::Editor,
+        scene::{SceneCache, to_svg},
+    };
+
+    #[test]
+    fn names_round_trip_and_render_at_the_moved_landmark() {
+        let mut editor = Editor::blank();
+        let mut landmark = Landmark {
+            position: Point::new(160., 80.),
+            ..Landmark::default()
+        };
+        landmark.set_name_label(Label {
+            text: "Harbour".into(),
+            position: Point::new(168., 104.),
+            ..Label::default()
+        });
+        let id = editor.add_landmark(landmark).unwrap();
+        let mut landmark = editor.landmark(id).unwrap().clone();
+        landmark.position = Point::new(200., 100.);
+        assert!(editor.update_landmark(landmark));
+        let json = serde_json::to_string(editor.document()).unwrap();
+        let document = serde_json::from_str::<crate::document::Document>(&json).unwrap();
+        assert!(document.validate().is_ok());
+        let scene = SceneCache::default().render(&document, None);
+        let named = scene
+            .batches()
+            .find_map(|batch| scene.label(batch).map(|label| (batch, label)))
+            .unwrap();
+        assert!(!named.0.is_empty());
+        assert_eq!(named.1.text, "Harbour");
+        assert_eq!(named.1.position, Point::new(208., 124.));
+        assert!(document.content_bounds().intersects(named.1.bounds()));
+        let mut unnamed = document.clone();
+        unnamed.layers[0].landmarks[0].name = None;
+        assert_ne!(to_svg(&document), to_svg(&unnamed));
     }
 }

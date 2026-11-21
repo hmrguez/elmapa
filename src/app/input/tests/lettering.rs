@@ -228,3 +228,86 @@ fn clicking_outside_typography_commits_the_value_and_dismisses_the_card() {
     assert!(s.text.edit.is_none());
     assert_eq!(s.editor.stroke_count(), 0);
 }
+
+#[test]
+fn typing_names_the_selected_landmark_in_one_edit_and_escape_discards_renaming() {
+    let (mut app, window) = app();
+    let point = Vec2::new(400., 400.);
+    let (id, revision) = {
+        let mut studio = app.world_mut().resource_mut::<Studio>();
+        let position = studio.map_point(point);
+        let id = studio
+            .editor
+            .add_landmark(elmapa::document::Landmark {
+                position,
+                ..default()
+            })
+            .unwrap();
+        (id, studio.editor.revision())
+    };
+    key(&mut app, window, KeyCode::KeyV, ButtonState::Pressed);
+    moved(&mut app, window, point);
+    button(&mut app, window, ButtonState::Pressed);
+    button(&mut app, window, ButtonState::Released);
+    type_text(&mut app, window, KeyCode::KeyL, "L");
+    app.world_mut()
+        .write_message(WindowEvent::Ime(bevy::window::Ime::Commit {
+            window,
+            value: "éon".into(),
+        }));
+    app.update();
+
+    let studio = app.world().resource::<Studio>();
+    assert_eq!(studio.landmarks.selected, Some(id));
+    assert!(studio.has_text_selection());
+    assert_eq!(studio.current_label().text, "Léon");
+    assert_eq!(studio.editor.revision(), revision);
+
+    key(&mut app, window, KeyCode::Enter, ButtonState::Pressed);
+    type_text(&mut app, window, KeyCode::KeyA, "A");
+    key(&mut app, window, KeyCode::Escape, ButtonState::Pressed);
+    app.update();
+
+    let mut studio = app.world_mut().resource_mut::<Studio>();
+    assert_eq!(studio.landmarks.selected, Some(id));
+    assert!(!studio.text.landmark_name);
+    assert_eq!(studio.editor.revision(), revision + 1);
+    assert_eq!(
+        studio
+            .editor
+            .landmark(id)
+            .unwrap()
+            .name_label()
+            .unwrap()
+            .text,
+        "Léon"
+    );
+    assert!(studio.editor.document().layers[0].labels.is_empty());
+
+    assert!(studio.editor.undo());
+    assert!(studio.editor.landmark(id).unwrap().name.is_none());
+    assert!(studio.editor.redo());
+    assert_eq!(
+        studio
+            .editor
+            .landmark(id)
+            .unwrap()
+            .name_label()
+            .unwrap()
+            .text,
+        "Léon"
+    );
+
+    use crate::app::{files::Jobs, state::Action};
+    let mut jobs = Jobs::default();
+    studio.act(Action::LandmarkName, &mut jobs);
+    studio.act(Action::LandmarkNameAbove(true), &mut jobs);
+    let landmark = studio.editor.landmark(id).unwrap();
+    let icon = elmapa::scene::landmark_bounds(landmark);
+    let name = landmark.name_label().unwrap();
+    assert_eq!(name.position.x, landmark.position.x);
+    assert!(name.bounds().max.y < icon.min.y);
+    studio.act(Action::LandmarkNameAbove(false), &mut jobs);
+    let below = studio.editor.landmark(id).unwrap().name_label().unwrap();
+    assert!(below.bounds().min.y > icon.max.y);
+}

@@ -140,7 +140,7 @@ impl Studio {
         if blocked && self.text.transforming.is_none() {
             return;
         }
-        if self.landmarks.selected.is_some() {
+        if self.landmarks.moving.is_some() {
             self.landmark_move(self.map_point(point));
             return;
         }
@@ -170,7 +170,7 @@ impl Studio {
             self.finish();
             return;
         }
-        if self.landmarks.selected.is_some() {
+        if self.landmarks.moving.is_some() {
             if !blocked {
                 self.landmark_move(self.map_point(point));
             }

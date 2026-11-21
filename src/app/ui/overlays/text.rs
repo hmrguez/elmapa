@@ -37,10 +37,11 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
         }
         return;
     }
-    if s.selected_label().is_none() {
+    if !s.has_text_selection() {
         return;
     }
-    {
+    let label = s.current_label();
+    if !label.text.trim().is_empty() {
         let node = b.node(
             root,
             Node {
@@ -77,12 +78,15 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
                 shadow(false),
             ));
         }
+        let above = s.name_above_landmark(&label);
+        let edge = if above { 0. } else { 100. };
         let stem = b.node(
             node,
             Node {
                 position_type: PositionType::Absolute,
                 left: percent(50.),
-                top: percent(100.),
+                top: percent(edge),
+                margin: UiRect::top(px(if above { -22. } else { 0. })),
                 width: px(1.),
                 height: px(22.),
                 ..default()
@@ -96,10 +100,10 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
             Node {
                 position_type: PositionType::Absolute,
                 left: percent(50.),
-                top: percent(100.),
+                top: percent(edge),
                 margin: UiRect {
                     left: px(-7.),
-                    top: px(21.),
+                    top: px(if above { -35. } else { 21. }),
                     ..default()
                 },
                 width: px(14.),
@@ -117,7 +121,12 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
         ));
         b.icon(handle, "text-rotate", b.p.accent, 10.);
     }
-    let orbit = text_orbit(b, root, s, &format!("text/{:?}", s.text.selected));
+    let identity = if s.text.landmark_name {
+        "landmark-name"
+    } else {
+        "text"
+    };
+    let orbit = text_orbit(b, root, s, &format!("{identity}/{}", label.id));
     if let Some(field) = s.text.control {
         let panel = edit_card(b, root, orbit);
         let (title, value, step) = style_setting(field, LabelStyle::from(&s.current_label()));
@@ -131,7 +140,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
         let panel = edit_card(b, root, orbit);
         b.text(panel, error, 11., b.p.text, false);
     }
-    inline_name_edit(b, root, s, &s.current_label());
+    inline_name_edit(b, root, s, &label);
 }
 
 fn inline_name_edit(b: &mut Builder, root: Entity, s: &Studio, label: &Label) {
@@ -396,11 +405,21 @@ pub fn text_selection_follow(
         node.height = px(size.y);
         transform.rotation = Rot2::degrees(label.rotation);
     }
-    let bounds = label.bounds();
+    let label_bounds = label.bounds();
+    let (orbit_center, orbit_bounds) = if studio.text.landmark_name
+        && let Some(landmark) = studio.name_landmark()
+    {
+        let bounds = label_bounds.union(elmapa::scene::landmark_bounds(landmark));
+        let middle = Vec2::new(bounds.min.x + bounds.max.x, bounds.min.y + bounds.max.y) * 0.5;
+        (view.origin + middle * view.scale, bounds)
+    } else {
+        (center, label_bounds)
+    };
+    let vertical_gap = if studio.text.landmark_name { 64. } else { 58. };
     for mut orbit in &mut orbits {
-        orbit.center = center;
-        orbit.radius = (Vec2::new(bounds.width(), bounds.height()) * view.scale / 2.
-            + Vec2::new(48., 58.))
+        orbit.center = orbit_center;
+        orbit.radius = (Vec2::new(orbit_bounds.width(), orbit_bounds.height()) * view.scale / 2.
+            + Vec2::new(48., vertical_gap))
         .max(Vec2::new(84., 76.));
         orbit.hidden = studio.text.moving.is_some() || studio.text.transforming.is_some();
         orbit.card_height = if studio.text.control.is_some() && studio.text.draft.is_none() {
@@ -490,14 +509,26 @@ pub fn text_ime(studio: Res<Studio>, mut window: Single<&mut Window>) {
         .as_ref()
         .and(studio.regions.style.anchor);
     let enabled = studio.replay_view.is_none()
-        && (region.is_some() || draft.is_some() || studio.selected_label().is_some());
+        && (region.is_some()
+            || draft.is_some()
+            || studio.selected_label().is_some()
+            || studio.name_landmark().is_some());
     if window.ime_enabled != enabled {
         window.ime_enabled = enabled;
     }
     if enabled {
         let view = studio.viewport.transform(studio.bounds);
         let position = region.unwrap_or_else(|| {
-            draft.map_or_else(|| studio.current_label().position, |draft| draft.point)
+            draft.map_or_else(
+                || {
+                    studio
+                        .name_landmark()
+                        .filter(|_| !studio.text.landmark_name)
+                        .map_or_else(|| studio.current_label(), Studio::landmark_name_label)
+                        .position
+                },
+                |draft| draft.point,
+            )
         });
         window.ime_position = (view.origin + Vec2::new(position.x, position.y) * view.scale).clamp(
             Vec2::splat(30.),

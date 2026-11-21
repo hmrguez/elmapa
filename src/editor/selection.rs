@@ -29,13 +29,13 @@ impl Editor {
                         .find(|label| label.id == id)?
                         .position,
                 ),
-                SelectionId::Landmark { id, .. } => translate(
-                    &mut layer
+                SelectionId::Landmark { id, .. } => {
+                    let landmark = layer
                         .landmarks
                         .iter_mut()
-                        .find(|landmark| landmark.id == id)?
-                        .position,
-                ),
+                        .find(|landmark| landmark.id == id)?;
+                    translate(&mut landmark.position) && landmark.validate().is_ok()
+                }
                 SelectionId::Course(id) => layer.strokes[id.index].points.iter_mut().all(translate),
                 SelectionId::Relief { key, layer, .. } => {
                     let mut position = anchor;

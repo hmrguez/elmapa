@@ -109,27 +109,29 @@ impl Studio {
         }
         self.ui_dirty = true;
         if let Some(label) = self.text.preview.take()
-            && self.editor.update_label(label)
+            && self.update_selected_lettering(label)
         {
             self.changed();
         }
     }
     pub fn text_handle(&self, point: Point) -> Option<Handle> {
-        if self.tool != Tool::Select
-            || self
-                .text
-                .selected
-                .and_then(|id| self.editor.label(id))
-                .is_none()
-        {
+        if self.tool != Tool::Select || !self.has_text_selection() {
             return None;
         }
         let label = self.current_label();
+        if label.text.trim().is_empty() {
+            return None;
+        }
         let zoom = self.viewport.transform(self.bounds).scale;
         let half = selection_size(&label, zoom) / 2.;
         let local =
             Rot2::degrees(-label.rotation) * (vector(point) - vector(label.position)) * zoom;
-        if local.distance(Vec2::new(0., half.y + 28.)) <= 11. {
+        let side = if self.name_above_landmark(&label) {
+            -1.
+        } else {
+            1.
+        };
+        if local.distance(Vec2::new(0., side * (half.y + 28.))) <= 11. {
             return Some(Handle::Rotate);
         }
         for (x, y) in [(-1., -1.), (1., -1.), (1., 1.), (-1., 1.)] {
