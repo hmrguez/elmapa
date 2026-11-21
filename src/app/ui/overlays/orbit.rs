@@ -9,7 +9,7 @@ use crate::app::{
 };
 use bevy::prelude::*;
 use elmapa::document::LabelFont;
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 /// Geometry supplied by a target adapter; the renderer has no text dependency.
 #[derive(Component, Default)]
@@ -35,6 +35,36 @@ impl Orbit {
         if self.single_ring_radius <= self.radius_limit(viewport).min_element() {
             self.radius = self.radius.max(Vec2::splat(self.single_ring_radius));
         }
+    }
+}
+
+const RESIZE_SETTLE: Duration = Duration::from_millis(750);
+
+/// Retain the displayed size through UI rebuilds. The target's anchor and the
+/// viewport can still move while a series of size edits is settling.
+#[derive(Default)]
+pub struct OrbitResize {
+    key: String,
+    target_size: f32,
+    displayed_size: f32,
+    settle_at: Duration,
+}
+
+impl OrbitResize {
+    pub(super) fn displayed_size(&mut self, orbit: &Orbit, size: f32, now: Duration) -> f32 {
+        let key = &orbit.keys[0];
+        if self.key != *key || orbit.hidden {
+            self.key.clone_from(key);
+            self.target_size = size;
+            self.settle_at = now;
+        } else if self.target_size != size {
+            self.target_size = size;
+            self.settle_at = now + RESIZE_SETTLE;
+        }
+        if now >= self.settle_at {
+            self.displayed_size = size;
+        }
+        self.displayed_size
     }
 }
 
