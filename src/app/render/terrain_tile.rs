@@ -4,7 +4,7 @@ use bevy::{
     asset::embedded_asset,
     prelude::*,
     render::render_resource::AsBindGroup,
-    shader::ShaderRef,
+    shader::{ShaderRef, load_shader_library},
     sprite_render::{AlphaMode2d, Material2d, Material2dPlugin},
 };
 
@@ -13,6 +13,7 @@ pub(super) struct TerrainTilePlugin;
 impl Plugin for TerrainTilePlugin {
     fn build(&self, app: &mut App) {
         embedded_asset!(app, "terrain_tile.wgsl");
+        load_shader_library!(app, "water_surface.wgsl");
         app.add_plugins(Material2dPlugin::<TerrainTile>::default())
             .add_systems(PostUpdate, sync_motion);
     }
@@ -62,9 +63,11 @@ fn sync_motion(
     }
     *previous = studio.reduced;
     let motion = u32::from(!studio.reduced);
-    for (_, tile) in tiles.iter_mut() {
-        if tile.profile != 0 {
-            tile.motion = motion;
-        }
+    let animated: Vec<_> = tiles
+        .iter()
+        .filter_map(|(id, tile)| (tile.profile != 0).then_some(id))
+        .collect();
+    for id in animated {
+        tiles.get_mut(id).expect("animated tile").motion = motion;
     }
 }

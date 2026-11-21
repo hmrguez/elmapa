@@ -39,7 +39,6 @@ pub fn sync(
     mut studio: ResMut<Studio>,
     mut canvas: ResMut<Canvas>,
     time: Res<Time<Real>>,
-    mut tiles: ResMut<Assets<TerrainTile>>,
     window: Single<&Window>,
     mut transforms: Query<&mut Transform, With<WorldContent>>,
     mut visibility: Query<&mut Visibility, With<WorldContent>>,
@@ -49,6 +48,7 @@ pub fn sync(
         mut images,
         meshes: _,
         mut materials,
+        mut tiles,
         mut rivers,
         mut forest_materials,
     } = graphics;
