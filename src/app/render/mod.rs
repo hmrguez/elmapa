@@ -1,5 +1,6 @@
 //! Retained world-space meshes and atlas-backed sprites for the native canvas.
 mod camera;
+mod dune_surface;
 mod forest_atlas;
 mod forest_wind;
 mod grass_wind;
@@ -100,8 +101,9 @@ impl Canvas {
         self.tile_materials
             .retain(|_, handle| handle.strong_count() != 0);
         let mut material = TerrainTile::new(image, opacity, reduced);
-        material.profile =
-            grass_wind::profile(texture).unwrap_or_else(|| water_surface::profile(texture));
+        material.profile = grass_wind::profile(texture)
+            .or_else(|| dune_surface::profile(texture))
+            .unwrap_or_else(|| water_surface::profile(texture));
         let handle = materials.add(material);
         if let Handle::Strong(strong) = &handle {
             self.tile_materials.insert(key, Arc::downgrade(strong));
