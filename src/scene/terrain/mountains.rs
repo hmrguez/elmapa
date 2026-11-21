@@ -89,6 +89,51 @@ fn level(path: &[Point], y: f32) -> Point {
     *path.last().expect("nonempty pen path")
 }
 
+fn ground_wash(
+    shapes: &mut Vec<Shape>,
+    flank: impl Fn(f32, f32) -> Point,
+    toe_y: f32,
+    pigment: u32,
+    strength: f32,
+) {
+    // The outer wash reaches the foot of the flank and fades into the paper.
+    // The last point of the first polygon is also the relief and uplift pivot.
+    for (spread, depth, density) in [
+        (1.17, 0.24, 0.045),
+        (1.09, 0.19, 0.085),
+        (1.01, 0.135, 0.16),
+    ] {
+        polygon(
+            shapes,
+            vec![
+                flank(0.12, -0.27),
+                flank(0.57, -0.16),
+                flank(0.94, -0.12),
+                flank(spread, toe_y + 0.04),
+                flank(0.84, depth * 0.71),
+                flank(0.55, depth),
+                flank(0.21, depth * 0.68),
+                flank(0., 0.),
+            ],
+            pigment,
+            strength * density,
+        );
+    }
+}
+
+fn sprite_ground_pigment(style: AtlasStyle, swatch: u32) -> u32 {
+    let earth = if style.is_classic() {
+        0x927858
+    } else {
+        0x806b51
+    };
+    [16, 8, 0].into_iter().fold(0, |pigment, shift| {
+        let base = (earth >> shift) & 255;
+        let finish = (swatch >> shift) & 255;
+        pigment | (((base * 3 + finish) / 4) << shift)
+    })
+}
+
 pub(in crate::scene) fn mountain_chunks(
     layer: &Layer,
     index: usize,
@@ -136,6 +181,7 @@ pub(in crate::scene) fn mountain_chunks(
             let right = center.x + width * 0.5;
             let top = center.y - height;
             let frame = (h(4) * sheet.frames as f32) as u32;
+            let opacity = alpha * (0.45 + shade * 0.55);
             let sprite = Shape::Sprite {
                 points: [
                     p(left, top),
@@ -145,10 +191,27 @@ pub(in crate::scene) fn mountain_chunks(
                 ],
                 material,
                 frame: frame.min(sheet.frames - 1),
-                opacity: alpha * (0.45 + shade * 0.55),
+                opacity,
             };
-            // Retain the ordinal pair used by the depth and uplift caches.
-            chunks.push([vec![sprite], Vec::new()]);
+            let mut contact = Vec::new();
+            let pigment =
+                sprite_ground_pigment(style, brush_materials::artwork_catalog()[material].color);
+            for side in [-1., 1.] {
+                ground_wash(
+                    &mut contact,
+                    |x, y| {
+                        p(
+                            center.x + side * width * 0.45 * x,
+                            center.y + height * 0.54 * y,
+                        )
+                    },
+                    -0.028,
+                    pigment,
+                    opacity * if side > 0. { 0.78 } else { 0.64 },
+                );
+            }
+            // The existing pair gives the untextured wash and sprite one depth.
+            chunks.push([contact, vec![sprite]]);
             continue;
         }
         if style == AtlasStyle::Woodland {
@@ -200,6 +263,19 @@ pub(in crate::scene) fn mountain_chunks(
                     ));
                 }
                 let edge = curved(&edge);
+                let foot = edge.last().unwrap();
+                ground_wash(
+                    &mut out,
+                    |x, y| {
+                        p(
+                            center.x + (foot.x - center.x) * x,
+                            center.y + height * 0.55 * y,
+                        )
+                    },
+                    -0.025,
+                    0x9b825e,
+                    alpha * shade * if side > 0. { 0.92 } else { 0.70 },
+                );
                 let surface = |t: f32, u: f32| {
                     let y = top.y + height * t.clamp(0., 1.);
                     mix(level(&spine, y), level(&edge, y), u)
@@ -388,7 +464,7 @@ mod tests {
 
         s.material = Some("alpine-crags".into());
         let click = mountain_chunks(&doc.layers[0], 0, &s, AtlasStyle::Classic);
-        assert!(matches!(click[0][0].as_slice(), [Shape::Sprite { .. }]));
+        assert!(matches!(click[0][1].as_slice(), [Shape::Sprite { .. }]));
         assert_eq!(mountain_base(&click[0][0]), Some(s.points[0]));
         s.points = vec![p(100., 100.), p(257., 121.)].into();
         doc.layers[0].strokes.push(s.clone());
