@@ -140,6 +140,7 @@ pub struct Studio {
     pub bounds: Bounds,
     pub viewport: Viewport,
     pub stroke: Option<Stroke>,
+    pub(super) wet_release: Option<(u64, u64)>,
     pub drag: Option<Vec2>,
     pub pointer: Option<Vec2>,
     pub scene: SceneWork,
@@ -195,6 +196,7 @@ impl Default for Studio {
                 size: Vec2::new(1440., 940.),
             },
             stroke: None,
+            wet_release: None,
             drag: None,
             pointer: None,
             scene: SceneWork::default(),
@@ -238,6 +240,7 @@ impl Studio {
     }
     pub fn changed(&mut self) {
         self.stop_view_replay();
+        self.wet_release = None;
         self.dirty = true;
         self.ui_dirty = true;
         self.invalidate_preview();
@@ -248,6 +251,7 @@ impl Studio {
         self.clear_map_selection();
         self.regions.clear();
         self.stroke = None;
+        self.wet_release = None;
         self.drag = None;
         self.motion.reset();
         self.mountain_motion.reset();
@@ -293,6 +297,7 @@ impl Studio {
         self.settings = false;
         self.menu = false;
         self.stroke = None;
+        self.wet_release = None;
         self.drag = None;
         self.invalidate_preview();
         self.installing = true;

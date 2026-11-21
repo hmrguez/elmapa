@@ -1,9 +1,36 @@
 //! Seeded pen-and-wash drawing primitives. No traced or downloaded artwork.
-use crate::document::Point as P;
+use crate::document::{AtlasStyle, Point as P};
 use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use std::fmt::Write;
 pub(super) const INK: &str = "#75654f";
+
+pub(super) fn ground_contact(variant: usize, style: AtlasStyle) -> String {
+    let (width, depth, pigment) = if super::SCRUB.contains(&variant) {
+        (
+            1.,
+            0.75,
+            if style.is_classic() {
+                0x9d7951
+            } else {
+                0x96734f
+            },
+        )
+    } else if style.is_classic() {
+        (1.15, 1., 0x95815e)
+    } else if super::OAK.contains(&variant) || (6..super::MIXED.end).contains(&variant) {
+        (1., 1., 0x877452)
+    } else {
+        (0.88, 0.9, 0x877452)
+    };
+    // The wider band follows the cast wash to the right of the rooted trunk.
+    format!(
+        r##"<g transform="scale({width} {depth})" fill="#{pigment:06x}">
+<path d="M-23 2Q-16-5 1-4Q24-4 33 4Q24 8 18 9Q5 13-5 10Q-18 9-23 2Z" opacity=".047"/>
+<path d="M-16 2Q-9-2 3-2Q20-2 26 4Q15 8 6 8Q-8 8-16 2Z" opacity=".061"/>
+</g>"##
+    )
+}
 
 /// A closed, smoothed, irregular silhouette: small lobes, no regular polygons.
 pub(super) fn blob(rng: &mut ChaCha8Rng, x: f32, y: f32, rx: f32, ry: f32, n: usize) -> String {

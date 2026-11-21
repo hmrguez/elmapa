@@ -2,6 +2,7 @@
 mod camera;
 mod forest_atlas;
 mod forest_wind;
+mod grass_wind;
 mod mesh;
 mod motion;
 mod opening;
@@ -13,6 +14,7 @@ pub(super) mod tile_upload;
 pub(super) mod tree_leaves;
 pub(super) mod view_replay;
 mod water_surface;
+pub(super) mod wet_edge;
 
 use super::river_material::RiverMaterial;
 use bevy::{
@@ -81,7 +83,8 @@ impl Canvas {
             .retain(|_, handle| handle.strong_count() != 0);
         let image = texture.and_then(|index| self.brush_textures.get(&index).cloned());
         let mut material = TerrainTile::new(image, opacity, reduced);
-        material.profile = water_surface::profile(texture);
+        material.profile =
+            grass_wind::profile(texture).unwrap_or_else(|| water_surface::profile(texture));
         let handle = materials.add(material);
         if let Handle::Strong(strong) = &handle {
             self.tile_materials.insert(key, Arc::downgrade(strong));

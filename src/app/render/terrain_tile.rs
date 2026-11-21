@@ -12,6 +12,7 @@ pub(super) struct TerrainTilePlugin;
 
 impl Plugin for TerrainTilePlugin {
     fn build(&self, app: &mut App) {
+        load_shader_library!(app, "grass_wind.wgsl");
         embedded_asset!(app, "terrain_tile.wgsl");
         load_shader_library!(app, "water_surface.wgsl");
         app.add_plugins(Material2dPlugin::<TerrainTile>::default())

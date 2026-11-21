@@ -49,6 +49,55 @@ fn live_material_matches_committed_material_for_every_brush() {
 }
 
 #[test]
+fn wet_pigment_uses_the_new_perimeter_across_tiles_and_reuses_it_on_release() {
+    use crate::{document::AtlasStyle, scene::Shape};
+
+    let hits = |shapes: &[Shape], point| {
+        use crate::scene::geometry::contains;
+        shapes.iter().any(|shape| match shape {
+            Shape::Polygon { points, .. } => contains(points, point),
+            Shape::RegionSurface { contours, .. } => {
+                contours.iter().filter(|ring| contains(ring, point)).count() % 2 == 1
+            }
+            _ => false,
+        })
+    };
+    for (style, brush) in [
+        (AtlasStyle::Classic, Brush::Land),
+        (AtlasStyle::Woodland, Brush::Water),
+    ] {
+        let mut doc = Document::blank();
+        doc.style = style;
+        let layer = doc.layers[0].id;
+        let mut paint = stroke(brush);
+        paint.points = vec![Point::new(110., 0.), Point::new(270., 0.)].into();
+        let mut cache = SceneCache::default();
+        cache.render(&doc, None);
+        let (live, wet) = cache.render_with_wet_edges(&doc, Some((layer, &paint)), layer);
+        assert_eq!(wet.len(), 2);
+        for edge in &wet {
+            assert!(
+                live.batches()
+                    .any(|batch| live.region(batch) == Some(edge.region))
+            );
+            assert!(!hits(&edge.shapes, Point::new(191., 0.)));
+            assert!(!hits(&edge.shapes, Point::new(193., 0.)));
+        }
+        doc.layers[0].strokes.push(paint.clone());
+        let (settled, release) = cache.render_with_wet_edges(&doc, None, layer);
+        assert!(live == settled);
+        assert!(wet.iter().zip(&release).all(|(a, b)| a.shapes == b.shapes));
+        assert_eq!(wet.len(), release.len());
+
+        // The same finish entirely inside already painted pigment has no
+        // newly exposed edge, even though its sampled field can change.
+        paint.size = 20.;
+        let (_, repaint) = cache.render_with_wet_edges(&doc, Some((layer, &paint)), layer);
+        assert!(repaint.is_empty());
+    }
+}
+
+#[test]
 fn cancel_undo_redo_and_layer_changes_never_leave_live_material() {
     use crate::editor::Editor;
     let mut editor = Editor::demo();

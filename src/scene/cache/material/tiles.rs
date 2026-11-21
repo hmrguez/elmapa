@@ -1,16 +1,20 @@
 //! Sparse world-aligned terrain, shared by live painting, reopen and export.
+mod wet_edge;
+
+pub use wet_edge::WetEdge;
+
 use super::{Batch, REGIONS};
 use crate::{
     brush_materials,
     document::{AtlasStyle, Brush, ContentBounds, Layer, Point, Stroke},
     scene::{
-        generation,
+        Shape, generation,
         noise::noise,
         terrain::{
             contours::RegionGrid,
             field::{cuts_region, radius, roughness},
             field_index::{FieldIndex, LiveDistance},
-            materials::Contours,
+            materials::{Contours, coordinates},
             regions,
         },
     },
@@ -383,11 +387,18 @@ impl Tile {
         let land = fields[0].coverage.as_ref();
         let land_unchanged =
             old.is_some_and(|old| same_contours(land, old.fields[0].coverage.as_ref()));
+        let water_unchanged = old.is_some_and(|old| fields[1].same_geometry(&old.fields[1]));
         let mut regions = REGIONS.map(|_| TileRegion::default());
-        for (index, brush) in REGIONS.into_iter().enumerate() {
+        // The shelf samples the resolved water finishes. Build them before
+        // the land artwork while retaining the usual water-then-land draw order.
+        for (index, brush) in REGIONS.into_iter().enumerate().rev() {
             let field = &fields[index];
             if let Some(old) = old.filter(|old| {
-                field.same_geometry(&old.fields[index]) && (index == 0 || land_unchanged)
+                if brush == Brush::Land {
+                    water_unchanged && field.same_geometry(&old.fields[index])
+                } else {
+                    land_unchanged && water_unchanged
+                }
             }) {
                 regions[index] = old.regions[index].clone();
             } else if let Some(coverage) = &field.coverage {
@@ -397,8 +408,31 @@ impl Tile {
                     .map(|(&id, grid)| (id, regions::contours(grid)))
                     .collect();
                 let coast = (index == 1).then_some(land).flatten();
-                let (surface, batches) =
-                    regions::build(coverage, brush, &masks, coast, coord.bounds(), style);
+                let mut water_finishes = Vec::new();
+                if brush == Brush::Land {
+                    for batch in &regions[1].batches {
+                        if let Some(Shape::RegionSurface {
+                            contours,
+                            material: Some(id),
+                            ..
+                        }) = batch.first()
+                        {
+                            water_finishes.push((
+                                *id,
+                                contours.iter().map(|ring| coordinates(ring)).collect(),
+                            ));
+                        }
+                    }
+                }
+                let (surface, batches) = regions::build(
+                    coverage,
+                    brush,
+                    &masks,
+                    coast,
+                    &water_finishes,
+                    coord.bounds(),
+                    style,
+                );
                 let prior = old
                     .map(|old| &old.regions[index])
                     .filter(|prior| !prior.batches.is_empty());

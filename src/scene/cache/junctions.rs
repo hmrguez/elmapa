@@ -6,7 +6,7 @@ use crate::{
         RiverReach, Shape, generation,
         terrain::{
             materials::{Contours, coordinates, surface},
-            regions::pigments,
+            regions::shore_ink,
         },
     },
 };
@@ -139,7 +139,7 @@ impl Junctions {
             }
             self.rivers.insert(key, cut);
         }
-        let shore_ink = pigments(scene.style()).0;
+        let shore_ink = shore_ink(scene.style());
         for batch in scene.batches() {
             if mouths.is_empty() {
                 break;
@@ -370,7 +370,7 @@ fn clip_river(shape: &Shape, mask: &Contours) -> Vec<Shape> {
                 .collect();
             (*color, *opacity, ink)
         }
-        Shape::RegionSurface { .. } | Shape::Sprite { .. } => {
+        Shape::RegionSurface { .. } | Shape::Sprite { .. } | Shape::ShoreWash(_) => {
             unreachable!("river reaches contain ribbons and ink")
         }
     };
@@ -477,7 +477,7 @@ mod tests {
     fn shore_crossings(scene: &Scene) -> Vec<f32> {
         scene
             .shapes()
-            .filter(|shape| is_shore_ink(shape, pigments(scene.style()).0))
+            .filter(|shape| is_shore_ink(shape, shore_ink(scene.style())))
             .flat_map(|shape| match shape {
                 Shape::Polygon { points, .. } => std::slice::from_ref(points),
                 Shape::RegionSurface { contours, .. } => contours,
