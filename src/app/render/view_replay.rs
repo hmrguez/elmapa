@@ -72,6 +72,7 @@ impl Material2d for InkReveal {
 }
 
 enum Entrance {
+    Instant,
     Tree(ForestTree),
     Mountain(MountainPart),
     Trail(PathPart),
@@ -97,6 +98,7 @@ impl Entrance {
 
     fn duration(&self) -> f32 {
         match self {
+            Self::Instant => 0.,
             Self::Tree(..) | Self::Mountain(_) => 0.33,
             Self::Trail(_) => 0.36,
             Self::River(..) => 0.58,
@@ -167,6 +169,7 @@ impl PlaybackGraphics<'_, '_> {
         let z = cue.z;
         let duration = cue.entrance.duration();
         match &mut cue.entrance {
+            Entrance::Instant => {}
             Entrance::Tree(tree) => {
                 *transform = tree_transform(tree, z, ForestAnimation::replay_factor(tree, age));
             }
@@ -328,6 +331,7 @@ pub fn play(
         studio.editor.document(),
         frame,
         &mut graphics.images,
+        studio.shader_motion(),
     );
     if queued.is_empty() {
         studio.status = "No artwork in this view.".into();

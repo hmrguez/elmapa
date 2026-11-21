@@ -4,6 +4,7 @@ use super::{
     Canvas, CpuMesh,
     terrain_tile::{TerrainTile, TerrainTilePlugin},
 };
+use crate::app::state::ShaderMode;
 use bevy::{
     camera::primitives::{Aabb, MeshAabb},
     prelude::*,
@@ -52,7 +53,7 @@ impl TileUploads {
         canvas: &mut Canvas,
         meshes: &mut Assets<Mesh>,
         materials: &mut Assets<TerrainTile>,
-        reduced: bool,
+        shader_mode: ShaderMode,
     ) -> (Vec<SceneMesh>, Arc<AtomicBool>) {
         let mut assets = Vec::new();
         let mut bytes = 0;
@@ -73,7 +74,7 @@ impl TileUploads {
                         scene.style(),
                         scene.batch_opacity(&cpu.source),
                         materials,
-                        reduced,
+                        shader_mode,
                     );
                     assets.push((mesh.id(), material.id()));
                     bytes += size;

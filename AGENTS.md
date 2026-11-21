@@ -18,3 +18,10 @@ Repeat `--attach` for each file.
 
 When working in a linked Git worktree, check the primary checkout for a local
 `AGENTS.override.md`. Follow it if present and give it precedence.
+
+## Shader effects
+
+Make new shader effects follow **Settings → Shader effects**. Use
+`Studio::shader_mode()` for static and animated effects, or
+`Studio::shader_motion()` for animation alone. Verify both toggle states
+and keep atlas artwork visible with shader effects off.

@@ -65,6 +65,7 @@ fn cue_source(
     scene: &Scene,
     batch: &Arc<Vec<Shape>>,
     canvas: &Canvas,
+    shader_effects: bool,
 ) -> Option<(Source, Entity, ContentBounds, Entrance)> {
     if let Some(tree) = scene.forest_tree(batch) {
         let retained = canvas.trees.get(&tree.id)?;
@@ -82,17 +83,25 @@ fn cue_source(
             let reach = scene.river_reach(batch)?;
             (
                 Source::Stroke(reach.id.0, reach.id.1),
-                Entrance::River(reach.clone(), handle.clone()),
+                if shader_effects {
+                    Entrance::River(reach.clone(), handle.clone())
+                } else {
+                    Entrance::Instant
+                },
             )
         }
         TerrainMaterial::Tile { handle, .. } => {
             let (layer, brush, tile) = scene.region(batch)?;
             (
                 Source::Region(layer, brush, tile),
-                Entrance::Wash {
-                    original: handle.clone(),
-                    material: None,
-                    order: None,
+                if shader_effects {
+                    Entrance::Wash {
+                        original: handle.clone(),
+                        material: None,
+                        order: None,
+                    }
+                } else {
+                    Entrance::Instant
                 },
             )
         }
@@ -135,13 +144,15 @@ pub(super) fn timeline(
     doc: &Document,
     frame: ContentBounds,
     images: &mut Assets<Image>,
+    shader_effects: bool,
 ) -> VecDeque<Cue> {
     let mut groups = HashMap::<Source, Group>::new();
     let mut surface_orders = HashMap::new();
     let mut budget = paint_order::SAMPLE_BUDGET;
     for (order, batch) in scene.batches().enumerate() {
         let Some((mut source, entity, bounds, mut entrance)) =
-            cue_source(scene, batch, canvas).filter(|(_, _, bounds, _)| bounds.intersects(frame))
+            cue_source(scene, batch, canvas, shader_effects)
+                .filter(|(_, _, bounds, _)| bounds.intersects(frame))
         else {
             continue;
         };

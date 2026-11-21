@@ -56,7 +56,7 @@ pub fn sync(
     let atlas_changed =
         canvas
             .forest_atlas
-            .poll(&mut images, &mut forest_materials, !studio.reduced);
+            .poll(&mut images, &mut forest_materials, studio.shader_motion());
     if atlas_changed {
         studio.scene.request_sync();
     }
@@ -167,7 +167,7 @@ pub fn sync(
                             scene.style(),
                             scene.batch_opacity(source),
                             &mut tiles,
-                            studio.reduced,
+                            studio.shader_mode(),
                         ))
                     }
                     _ => None,

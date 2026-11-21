@@ -165,6 +165,11 @@ impl Studio {
                 self.wet_release = None;
                 jobs.preferences = true;
             }
+            Action::ShaderEffects => {
+                self.shader_effects_disabled = !self.shader_effects_disabled;
+                self.wet_release = None;
+                jobs.preferences = true;
+            }
             Action::Settings => {
                 if self.home {
                     self.settings = !self.settings;

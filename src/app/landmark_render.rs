@@ -299,7 +299,7 @@ pub(super) fn accents(
     let ArrivalEffects { quad, active } = &mut *effects;
     let now = time.elapsed_secs();
     let replay = canvas.replay_landmark_ages();
-    if !studio.reduced
+    if studio.shader_motion()
         && !studio.home
         && !studio.installing
         && studio.opening.is_none()

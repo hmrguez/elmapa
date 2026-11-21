@@ -75,7 +75,7 @@ pub fn fall(
     )>,
 ) {
     let now = time.elapsed_secs();
-    let enabled = !studio.reduced
+    let enabled = studio.shader_motion()
         && !studio.home
         && !studio.installing
         && studio.opening.is_none()

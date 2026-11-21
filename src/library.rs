@@ -55,6 +55,8 @@ pub struct Shelf {
     pub dark: bool,
     pub reduced_motion: bool,
     #[serde(default)]
+    pub shader_effects_disabled: bool,
+    #[serde(default)]
     pub disabled_landmark_packs: std::collections::HashSet<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub biome_pack: Option<String>,
@@ -310,6 +312,7 @@ mod tests {
             .unwrap();
         library.shelf.dark = true;
         library.shelf.reduced_motion = true;
+        library.shelf.shader_effects_disabled = true;
         library
             .shelf
             .disabled_landmark_packs
@@ -324,6 +327,7 @@ mod tests {
         );
         assert_eq!(restored.shelf.atlases[0].source, record.source);
         assert!(restored.shelf.dark && restored.shelf.reduced_motion);
+        assert!(restored.shelf.shader_effects_disabled);
         assert!(
             restored
                 .shelf
@@ -331,6 +335,13 @@ mod tests {
                 .contains("elmapa.basic")
         );
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn shelves_without_a_shader_preference_enable_effects() {
+        let shelf: Shelf =
+            serde_json::from_str(r#"{"atlases":[],"dark":false,"reduced_motion":false}"#).unwrap();
+        assert!(!shelf.shader_effects_disabled);
     }
 
     #[test]

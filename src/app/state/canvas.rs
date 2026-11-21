@@ -14,7 +14,7 @@ impl Studio {
         self.finish_landmark_move();
         self.drag = None;
         if let Some(stroke) = self.stroke.take() {
-            let wet = !self.reduced && matches!(stroke.brush, Brush::Land | Brush::Water);
+            let wet = self.shader_motion() && matches!(stroke.brush, Brush::Land | Brush::Water);
             let layer = self.editor.active_layer();
             let id = self.editor.document().next_id;
             if self.editor.commit_stroke(stroke) {
@@ -110,7 +110,7 @@ impl Studio {
     }
 
     pub(in crate::app) fn wet_paint(&self) -> Option<(u64, u64)> {
-        if self.reduced
+        if !self.shader_motion()
             || self.home
             || self.installing
             || self.opening.is_some()

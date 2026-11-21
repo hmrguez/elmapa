@@ -17,7 +17,7 @@ pub(super) mod view_replay;
 mod water_surface;
 pub(super) mod wet_edge;
 
-use super::river_material::RiverMaterial;
+use super::{river_material::RiverMaterial, state::ShaderMode};
 use bevy::{
     asset::{RenderAssetUsages, StrongHandle},
     ecs::system::SystemParam,
@@ -90,7 +90,7 @@ impl Canvas {
         style: AtlasStyle,
         opacity: f32,
         materials: &mut Assets<TerrainTile>,
-        reduced: bool,
+        shader_mode: ShaderMode,
     ) -> Handle<TerrainTile> {
         let texture = batch.first().and_then(Shape::texture_index);
         let image = self.batch_texture(batch, style);
@@ -100,7 +100,7 @@ impl Canvas {
         }
         self.tile_materials
             .retain(|_, handle| handle.strong_count() != 0);
-        let mut material = TerrainTile::new(image, opacity, reduced);
+        let mut material = TerrainTile::new(image, opacity, shader_mode);
         material.profile = grass_wind::profile(texture)
             .or_else(|| dune_surface::profile(texture))
             .unwrap_or_else(|| water_surface::profile(texture));
