@@ -2,7 +2,7 @@ use super::{Action, Studio, Tool};
 use crate::app::files;
 use bevy::prelude::Vec2;
 use elmapa::{
-    biome_packs, brush_materials,
+    biome_packs,
     document::{Brush, Point},
 };
 
@@ -112,129 +112,67 @@ fn shader_toggle_suppresses_wet_paint_without_changing_reduced_motion() {
 }
 
 #[test]
-fn advanced_materials_share_selection_with_the_orbit_and_next_stroke() {
+fn the_brush_orbit_changes_only_the_next_strokes_of_the_active_brush() {
     let mut studio = editor();
     let mut jobs = files::Jobs::default();
-    studio.act(Action::Advanced, &mut jobs);
-    let point = Vec2::new(300., 300.);
-
-    for brush in [Brush::Land, Brush::Water, Brush::Forest, Brush::Mountain] {
-        studio.act(Action::Brush(brush), &mut jobs);
-        let mut materials = brush_materials::for_brush(brush);
-        let (default_index, _) = materials.next().unwrap();
-        let (index, material) = materials.next().unwrap();
-
-        let strokes = studio.editor.stroke_count();
-        studio.act(Action::AdvancedBrushMaterial(index), &mut jobs);
-        assert!(studio.advanced);
-        assert_eq!(studio.editor.stroke_count(), strokes);
-        studio.down(point);
-        assert_eq!(
-            studio.stroke.as_ref().unwrap().material.as_deref(),
-            Some(material.id.as_str())
-        );
-        studio.up(point, false);
-        assert!(
-            studio
-                .brush_orbit
-                .items(brush, studio.biome_pack)
-                .iter()
-                .any(|item| { item.active && item.action == Some(Action::BrushMaterial(index)) })
-        );
-
-        studio.open_brush_orbit(point);
-        studio.act(Action::BrushMaterial(default_index), &mut jobs);
-        assert_eq!(
-            studio.brush_orbit.current_index(brush, studio.biome_pack),
-            Some(default_index)
-        );
-        assert!(studio.brush_orbit.anchor.is_none());
-    }
-}
-
-#[test]
-fn switching_biomes_changes_only_authoring_defaults_and_choices() {
-    let mut studio = editor();
-    let mut jobs = files::Jobs::default();
-    let desert = biome_packs::find("desert");
-    let alpine = biome_packs::find("alpine");
-    let (plain_land, _) = brush_materials::for_brush(Brush::Land).next().unwrap();
+    let desert = biome_packs::find("desert").unwrap();
+    let alpine = biome_packs::find("alpine").unwrap();
+    let (dunes, _) = biome_packs::materials(Some(desert), Brush::Land)
+        .next()
+        .unwrap();
+    let (glacial, _) = biome_packs::materials(Some(alpine), Brush::Water)
+        .next()
+        .unwrap();
     let point = Vec2::new(500., 500.);
+    let landmark = studio.placement_landmark();
 
     studio.down(point);
     studio.up(point, false);
-    studio.act(Action::Advanced, &mut jobs);
-    studio.open_brush_orbit(point);
-    studio.brush_orbit.page = 1;
-    studio.dirty = false;
     let document = studio.editor.document().clone();
     let revision = studio.editor.revision();
-    let scene_epoch = studio.scene.epoch();
-    studio.act(Action::BiomePack(desert), &mut jobs);
-    assert!(desert.is_some() && alpine.is_some());
-    assert!(jobs.preferences);
-    assert!(studio.advanced);
+    studio.act(Action::Advanced, &mut jobs);
+    studio.act(Action::OpenBrushOrbit, &mut jobs);
+    studio.act(Action::BrushOrbitEnter(0, desert), &mut jobs);
+    assert_eq!(studio.brush_orbit.navigation.path, [desert]);
+    studio.act(Action::BrushMaterial(Some(dunes)), &mut jobs);
     assert!(studio.brush_orbit.anchor.is_none());
-    assert_eq!(studio.brush_orbit.page, 0);
-    assert!(!studio.dirty && studio.editor.can_undo());
-    assert_eq!(*studio.editor.document(), document);
+    assert_eq!(studio.brush_orbit.current_index(Brush::Land), Some(dunes));
+    assert_eq!(studio.placement_landmark(), landmark);
     assert_eq!(studio.editor.revision(), revision);
-    assert_eq!(studio.scene.epoch(), scene_epoch);
+    assert_eq!(*studio.editor.document(), document);
 
-    let desert_land: Vec<_> = biome_packs::materials(desert, Brush::Land).collect();
-    let orbit: Vec<_> = studio
-        .brush_orbit
-        .items(Brush::Land, desert)
-        .into_iter()
-        .filter_map(|item| match item.action {
-            Some(Action::BrushMaterial(index)) => Some(index),
-            _ => None,
-        })
-        .collect();
-    assert_eq!(
-        orbit,
-        desert_land
-            .iter()
-            .map(|(index, _)| *index)
-            .collect::<Vec<_>>()
-    );
-    studio.act(Action::AdvancedBrushMaterial(plain_land), &mut jobs);
-    assert_eq!(
-        studio.brush_orbit.current_index(Brush::Land, desert),
-        Some(desert_land[0].0)
-    );
-    studio.act(Action::AdvancedBrushMaterial(desert_land[1].0), &mut jobs);
-    assert_eq!(
-        studio.brush_orbit.current_index(Brush::Land, desert),
-        Some(desert_land[1].0)
-    );
     studio.act(Action::Brush(Brush::River), &mut jobs);
+    assert_eq!(studio.brush_orbit.stroke_material(Brush::River), None);
+    studio.open_brush_orbit(point);
+    studio.act(Action::BrushOrbitEnter(0, desert), &mut jobs);
+    studio.act(Action::BrushOrbitEnter(0, alpine), &mut jobs);
+    assert_eq!(studio.brush_orbit.navigation.path, [alpine]);
+    studio.act(Action::BrushMaterial(Some(glacial)), &mut jobs);
     studio.down(point);
     assert_eq!(
         studio.stroke.as_ref().unwrap().material.as_deref(),
-        Some("oasis-water")
+        Some("glacial-water")
     );
     studio.up(point, false);
-
-    studio.act(Action::BiomePack(alpine), &mut jobs);
-    let material = |brush| studio.brush_orbit.stroke_material(brush, studio.biome_pack);
-    assert_eq!(material(Brush::Land).as_deref(), Some("alpine-meadow"));
-    assert_eq!(material(Brush::River).as_deref(), Some("glacial-water"));
-    assert_eq!(material(Brush::Path), None);
-    studio.act(Action::BiomePack(None), &mut jobs);
-    assert_eq!(
-        studio.brush_orbit.current_index(Brush::Land, None),
-        Some(plain_land)
+    assert_ne!(
+        studio.brush_orbit.current_index(Brush::Water),
+        Some(glacial)
     );
-    assert_eq!(studio.brush_orbit.stroke_material(Brush::River, None), None);
+    assert_eq!(studio.brush_orbit.current_index(Brush::Land), Some(dunes));
+
+    studio.open_brush_orbit(point);
+    studio.act(Action::BrushOrbitEnter(0, 0), &mut jobs);
+    studio.act(Action::BrushMaterial(None), &mut jobs);
+    assert_eq!(studio.brush_orbit.stroke_material(Brush::River), None);
     assert_eq!(studio.editor.document().layers[0].strokes[0].material, None);
     assert_eq!(
         studio.editor.document().layers[0].strokes[1]
             .material
             .as_deref(),
-        Some("oasis-water")
+        Some("glacial-water")
     );
 }
+
 #[test]
 fn river_pointer_down_requests_material_animation_and_undo_clears_it() {
     let mut studio = editor();

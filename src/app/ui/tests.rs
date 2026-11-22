@@ -88,68 +88,69 @@ fn appearance_switch_rebuilds_the_same_tools_with_the_chosen_faces() {
 }
 
 #[test]
-fn map_menu_and_advanced_settings_show_biome_choices() {
+fn brush_settings_opens_pack_branches_and_renders_only_the_open_pack_finishes() {
     use elmapa::{biome_packs, document::Brush};
 
-    let desert = biome_packs::find("desert").unwrap();
-    let alpine = biome_packs::find("alpine").unwrap();
-    let mut studio = Studio {
+    let mut app = ui_app(Studio {
         home: false,
-        menu: true,
         advanced: true,
+        brush: Brush::Forest,
         ..default()
+    });
+    let click = |app: &mut App, action| {
+        app.world_mut()
+            .resource_scope(|world, mut studio: Mut<Studio>| {
+                studio.act(action, &mut world.resource_mut::<Jobs>());
+            });
+        app.update();
     };
-    studio.set_biome_pack(Some(desert));
-    let mut app = ui_app(studio);
-    app.update();
-
-    let buttons = |world: &mut World, filter: fn(Action) -> bool| {
+    let actions = |world: &mut World, filter: fn(Action) -> bool| {
         let mut hits: Vec<_> = world
-            .query::<(&Hit, &Children)>()
+            .query::<&Hit>()
             .iter(world)
-            .filter_map(|(hit, children)| {
-                let action = hit.action.filter(|&action| filter(action))?;
-                let label = children.iter().find_map(|child| world.get::<Text>(child))?;
-                Some((hit.order, action, label.0.clone()))
+            .filter_map(|hit| {
+                hit.action
+                    .filter(|&action| filter(action))
+                    .map(|a| (hit.order, a))
             })
             .collect();
-        hits.sort_by_key(|(order, _, _)| *order);
+        hits.sort_by_key(|(order, _)| *order);
         hits.into_iter()
-            .map(|(_, action, label)| (action, label))
+            .map(|(_, action)| action)
             .collect::<Vec<_>>()
     };
-    assert_eq!(
-        buttons(app.world_mut(), |action| matches!(
-            action,
-            Action::BiomePack(_)
-        )),
-        [
-            (Action::BiomePack(None), "All Materials".into()),
-            (Action::BiomePack(Some(desert)), "Desert".into()),
-            (Action::BiomePack(Some(alpine)), "Alpine".into()),
-        ]
-    );
-    let material_buttons = |world: &mut World, brush| {
-        assert_eq!(
-            buttons(world, |action| matches!(
-                action,
-                Action::AdvancedBrushMaterial(_)
-            )),
-            biome_packs::materials(Some(desert), brush)
-                .map(|(index, finish)| (Action::AdvancedBrushMaterial(index), finish.name.clone()))
-                .collect::<Vec<_>>()
-        );
-    };
-    material_buttons(app.world_mut(), Brush::Land);
-    app.world_mut()
-        .resource_scope(|world, mut studio: Mut<Studio>| {
-            studio.act(
-                Action::Brush(Brush::Forest),
-                &mut world.resource_mut::<Jobs>(),
-            );
-        });
+    let branches = |action| matches!(action, Action::BrushOrbitEnter(0, _));
+    let finishes = |action| matches!(action, Action::BrushMaterial(_));
+    let desert = biome_packs::find("desert").unwrap();
     app.update();
-    material_buttons(app.world_mut(), Brush::Forest);
+    assert_eq!(
+        actions(app.world_mut(), |action| action == Action::OpenBrushOrbit),
+        [Action::OpenBrushOrbit]
+    );
+    click(&mut app, Action::OpenBrushOrbit);
+    assert_eq!(
+        actions(app.world_mut(), branches),
+        (0..biome_packs::catalog().len())
+            .map(|index| Action::BrushOrbitEnter(0, index))
+            .collect::<Vec<_>>()
+    );
+    assert!(actions(app.world_mut(), finishes).is_empty());
+    click(&mut app, Action::BrushOrbitEnter(0, desert));
+    let (scrub, _) = biome_packs::materials(Some(desert), Brush::Forest)
+        .next()
+        .unwrap();
+    assert_eq!(
+        actions(app.world_mut(), finishes),
+        [Action::BrushMaterial(Some(scrub))]
+    );
+    click(&mut app, Action::BrushMaterial(Some(scrub)));
+    assert!(actions(app.world_mut(), branches).is_empty());
+    assert!(
+        app.world_mut()
+            .query::<&Text>()
+            .iter(app.world())
+            .any(|text| text.0 == "Desert Scrub")
+    );
 }
 
 #[test]

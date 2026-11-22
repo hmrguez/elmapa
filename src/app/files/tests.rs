@@ -128,49 +128,6 @@ mod lifecycle {
     }
 
     #[test]
-    fn biome_preference_saves_without_checkpointing_the_open_atlas() {
-        use crate::app::state::Action;
-
-        let (mut app, root) = fixture();
-        paint(&mut app);
-        let alpine = biome_packs::find("alpine").unwrap();
-        app.world_mut()
-            .resource_scope(|world, mut studio: Mut<Studio>| {
-                studio.act(
-                    Action::BiomePack(Some(alpine)),
-                    &mut world.resource_mut::<Jobs>(),
-                );
-            });
-        app.update();
-        wait(&mut app);
-
-        let library = Library::load(root.clone()).unwrap();
-        assert_eq!(library.shelf.biome_pack.as_deref(), Some("alpine"));
-        assert!(library.read(1).unwrap().layers[0].strokes.is_empty());
-        assert!(app.world().resource::<Studio>().dirty);
-
-        for (id, expected) in [
-            (Some("alpine"), Some(alpine)),
-            (Some("uninstalled"), None),
-            (None, None),
-        ] {
-            let mut library = library.clone();
-            library.shelf.biome_pack = id.map(str::to_owned);
-            app.world_mut().resource_mut::<Studio>().biome_pack = biome_packs::find("desert");
-            app.world_mut().resource_mut::<Jobs>().task =
-                Some(IoTaskPool::get().spawn(async move {
-                    Completion {
-                        library: Some(library),
-                        result: Ok(Outcome::Loaded),
-                        epoch: 0,
-                    }
-                }));
-            wait(&mut app);
-            assert_eq!(app.world().resource::<Studio>().biome_pack, expected);
-        }
-        std::fs::remove_dir_all(root).unwrap();
-    }
-    #[test]
     fn external_save_can_rescue_edits_when_library_checkpointing_is_unavailable() {
         let (mut app, root) = fixture();
         paint(&mut app);

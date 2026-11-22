@@ -173,6 +173,25 @@ mod tests {
     }
 
     #[test]
+    fn packs_cover_the_material_catalog_and_core_defaults_match_catalog_order() {
+        let core = find("core").unwrap();
+        assert_eq!(core, 0);
+        for brush in MATERIAL_BRUSHES {
+            assert_eq!(
+                materials(Some(core), brush).next().unwrap().0,
+                materials(None, brush).next().unwrap().0
+            );
+            let packed = (0..catalog().len())
+                .flat_map(|pack| materials(Some(pack), brush).map(|(index, _)| index))
+                .collect::<HashSet<_>>();
+            assert_eq!(
+                packed,
+                materials(None, brush).map(|(index, _)| index).collect()
+            );
+        }
+    }
+
+    #[test]
     fn landmark_choices_preserve_order_and_honor_disabled_packs() {
         let alpine = find("alpine").unwrap();
         let landmarks = landmark_catalog();
@@ -192,24 +211,23 @@ mod tests {
 
         let manifest: Value = serde_json::from_str(MANIFEST).unwrap();
         let bad_fields = [
-            ("/packs/0/id", json!("Desert")),
-            ("/packs/0/id", json!("alpine")),
-            ("/packs/0/materials/land", json!([])),
-            ("/packs/0/materials/land", json!(["missing-material"])),
-            ("/packs/0/materials/land", json!(["oasis-water"])),
-            ("/packs/0/materials/land", json!(["dune-sand", "dune-sand"])),
+            ("id", json!("Desert")),
+            ("id", json!("alpine")),
+            ("materials/land", json!([])),
+            ("materials/land", json!(["missing-material"])),
+            ("materials/land", json!(["oasis-water"])),
+            ("materials/land", json!(["dune-sand", "dune-sand"])),
+            ("landmarks", json!(["elmapa.nature:missing-landmark"])),
             (
-                "/packs/0/landmarks",
-                json!(["elmapa.nature:missing-landmark"]),
-            ),
-            (
-                "/packs/0/landmarks",
+                "landmarks",
                 json!(["elmapa.nature:oasis", "elmapa.nature:oasis"]),
             ),
         ];
-        for (path, value) in bad_fields {
+        let desert = find("desert").unwrap();
+        for (field, value) in bad_fields {
+            let path = format!("/packs/{desert}/{field}");
             let mut invalid = manifest.clone();
-            *invalid.pointer_mut(path).unwrap() = value;
+            *invalid.pointer_mut(&path).unwrap() = value;
             assert!(validate_manifest(&invalid.to_string()).is_err(), "{path}");
         }
     }

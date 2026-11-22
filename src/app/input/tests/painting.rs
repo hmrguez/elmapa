@@ -43,20 +43,26 @@ fn option_click_opens_materials_without_painting_and_selection_sets_the_next_str
         let (mut app, window) = app();
         app.world_mut().resource_mut::<Studio>().brush = brush;
         let anchor = Vec2::new(400., 400.);
-        let swatch = Vec2::new(400., 320.);
+        let pack = Vec2::new(400., 320.);
+        let swatch = Vec2::new(400., 274.);
         let index = elmapa::brush_materials::for_brush(brush).nth(1).unwrap().0;
-        app.world_mut().spawn((
-            Hit {
-                action: Some(Action::BrushMaterial(index)),
-                order: 1,
-            },
-            ComputedNode {
-                size: Vec2::splat(36.),
-                inverse_scale_factor: 1.,
-                ..default()
-            },
-            UiGlobalTransform::from_translation(swatch),
-        ));
+        for (point, action) in [
+            (pack, Action::BrushOrbitEnter(0, 0)),
+            (swatch, Action::BrushMaterial(Some(index))),
+        ] {
+            app.world_mut().spawn((
+                Hit {
+                    action: Some(action),
+                    order: 1,
+                },
+                ComputedNode {
+                    size: Vec2::splat(36.),
+                    inverse_scale_factor: 1.,
+                    ..default()
+                },
+                UiGlobalTransform::from_translation(point),
+            ));
+        }
         moved(&mut app, window, anchor);
         key(&mut app, window, KeyCode::AltRight, ButtonState::Pressed);
         button(&mut app, window, ButtonState::Pressed);
@@ -67,6 +73,25 @@ fn option_click_opens_materials_without_painting_and_selection_sets_the_next_str
         assert_eq!(studio.brush_orbit.anchor, Some(anchor));
         assert_eq!(studio.editor.stroke_count(), 0);
 
+        moved(&mut app, window, pack);
+        button(&mut app, window, ButtonState::Pressed);
+        button(&mut app, window, ButtonState::Released);
+        app.update();
+        assert_eq!(
+            app.world().resource::<Studio>().brush_orbit.navigation.path,
+            [0]
+        );
+
+        key(&mut app, window, KeyCode::Escape, ButtonState::Pressed);
+        key(&mut app, window, KeyCode::Escape, ButtonState::Released);
+        app.update();
+        let orbit = &app.world().resource::<Studio>().brush_orbit;
+        assert_eq!(orbit.anchor, Some(anchor));
+        assert!(orbit.navigation.path.is_empty());
+
+        button(&mut app, window, ButtonState::Pressed);
+        button(&mut app, window, ButtonState::Released);
+        app.update();
         moved(&mut app, window, swatch);
         button(&mut app, window, ButtonState::Pressed);
         button(&mut app, window, ButtonState::Released);

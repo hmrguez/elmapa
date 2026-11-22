@@ -1,6 +1,6 @@
 # Brush materials
 
-The [manifest](manifest.json) supplies material order, swatches and texture settings for the brush orbit. The first entry for a brush is its default finish. Land defaults to Parchment, Water defaults to Ocean, Forest defaults to Mixed Woodland, and Mountains defaults to Engraved Peaks.
+The [material manifest](manifest.json) defines swatches and texture settings. The [biome manifest](../biome-packs/manifest.json) groups the finishes in the brush Orbit. The first entry for a brush is its default finish. Land defaults to Parchment, Water defaults to Ocean, Forest defaults to Mixed Woodland, and Mountains defaults to Engraved Peaks.
 
 To add a Land or Water finish, put an opaque, tileable PNG beside the manifest and append an entry for it. The app embeds the referenced PNG when it builds.
 

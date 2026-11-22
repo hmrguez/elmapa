@@ -121,7 +121,7 @@ fn glass_bubble(
         },
     ));
     let hex = if active { p.accent } else { p.text };
-    if let Action::BrushMaterial(index) = action {
+    if let Action::BrushMaterial(Some(index)) = action {
         b.material_swatch(id, index, 23.);
     } else if let Some(swatch) = item.swatch {
         b.swatch(id, swatch, 16., None);

@@ -1,11 +1,12 @@
 //! Brush and placement toolbar, including advanced brush settings.
 use crate::app::{
+    brush_orbit::{BrushOrbit, DEFAULT_RIVER_FINISH},
     regions::RegionAction,
     state::{Action, Appearance, Studio, Tool},
     ui::components::{BUTTON_HEIGHT, Builder, PAPER_TOOL_SIZE, ToolIcon, color, column, row},
 };
 use bevy::prelude::*;
-use elmapa::{biome_packs, document::Brush};
+use elmapa::{brush_materials, document::Brush};
 
 pub fn brush_icon(b: Brush) -> &'static str {
     ToolIcon::Brush(b).symbol()
@@ -56,9 +57,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
     let toolbar = b.tool_row(bottom);
     for tool in tools(s) {
         let tip = match tool.action {
-            Action::Brush(brush)
-                if biome_packs::materials(s.biome_pack, brush).nth(1).is_some() =>
-            {
+            Action::Brush(brush) if BrushOrbit::supports(brush) => {
                 let modifier = if cfg!(target_os = "macos") {
                     "Option"
                 } else {
@@ -242,41 +241,32 @@ fn advanced_controls(b: &mut Builder, bottom: Entity, s: &Studio) {
     b.button(buttons, "minus", "", Action::Strength(-0.1), false);
     b.button(buttons, "plus", "", Action::Strength(0.1), false);
 
-    let materials: Vec<_> = biome_packs::materials(s.biome_pack, s.brush).collect();
-    if materials.len() > 1 || s.biome_pack.is_some() && !materials.is_empty() {
-        b.text(advanced, "Material", 11., p.muted, false);
-        let choices = b.node(
+    if BrushOrbit::supports(s.brush) {
+        let material = b.node(
             advanced,
             Node {
-                flex_wrap: FlexWrap::Wrap,
-                row_gap: px(5.),
-                ..row(5.)
+                width: percent(100.),
+                justify_content: JustifyContent::SpaceBetween,
+                ..row(0.)
             },
         );
-        let current = s.brush_orbit.current_index(s.brush, s.biome_pack);
-        for (index, material) in materials {
-            let active = current == Some(index);
-            let button = b.button(
-                choices,
-                "",
-                &material.name,
-                Action::AdvancedBrushMaterial(index),
-                active,
-            );
+        b.text(material, "Material", 12., p.text, false);
+        let index = s.brush_orbit.current_index(s.brush);
+        let name = index.map_or(DEFAULT_RIVER_FINISH, |index| {
+            &brush_materials::catalog()[index].name
+        });
+        let button = b.button(
+            material,
+            "",
+            name,
+            Action::OpenBrushOrbit,
+            s.brush_orbit.anchor.is_some(),
+        );
+        if let Some(index) = index {
             let swatch = b.material_swatch(button, index, 16.);
             b.commands.entity(button).insert_children(0, &[swatch]);
-            b.commands.entity(button).insert(BorderColor::all(color(
-                if active { p.accent } else { p.line },
-                0.75,
-            )));
-            b.commands
-                .entity(button)
-                .entry::<Node>()
-                .and_modify(|mut node| {
-                    node.border = UiRect::all(px(1.));
-                    node.padding = UiRect::horizontal(px(7.));
-                });
         }
+        b.icon(button, "chevron-down", p.muted, 13.);
     }
 }
 
