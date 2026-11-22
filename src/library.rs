@@ -152,7 +152,7 @@ impl Library {
             .map_err(|e| e.to_string())?
             .as_nanos();
         // Rebuild cached shelf art when shared terrain rendering changes.
-        let mut header = b"ELMAPA-THUMB-4".to_vec();
+        let mut header = b"ELMAPA-THUMB-5".to_vec();
         header.extend_from_slice(&crate::scene::landmark_catalog().fingerprint.to_le_bytes());
         header.extend_from_slice(b"relief-1");
         header.extend_from_slice(&stamp.to_le_bytes());
