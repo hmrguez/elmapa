@@ -91,7 +91,7 @@ pub enum Action {
     Redo,
     Save,
     Open,
-    Export,
+    Export(super::files::ExportFormat),
     AtlasStyle,
     Zoom(f32),
     Fit,

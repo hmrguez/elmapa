@@ -1,5 +1,6 @@
 //! Map actions menu and its retained animation state.
 use crate::app::{
+    files::ExportFormat,
     state::{Action, Studio},
     ui::{
         components::{Builder, column, row},
@@ -28,7 +29,16 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, menu_progress: f3
         for (symbol, label, action) in [
             ("save", "Save", Action::Save),
             ("folder-open", "Open", Action::Open),
-            ("export-svg", "Export SVG", Action::Export),
+            (
+                "export-svg",
+                "Export SVG",
+                Action::Export(ExportFormat::Svg),
+            ),
+            (
+                "export-png",
+                "Export PNG",
+                Action::Export(ExportFormat::Png),
+            ),
             (
                 "atlas",
                 if s.editor.document().style.is_classic() {

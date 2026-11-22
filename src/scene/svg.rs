@@ -391,14 +391,14 @@ pub(super) fn render_svg<W: std::fmt::Write>(
     renderer.svg
 }
 
-/// Send preview geometry in painter order, optionally drawing forest instances
+/// Send raster geometry in painter order, optionally drawing forest instances
 /// outside SVG so the parser does not expand each specimen into hundreds of nodes.
-pub(super) fn render_preview_parts(
+pub(super) fn render_raster_parts(
     scene: &Scene,
     bounds: ContentBounds,
     raster_trees: bool,
     pixel_scale: f32,
-    mut render: impl FnMut(PreviewPart<'_>) -> Result<(), String>,
+    mut render: impl FnMut(RasterPart<'_>) -> Result<(), String>,
 ) -> Result<(), String> {
     // Keep each parsed fragment comfortably below usvg's one-million-node cap.
     const PART_NODE_BUDGET: usize = 100_000;
@@ -421,16 +421,18 @@ pub(super) fn render_preview_parts(
     let header = renderer.svg.len();
     write_background(&mut renderer.svg, bounds, scene.style());
     let mut nodes = 1;
-    let flush = |svg: &mut String,
-                 render: &mut dyn FnMut(PreviewPart<'_>) -> Result<(), String>| {
+    let flush = |svg: &mut String, render: &mut dyn FnMut(RasterPart<'_>) -> Result<(), String>| {
         if svg.len() > header {
             svg.push_str("</svg>\n");
-            render(PreviewPart::Svg(svg))?;
+            render(RasterPart::Svg(svg))?;
             svg.truncate(header);
         }
         Ok::<_, String>(())
     };
     for item in artwork(scene) {
+        if super::generation::is_stopped() {
+            return Ok(());
+        }
         match item {
             Artwork::Terrain(tiles) => {
                 renderer.opacity = scene.batch_opacity(tiles[0]);
@@ -440,7 +442,7 @@ pub(super) fn render_preview_parts(
                 if let Some(tree) = scene.forest_tree(batch) {
                     if raster_trees {
                         flush(&mut renderer.svg, &mut render)?;
-                        render(PreviewPart::Tree(tree))?;
+                        render(RasterPart::Tree(tree))?;
                         nodes = 0;
                     } else {
                         nodes += tree_cost[tree.variant];
@@ -469,7 +471,7 @@ pub(super) fn render_preview_parts(
     flush(&mut renderer.svg, &mut render)
 }
 
-pub(super) enum PreviewPart<'a> {
+pub(super) enum RasterPart<'a> {
     Svg(&'a str),
     Tree(&'a super::ForestTree),
 }

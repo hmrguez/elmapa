@@ -251,6 +251,15 @@
       ]
     },
     {
+      "name": "export-png",
+      "label": "Export PNG",
+      "category": "documents",
+      "file": "export-png.svg",
+      "uses": [
+        "Export raster artwork"
+      ]
+    },
+    {
       "name": "world-new",
       "label": "New world",
       "category": "documents",

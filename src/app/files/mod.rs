@@ -13,16 +13,45 @@ use bevy::{
 use elmapa::{
     document::Document,
     library::{AtlasRecord, Camera, Library},
-    storage::{DocumentStore, LocalDocumentStore, export_svg},
+    storage::{DocumentStore, LocalDocumentStore, export_png, export_svg},
 };
 use previews::ShelfPreviews;
 use std::{
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{
         Arc,
         atomic::{AtomicU64, Ordering},
     },
 };
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ExportFormat {
+    #[default]
+    Svg,
+    Png,
+}
+impl ExportFormat {
+    pub(super) fn extension(self) -> &'static str {
+        match self {
+            Self::Svg => "svg",
+            Self::Png => "png",
+        }
+    }
+
+    fn write(
+        self,
+        path: &Path,
+        document: &Document,
+        cancellation: (Arc<AtomicU64>, u64),
+    ) -> Result<(), String> {
+        let export = match self {
+            Self::Svg => export_svg,
+            Self::Png => export_png,
+        };
+        export(path, document, Some(cancellation))
+    }
+}
 
 #[derive(Clone)]
 pub enum Request {
@@ -31,7 +60,7 @@ pub enum Request {
     Create(bool),
     Save(Option<PathBuf>),
     Open(Option<PathBuf>),
-    Export(Option<PathBuf>),
+    Export(ExportFormat, Option<PathBuf>),
     Quit,
     Preferences,
 }
@@ -45,7 +74,7 @@ enum Outcome {
     Home,
     Enter(Document, AtlasRecord, bool),
     Saved(PathBuf),
-    Exported,
+    Exported(ExportFormat),
     Quit,
     Preferences,
     Cancelled,
@@ -175,7 +204,10 @@ pub fn poll(
                             "Saved the requested snapshot; newer changes remain unsaved.".into();
                     }
                 }
-                Ok(Outcome::Exported) => studio.status = "Exported SVG.".into(),
+                Ok(Outcome::Exported(format)) => {
+                    studio.status =
+                        format!("Exported {}.", format.extension().to_ascii_uppercase());
+                }
                 Ok(Outcome::Quit) => {
                     exit.write(AppExit::Success);
                 }
@@ -209,7 +241,7 @@ pub fn poll(
             library.shelf.paper_ui = studio.appearance == Appearance::Paper;
             library.shelf.shader_effects_disabled = studio.shader_effects_disabled;
             library.shelf.disabled_landmark_packs = studio.disabled_landmark_packs.clone();
-            let external = matches!(request, Request::Save(_) | Request::Export(_));
+            let external = matches!(request, Request::Save(_) | Request::Export(..));
             if !external {
                 jobs.preferences = false;
             }
@@ -235,7 +267,7 @@ pub fn poll(
             let version = token.load(Ordering::Relaxed);
             studio.status = match request {
                 Request::Save(_) => "Saving…",
-                Request::Export(_) => "Exporting…",
+                Request::Export(..) => "Exporting…",
                 Request::Open(_) | Request::Enter(_) => "Opening…",
                 _ => "Preparing…",
             }
@@ -305,18 +337,22 @@ pub fn poll(
                             LocalDocumentStore.save(&document, &destination)?;
                             Ok(Outcome::Saved(destination))
                         }
-                        Request::Export(destination) => {
+                        Request::Export(format, destination) => {
+                            let extension = format.extension();
                             let destination = destination.or_else(|| {
                                 rfd::FileDialog::new()
-                                    .add_filter("SVG image", &["svg"])
-                                    .set_file_name("world.svg")
+                                    .add_filter(
+                                        format!("{} image", extension.to_ascii_uppercase()),
+                                        &[extension],
+                                    )
+                                    .set_file_name(format!("world.{extension}"))
                                     .save_file()
                             });
                             let Some(destination) = destination else {
                                 return Ok(Outcome::Cancelled);
                             };
-                            export_svg(&destination, &document, Some((token, version)))?;
-                            Ok(Outcome::Exported)
+                            format.write(&destination, &document, (token, version))?;
+                            Ok(Outcome::Exported(format))
                         }
                         Request::Open(source) => {
                             let source = source.or_else(|| {

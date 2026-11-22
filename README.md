@@ -6,7 +6,7 @@
 
 [![Build and test](https://github.com/hmrguez/elmapa-public/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/hmrguez/elmapa-public/actions/workflows/ci.yml)
 
-Elmapa is a native map editor for drawing parchment atlases. Paint a coastline, trace a river from the mountains to the sea, and place settlements along its banks. The layered `.elmapa` file stays editable, and SVG export gives you a self-contained map for printing or sharing.
+Elmapa is a native map editor for drawing parchment atlases. Paint a coastline, trace a river from the mountains to the sea, and place settlements along its banks. The layered `.elmapa` file stays editable, and you can export a self-contained SVG or a PNG for printing or sharing.
 
 ![The Stillwater Isles in the native map editor, with engraved peaks, forests, a river, and the layer stack](docs/images/map-editor.png)
 
@@ -22,7 +22,7 @@ cd elmapa-public
 cargo run --release --locked
 ```
 
-Open **España · Pinceladas** on a new shelf, or choose **Example world** in the editor menu to open a fresh copy. In the example, choose **Replay this view** to watch Iberia, the Canaries and the Balearics take shape. Choose **New atlas** to start with blank parchment. Drag the Land brush to paint, scroll to zoom, and drag the middle mouse button to pan. Use the map menu to save an editable file or export SVG.
+Open **España · Pinceladas** on a new shelf, or choose **Example world** in the editor menu to open a fresh copy. In the example, choose **Replay this view** to watch Iberia, the Canaries and the Balearics take shape. Choose **New atlas** to start with blank parchment. Drag the Land brush to paint, scroll to zoom, and drag the middle mouse button to pan. Use the map menu to save an editable file or export your artwork as SVG or PNG.
 
 ![The atlas shelf with a preview of The Stillwater Isles and the New atlas card](docs/images/atlas-shelf.png)
 

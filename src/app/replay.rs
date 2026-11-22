@@ -1,6 +1,6 @@
 //! Identical deterministic native workload inputs for GPUI/Bevy comparisons.
 use super::{
-    files::{Jobs, Request},
+    files::{ExportFormat, Jobs, Request},
     render::Canvas,
     state::{Action, Appearance, Studio},
 };
@@ -73,7 +73,10 @@ enum Step {
     },
     Save,
     Open,
-    Export,
+    Export {
+        #[serde(default)]
+        format: ExportFormat,
+    },
     ReducedMotion {
         enabled: bool,
     },
@@ -209,8 +212,9 @@ pub fn advance(
             jobs.request(Request::Open(Some(path("native-save.elmapa"))));
             None
         }
-        Step::Export => {
-            jobs.request(Request::Export(Some(path("native-export.svg"))));
+        Step::Export { format } => {
+            let filename = format!("native-export.{}", format.extension());
+            jobs.request(Request::Export(format, Some(path(&filename))));
             None
         }
         Step::ReducedMotion { enabled } => {

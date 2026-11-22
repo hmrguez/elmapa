@@ -477,7 +477,9 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             Action::Menu => "Map actions".into(),
             Action::Save => crate::app::input::shortcut_hint("Save map", "S", false),
             Action::Open => crate::app::input::shortcut_hint("Open map", "O", false),
-            Action::Export => crate::app::input::shortcut_hint("Export SVG", "E", false),
+            Action::Export(crate::app::files::ExportFormat::Svg) => {
+                crate::app::input::shortcut_hint("Export SVG", "E", false)
+            }
             Action::ReplayView => crate::app::input::shortcut_hint("Replay this view", "R", true),
             Action::Undo => crate::app::input::shortcut_hint("Undo", "Z", false),
             Action::Redo => crate::app::input::shortcut_hint("Redo", "Z", true),
