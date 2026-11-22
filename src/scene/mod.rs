@@ -31,6 +31,7 @@ pub use terrain::forest::{
     FOREST_SPECIMEN_COUNT, ForestTree, TreeId, forest_specimen, forest_specimen_svg,
     forest_specimen_tree, forest_swatch,
 };
+pub use terrain::palette_transition::TerrainPalette;
 pub use terrain::rivers::{CURRENT_INK, RiverReach};
 pub use terrain::shore_wash::ShoreWash;
 

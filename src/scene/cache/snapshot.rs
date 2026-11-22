@@ -2,7 +2,7 @@
 use crate::{
     document::{AtlasStyle, Brush, ContentBounds, Label, LinearStrokeId, Point, RegionLayer},
     scene::{
-        LandmarkPart, MountainPart, PathPart, RiverReach, Shape,
+        LandmarkPart, MountainPart, PathPart, RiverReach, Shape, TerrainPalette,
         terrain::forest::{self, ForestTree},
         territories::{RegionView, Shoreline},
     },
@@ -30,6 +30,7 @@ pub struct Scene {
     pub(super) labels: Arc<HashMap<usize, Label>>,
     pub(super) landmarks: Arc<HashMap<usize, LandmarkPart>>,
     pub(super) regions: Arc<HashMap<usize, RegionSource>>,
+    pub(super) terrain_palettes: Arc<HashMap<usize, Arc<TerrainPalette>>>,
     pub(super) shoreline: Arc<Shoreline>,
     pub(super) territory_views: Arc<HashMap<u64, TerritoryView>>,
 }
@@ -134,6 +135,10 @@ impl Scene {
     /// Source layer, brush and local shoreline grid of a finished batch.
     pub fn region(&self, batch: &Arc<Vec<Shape>>) -> Option<RegionSource> {
         self.regions.get(&(Arc::as_ptr(batch) as usize)).copied()
+    }
+
+    pub fn terrain_palette(&self, batch: &Arc<Vec<Shape>>) -> Option<&Arc<TerrainPalette>> {
+        self.terrain_palettes.get(&(Arc::as_ptr(batch) as usize))
     }
 
     pub fn forest_tree(&self, batch: &Arc<Vec<Shape>>) -> Option<&ForestTree> {

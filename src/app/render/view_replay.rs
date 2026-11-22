@@ -8,7 +8,7 @@ pub(in crate::app) mod video;
 use super::{
     Canvas, WorldCamera, WorldContent,
     motion::{drop_transform, mountain_transform, path_transform, tree_transform},
-    terrain_tile::TerrainTile,
+    terrain_tile::{PaletteTransition, TerrainTile},
 };
 use crate::app::{
     landmark_render,
@@ -53,12 +53,17 @@ struct InkReveal {
     /// World-space origin and reciprocal extent of the shared arrival texture.
     #[uniform(0)]
     placement: Vec4,
+    #[uniform(0)]
+    transition: PaletteTransition,
     #[texture(1)]
     #[sampler(2)]
     texture: Option<Handle<Image>>,
     #[texture(3)]
     #[sampler(4)]
     arrival: Option<Handle<Image>>,
+    #[texture(5)]
+    #[sampler(6)]
+    palette: Option<Handle<Image>>,
 }
 
 impl Material2d for InkReveal {
@@ -214,6 +219,8 @@ impl PlaybackGraphics<'_, '_> {
                     let handle = self.washes.add(InkReveal {
                         wash: Vec4::new(age / duration, material.opacity, cue.span.0, cue.span.1),
                         placement: order.as_ref().map_or(Vec4::ZERO, |order| order.position),
+                        transition: material.palette_transition(),
+                        palette: material.palette.clone(),
                         texture: material.texture.clone(),
                         arrival: order.as_ref().map(|order| order.texture.clone()),
                     });

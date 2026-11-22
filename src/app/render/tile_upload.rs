@@ -7,6 +7,7 @@ use super::{
 use crate::app::state::ShaderMode;
 use bevy::{
     camera::primitives::{Aabb, MeshAabb},
+    ecs::system::SystemParam,
     prelude::*,
     render::{
         Render, RenderApp, RenderSystems,
@@ -45,16 +46,28 @@ pub(in crate::app) fn install(app: &mut App) {
     app.insert_resource(uploads);
 }
 
+#[derive(SystemParam)]
+pub(in crate::app) struct TerrainAssets<'w> {
+    meshes: ResMut<'w, Assets<Mesh>>,
+    materials: ResMut<'w, Assets<TerrainTile>>,
+    images: ResMut<'w, Assets<Image>>,
+}
+
 impl TileUploads {
     pub(in crate::app) fn stage(
         &self,
         scene: &Scene,
         prepared: Vec<CpuMesh>,
         canvas: &mut Canvas,
-        meshes: &mut Assets<Mesh>,
-        materials: &mut Assets<TerrainTile>,
+        terrain: &mut TerrainAssets,
         shader_mode: ShaderMode,
     ) -> (Vec<SceneMesh>, Arc<AtomicBool>) {
+        canvas
+            .tile_materials
+            .retain(|_, handle| handle.strong_count() != 0);
+        canvas
+            .palette_images
+            .retain(|_, (palette, image)| palette.strong_count() != 0 && image.strong_count() != 0);
         let mut assets = Vec::new();
         let mut bytes = 0;
         let staged = prepared
@@ -67,13 +80,13 @@ impl TileUploads {
                 }
                 let size = (cpu.mesh.count_vertices() * (3 + 4 + 2) + index_count)
                     * std::mem::size_of::<u32>();
-                let mesh = meshes.add(cpu.mesh);
+                let mesh = terrain.meshes.add(cpu.mesh);
                 let tile = scene.region(&cpu.source).map(|_| {
                     let material = canvas.tile_material(
+                        scene,
                         &cpu.source,
-                        scene.style(),
-                        scene.batch_opacity(&cpu.source),
-                        materials,
+                        &mut terrain.materials,
+                        &mut terrain.images,
                         shader_mode,
                     );
                     assets.push((mesh.id(), material.id()));

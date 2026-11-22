@@ -163,10 +163,10 @@ pub fn sync(
                         if *opacity != scene.batch_opacity(source) =>
                     {
                         Some(canvas.tile_material(
+                            &scene,
                             source,
-                            scene.style(),
-                            scene.batch_opacity(source),
                             &mut tiles,
+                            &mut images,
                             studio.shader_mode(),
                         ))
                     }

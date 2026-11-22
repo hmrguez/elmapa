@@ -1,11 +1,19 @@
 #import bevy_sprite::mesh2d_vertex_output::VertexOutput
+#import elmapa::palette_transition::{PaletteTransition, blend}
 
-struct Wash { value: vec4<f32>, placement: vec4<f32> };
+struct Wash {
+    value: vec4<f32>,
+    placement: vec4<f32>,
+    transition: PaletteTransition,
+};
 @group(#{MATERIAL_BIND_GROUP}) @binding(0) var<uniform> wash: Wash;
 @group(#{MATERIAL_BIND_GROUP}) @binding(1) var paper_ink: texture_2d<f32>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(2) var ink_sampler: sampler;
 @group(#{MATERIAL_BIND_GROUP}) @binding(3) var arrival_texture: texture_2d<f32>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(4) var arrival_sampler: sampler;
+
+@group(#{MATERIAL_BIND_GROUP}) @binding(5) var palette: texture_2d<f32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(6) var palette_sampler: sampler;
 
 @fragment
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
@@ -30,5 +38,6 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
         * (1.0 - smoothstep(0.45, 1.6, age / wet_width))
         * (1.0 - smoothstep(0.94, 1.0, wash.value.x));
     let ink = mesh.color * textureSample(paper_ink, ink_sampler, mesh.uv);
-    return vec4<f32>(ink.rgb * (1.0 - 0.15 * wet), ink.a * wash.value.y * reveal);
+    let color = blend(ink.rgb, world, wash.transition, palette, palette_sampler);
+    return vec4<f32>(color * (1.0 - 0.15 * wet), ink.a * wash.value.y * reveal);
 }

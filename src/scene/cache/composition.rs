@@ -8,8 +8,8 @@ use super::{
 use crate::{
     document::{AtlasStyle, Document, Label, Landmark, Layer},
     scene::{
-        ForestTree, LandmarkBatch, LandmarkPart, MountainPart, PathPart, RiverReach, generation,
-        label_shapes, landmark_batches_in, territories::Shoreline,
+        ForestTree, LandmarkBatch, LandmarkPart, MountainPart, PathPart, RiverReach,
+        TerrainPalette, generation, label_shapes, landmark_batches_in, territories::Shoreline,
     },
 };
 use std::{collections::HashMap, sync::Arc};
@@ -52,6 +52,7 @@ struct Composition {
     labels: HashMap<usize, Label>,
     landmarks: HashMap<usize, LandmarkPart>,
     regions: HashMap<usize, RegionSource>,
+    terrain_palettes: HashMap<usize, Arc<TerrainPalette>>,
     territory_views: HashMap<u64, TerritoryView>,
 }
 
@@ -72,6 +73,7 @@ impl Composition {
         );
         material.path_parts(&mut self.paths);
         self.regions.extend(material.region_sources());
+        self.terrain_palettes.extend(material.terrain_palettes());
 
         for batch in material.forest.iter() {
             let mut tree = batch.tree.clone();
@@ -161,6 +163,7 @@ impl Composition {
             labels: Arc::new(self.labels),
             landmarks: Arc::new(self.landmarks),
             regions: Arc::new(self.regions),
+            terrain_palettes: Arc::new(self.terrain_palettes),
             shoreline,
             territory_views: Arc::new(self.territory_views),
         }

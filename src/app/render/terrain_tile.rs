@@ -1,12 +1,16 @@
 //! Material shared by retained terrain fills and shoreline details.
-use crate::app::state::{ShaderMode, Studio};
+use crate::app::{
+    state::{ShaderMode, Studio},
+    ui::color,
+};
 use bevy::{
     asset::embedded_asset,
     prelude::*,
-    render::render_resource::AsBindGroup,
+    render::render_resource::{AsBindGroup, ShaderType},
     shader::{ShaderRef, load_shader_library},
     sprite_render::{AlphaMode2d, Material2d, Material2dPlugin},
 };
+use elmapa::document::ContentBounds;
 
 pub(super) struct TerrainTilePlugin;
 
@@ -14,10 +18,31 @@ impl Plugin for TerrainTilePlugin {
     fn build(&self, app: &mut App) {
         load_shader_library!(app, "dune_surface.wgsl");
         load_shader_library!(app, "grass_wind.wgsl");
+        load_shader_library!(app, "palette_transition.wgsl");
         embedded_asset!(app, "terrain_tile.wgsl");
         load_shader_library!(app, "water_surface.wgsl");
         app.add_plugins(Material2dPlugin::<TerrainTile>::default())
             .add_systems(PostUpdate, sync_shader_mode);
+    }
+}
+
+#[derive(ShaderType, Default, Debug, Clone, Copy)]
+pub(super) struct PaletteTransition {
+    uv: Vec4,
+    pigment: Vec4,
+}
+
+impl PaletteTransition {
+    pub(super) fn new(bounds: ContentBounds, pigment: u32) -> Self {
+        Self {
+            uv: Vec4::new(
+                bounds.min.x,
+                bounds.min.y,
+                (bounds.max.x - bounds.min.x).recip(),
+                (bounds.max.y - bounds.min.y).recip(),
+            ),
+            pigment: Vec4::from_array(color(pigment, 1.).to_linear().to_f32_array()),
+        }
     }
 }
 
@@ -29,9 +54,14 @@ pub(in crate::app) struct TerrainTile {
     shader_mode: u32,
     #[uniform(0)]
     pub(super) profile: u32,
+    #[uniform(0)]
+    pub(super) transition: PaletteTransition,
     #[texture(1)]
     #[sampler(2)]
     pub texture: Option<Handle<Image>>,
+    #[texture(3)]
+    #[sampler(4)]
+    pub(super) palette: Option<Handle<Image>>,
 }
 
 impl TerrainTile {
@@ -44,7 +74,16 @@ impl TerrainTile {
             opacity,
             shader_mode: shader_mode as u32,
             profile: 0,
+            transition: PaletteTransition::default(),
             texture,
+            palette: None,
+        }
+    }
+    pub(super) fn palette_transition(&self) -> PaletteTransition {
+        if self.shader_mode == ShaderMode::Off as u32 {
+            PaletteTransition::default()
+        } else {
+            self.transition
         }
     }
 }
@@ -69,11 +108,11 @@ fn sync_shader_mode(
         return;
     }
     *previous = Some(mode);
-    let procedural: Vec<_> = tiles
+    let affected: Vec<_> = tiles
         .iter()
-        .filter_map(|(id, tile)| (tile.profile != 0).then_some(id))
+        .filter_map(|(id, tile)| (tile.profile != 0 || tile.palette.is_some()).then_some(id))
         .collect();
-    for id in procedural {
-        tiles.get_mut(id).expect("procedural tile").shader_mode = mode as u32;
+    for id in affected {
+        tiles.get_mut(id).expect("shader tile").shader_mode = mode as u32;
     }
 }

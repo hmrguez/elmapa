@@ -29,7 +29,7 @@ use bevy::{
 use elmapa::{
     brush_materials,
     document::AtlasStyle,
-    scene::{Shape, TreeId, granulation},
+    scene::{Scene, Shape, TerrainPalette, TreeId, granulation},
 };
 use forest_atlas::ForestAtlas;
 use forest_wind::ForestWind;
@@ -38,7 +38,9 @@ use std::{
     collections::{HashMap, HashSet},
     sync::{Arc, Weak},
 };
-use terrain_tile::TerrainTile;
+use terrain_tile::{PaletteTransition, TerrainTile};
+
+type TileMaterialKey = (Option<AssetId<Image>>, Option<AssetId<Image>>, u32);
 
 pub use camera::camera;
 pub use forest_wind::ForestWindPlugin;
@@ -67,7 +69,8 @@ pub struct Canvas {
     paper_material: Handle<ColorMaterial>,
     pub brush_textures: HashMap<usize, Handle<Image>>,
     granulation: [Handle<Image>; 2],
-    tile_materials: HashMap<(Option<AssetId<Image>>, u32), Weak<StrongHandle>>,
+    tile_materials: HashMap<TileMaterialKey, Weak<StrongHandle>>,
+    palette_images: HashMap<usize, (Weak<TerrainPalette>, Weak<StrongHandle>)>,
     view_replay: Option<view_replay::Playback>,
 }
 impl Canvas {
@@ -86,27 +89,62 @@ impl Canvas {
 
     fn tile_material(
         &mut self,
-        batch: &[Shape],
-        style: AtlasStyle,
-        opacity: f32,
+        scene: &Scene,
+        batch: &Arc<Vec<Shape>>,
         materials: &mut Assets<TerrainTile>,
+        images: &mut Assets<Image>,
         shader_mode: ShaderMode,
     ) -> Handle<TerrainTile> {
         let texture = batch.first().and_then(Shape::texture_index);
-        let image = self.batch_texture(batch, style);
-        let key = (image.as_ref().map(Handle::id), opacity.to_bits());
+        let image = self.batch_texture(batch, scene.style());
+        let palette = scene.terrain_palette(batch);
+        let transition_image = palette.map(|palette| self.palette_image(palette, images));
+        let opacity = scene.batch_opacity(batch);
+        let key = (
+            image.as_ref().map(Handle::id),
+            transition_image.as_ref().map(Handle::id),
+            opacity.to_bits(),
+        );
         if let Some(handle) = self.tile_materials.get(&key).and_then(Weak::upgrade) {
             return Handle::Strong(handle);
         }
-        self.tile_materials
-            .retain(|_, handle| handle.strong_count() != 0);
         let mut material = TerrainTile::new(image, opacity, shader_mode);
+        if let Some(palette) = palette {
+            let pigment = TerrainPalette::pigment(&batch[0]).expect("terrain pigment");
+            material.transition = PaletteTransition::new(palette.bounds, pigment);
+            material.palette = transition_image;
+        }
         material.profile = grass_wind::profile(texture)
             .or_else(|| dune_surface::profile(texture))
             .unwrap_or_else(|| water_surface::profile(texture));
         let handle = materials.add(material);
         if let Handle::Strong(strong) = &handle {
             self.tile_materials.insert(key, Arc::downgrade(strong));
+        }
+        handle
+    }
+
+    fn palette_image(
+        &mut self,
+        palette: &Arc<TerrainPalette>,
+        images: &mut Assets<Image>,
+    ) -> Handle<Image> {
+        let key = Arc::as_ptr(palette) as usize;
+        if let Some(handle) = self
+            .palette_images
+            .get(&key)
+            .and_then(|(_, image)| image.upgrade())
+        {
+            return Handle::Strong(handle);
+        }
+        let handle = images.add(rgba_image(
+            palette.width,
+            palette.height,
+            palette.pixels.clone(),
+        ));
+        if let Handle::Strong(strong) = &handle {
+            self.palette_images
+                .insert(key, (Arc::downgrade(palette), Arc::downgrade(strong)));
         }
         handle
     }
