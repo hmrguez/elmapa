@@ -63,6 +63,10 @@ pub(super) fn key_down(
         return;
     }
     if key == KeyCode::Escape {
+        if studio.brush_orbit.anchor.is_some() && !studio.brush_orbit.navigation.path.is_empty() {
+            studio.act(Action::BrushOrbitBack, jobs);
+            return;
+        }
         if studio.close_brush_orbit() {
             return;
         }

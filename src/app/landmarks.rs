@@ -4,7 +4,6 @@ use super::{
     state::{Action, Studio, Tool},
 };
 use elmapa::{
-    biome_packs,
     document::{
         Landmark, LandmarkKind, Point,
         limits::{MAX_LANDMARK_SIZE, MIN_LANDMARK_SIZE},
@@ -44,13 +43,7 @@ fn landmark_picker(
     catalog: &LandmarkCatalog,
     disabled: &HashSet<String>,
     current: Option<&LandmarkKind>,
-    pack: Option<usize>,
 ) -> Vec<Item<Action>> {
-    if let Some(pack) = pack {
-        return biome_packs::landmark_items(pack, catalog, disabled)
-            .map(|index| landmark_choice(catalog, index, current))
-            .collect();
-    }
     let packs: Vec<_> = catalog
         .packs
         .iter()
@@ -80,24 +73,8 @@ fn landmark_picker(
 }
 
 impl Studio {
-    pub(super) fn reset_landmark_picker(&mut self) {
-        self.landmarks.radial.reset();
-        self.landmarks.last_placed = None;
-        self.landmarks.placement.kind = self
-            .biome_pack
-            .and_then(|index| biome_packs::catalog()[index].landmarks.first())
-            .map(|id| LandmarkKind::from(id.as_str()))
-            .unwrap_or_default();
-    }
-
     fn landmark_choices(&self) -> Vec<usize> {
-        let catalog = landmark_catalog();
-        match self.biome_pack {
-            Some(pack) => {
-                biome_packs::landmark_items(pack, catalog, &self.disabled_landmark_packs).collect()
-            }
-            None => catalog.enabled_items(&self.disabled_landmark_packs),
-        }
+        landmark_catalog().enabled_items(&self.disabled_landmark_packs)
     }
 
     pub fn placement_landmark(&self) -> Option<usize> {
@@ -123,7 +100,6 @@ impl Studio {
             landmark_catalog(),
             &self.disabled_landmark_packs,
             current.as_ref().map(|mark| &mark.kind),
-            self.biome_pack,
         );
         items.extend([
             Item::action("Smaller · [", "minus", Action::LandmarkSize(-16.)),
@@ -212,12 +188,7 @@ impl Studio {
 
     pub(super) fn place_landmark(&mut self, point: Point, repeat: bool) {
         let Some(index) = self.placement_landmark() else {
-            self.status = if self.biome_pack.is_some() {
-                "Enable a landmark pack in Settings or choose another biome pack."
-            } else {
-                "Enable a landmark pack in Settings to place landmarks."
-            }
-            .into();
+            self.status = "Enable a landmark pack in Settings to place landmarks.".into();
             return;
         };
         let kind = &landmark_catalog().items[index].kind;
@@ -433,62 +404,5 @@ mod tests {
             other_pack
         );
         assert_eq!(studio.landmarks.placement.kind, placed.kind);
-    }
-
-    #[test]
-    fn biome_landmarks_share_ordered_placement_and_replacement_choices() {
-        let mut studio = studio();
-        let mut jobs = Jobs::default();
-        let desert = biome_packs::find("desert").unwrap();
-        let alpine = biome_packs::find("alpine").unwrap();
-        let catalog = landmark_catalog();
-        let available = |studio: &Studio, pack| {
-            biome_packs::landmark_items(pack, catalog, &studio.disabled_landmark_packs)
-                .collect::<Vec<_>>()
-        };
-        let picker = |studio: &Studio| {
-            studio
-                .landmark_actions()
-                .iter()
-                .filter_map(|item| match item.action {
-                    Some(Action::LandmarkKind(index)) => Some(index),
-                    _ => None,
-                })
-                .collect::<Vec<_>>()
-        };
-
-        studio.act(Action::BiomePack(Some(desert)), &mut jobs);
-        studio.act(Action::LandmarkTool, &mut jobs);
-        let allowed = available(&studio, desert);
-        assert_eq!(studio.placement_landmark(), allowed.first().copied());
-        let point = Point::new(500., 400.);
-        studio.annotation_press(point, false);
-        let placed = studio.current_landmark().unwrap();
-        assert_eq!(placed.kind, catalog.items[allowed[0]].kind);
-        assert_eq!(picker(&studio), allowed);
-        choose(&mut studio, &mut jobs, "town");
-        assert_eq!(studio.current_landmark().unwrap(), placed);
-        studio.act(Action::LandmarkKind(allowed[1]), &mut jobs);
-        assert_eq!(studio.placement_landmark(), Some(allowed[1]));
-
-        let updated = studio.current_landmark().unwrap();
-        studio.landmarks.radial.path.push(0);
-        studio.act(Action::BiomePack(Some(alpine)), &mut jobs);
-        assert!(studio.landmarks.radial.path.is_empty());
-        assert_eq!(studio.current_landmark().unwrap(), updated);
-        assert_eq!(picker(&studio), available(&studio, alpine));
-
-        let nature = catalog
-            .packs
-            .iter()
-            .position(|pack| pack.id == "elmapa.nature")
-            .unwrap();
-        studio.act(Action::LandmarkPack(nature), &mut jobs);
-        let allowed = available(&studio, alpine);
-        assert!(!allowed.is_empty());
-        assert_eq!(studio.placement_landmark(), allowed.first().copied());
-        assert_eq!(picker(&studio), allowed);
-        studio.act(Action::LandmarkSize(16.), &mut jobs);
-        assert_eq!(studio.current_landmark().unwrap().size, updated.size + 16.);
     }
 }

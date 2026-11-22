@@ -10,7 +10,6 @@ use super::{
 };
 use bevy::prelude::*;
 use elmapa::{
-    biome_packs,
     document::{Brush, Document, Point, RegionParent, Stroke},
     editor::Editor,
     library::Library,
@@ -38,9 +37,10 @@ pub enum Appearance {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Action {
     Brush(Brush),
-    BrushMaterial(usize),
-    AdvancedBrushMaterial(usize),
-    BrushOrbitPage(usize),
+    OpenBrushOrbit,
+    BrushMaterial(Option<usize>),
+    BrushOrbitEnter(usize, usize),
+    BrushOrbitBack,
     CloseBrushOrbit,
     TextTool,
     PlaceLabel,
@@ -75,7 +75,6 @@ pub enum Action {
     SetAppearance(Appearance),
     Advanced,
     Menu,
-    BiomePack(Option<usize>),
     ReplayView,
     SaveReplayVideo,
     LayerTools,
@@ -138,7 +137,6 @@ pub struct Studio {
     pub atlas: Option<u64>,
     pub brush: Brush,
     pub brush_orbit: super::brush_orbit::BrushOrbit,
-    pub biome_pack: Option<usize>,
     pub reduced: bool,
     pub appearance: Appearance,
     pub shader_effects_disabled: bool,
@@ -194,7 +192,6 @@ impl Default for Studio {
             atlas: None,
             brush: Brush::Land,
             brush_orbit: default(),
-            biome_pack: None,
             reduced: false,
             appearance: Appearance::default(),
             shader_effects_disabled: false,
@@ -250,18 +247,6 @@ impl Studio {
         self.shader_mode() == ShaderMode::Animated
     }
 
-    pub fn set_biome_pack(&mut self, pack: Option<usize>) -> bool {
-        let pack = pack.filter(|&index| biome_packs::catalog().get(index).is_some());
-        if self.biome_pack == pack {
-            return false;
-        }
-        self.biome_pack = pack;
-        self.brush_orbit.reset_picker();
-        self.reset_landmark_picker();
-        self.ui_dirty = true;
-        true
-    }
-
     pub fn map_point(&self, point: Vec2) -> Point {
         self.viewport.transform(self.bounds).map_point(point)
     }
@@ -312,7 +297,6 @@ impl Studio {
         self.tool = Tool::Brush;
         self.text = super::lettering::TextTool::default();
         self.landmarks = super::landmarks::LandmarkTool::default();
-        self.reset_landmark_picker();
         self.regions = default();
         self.path_selection = None;
         self.selection = Default::default();

@@ -43,16 +43,8 @@ impl Studio {
             self.ui_dirty = true;
             return;
         }
-        if let Action::BiomePack(pack) = action {
-            if self.set_biome_pack(pack) {
-                jobs.preferences = true;
-            }
-            self.menu = false;
-            self.ui_dirty = true;
-            return;
-        }
         let orbit_open = self.brush_orbit.anchor.is_some();
-        if !matches!(action, Action::BrushOrbitPage(_)) {
+        if !matches!(action, Action::BrushOrbitEnter(..) | Action::BrushOrbitBack) {
             self.close_brush_orbit();
         }
         self.finish();
@@ -96,7 +88,7 @@ impl Studio {
         let revision = self.editor.revision();
         match action {
             Action::Regions(action) => self.region_action(action),
-            Action::SetLayerBranch(..) | Action::BiomePack(_) => unreachable!(),
+            Action::SetLayerBranch(..) => unreachable!(),
             Action::Brush(b) => {
                 self.set_tool(Tool::Brush);
                 self.brush = b;
@@ -104,16 +96,22 @@ impl Studio {
                     self.wet_release = None;
                 }
             }
+            Action::OpenBrushOrbit if self.advanced && self.can_open_brush_orbit() => {
+                if !orbit_open {
+                    self.open_brush_orbit(self.bounds.size / 2.);
+                }
+            }
             Action::BrushMaterial(index) if orbit_open => {
-                self.brush_orbit.select(self.brush, self.biome_pack, index);
+                self.brush_orbit.select(self.brush, index);
             }
-            Action::AdvancedBrushMaterial(index) if self.advanced => {
-                self.brush_orbit.select(self.brush, self.biome_pack, index);
+            Action::BrushOrbitEnter(depth, index) if orbit_open => {
+                self.brush_orbit.enter(self.brush, depth, index);
             }
-            Action::BrushOrbitPage(page) if orbit_open => self.brush_orbit.page = page,
-            Action::BrushMaterial(_)
-            | Action::AdvancedBrushMaterial(_)
-            | Action::BrushOrbitPage(_)
+            Action::BrushOrbitBack if orbit_open => self.brush_orbit.navigation.back(),
+            Action::OpenBrushOrbit
+            | Action::BrushMaterial(_)
+            | Action::BrushOrbitEnter(..)
+            | Action::BrushOrbitBack
             | Action::CloseBrushOrbit => {}
             Action::SelectTool => self.set_tool(Tool::Select),
             Action::PathNodeDensity(step) => self.refresh_path_nodes(step),

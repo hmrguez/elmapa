@@ -7,7 +7,6 @@ use crate::app::{
     },
 };
 use bevy::{ecs::query::QueryData, prelude::*};
-use elmapa::biome_packs;
 
 pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, menu_progress: f32) {
     if s.menu || menu_progress > 0. {
@@ -42,7 +41,6 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, menu_progress: f3
         ] {
             menu_button(b, menu, symbol, label, action);
         }
-        biome_choices(b, menu, s.biome_pack);
         for (symbol, label, action) in [
             ("redo", "Replay this view", Action::ReplayView),
             ("world-new", "New world", Action::Blank),
@@ -74,52 +72,6 @@ fn menu_button(b: &mut Builder, menu: Entity, symbol: &str, label: &str, action:
             n.justify_content = JustifyContent::Start;
             n.width = percent(100.);
         });
-}
-
-fn biome_choices(b: &mut Builder, menu: Entity, active: Option<usize>) {
-    let group = b.node(
-        menu,
-        Node {
-            padding: UiRect::axes(px(6.), px(5.)),
-            ..column(3.)
-        },
-    );
-    b.text(group, "Biome pack", 11., b.p.muted, false);
-    let choices = b.node(
-        group,
-        Node {
-            flex_wrap: FlexWrap::Wrap,
-            row_gap: px(3.),
-            ..row(3.)
-        },
-    );
-    for (index, name, tip) in std::iter::once((
-        None,
-        "All Materials",
-        "Show all brush materials and enabled landmark packs.",
-    ))
-    .chain(
-        biome_packs::catalog()
-            .iter()
-            .enumerate()
-            .map(|(index, pack)| (Some(index), pack.name.as_str(), pack.description.as_str())),
-    ) {
-        let button = b.button(choices, "", name, Action::BiomePack(index), index == active);
-        b.commands
-            .entity(button)
-            .entry::<Node>()
-            .and_modify(|mut n| {
-                n.height = px(26.);
-                n.padding = UiRect::horizontal(px(6.));
-            });
-        let tip = tip.to_owned();
-        b.commands
-            .entity(button)
-            .entry::<Hover>()
-            .and_modify(move |mut hover| {
-                hover.tip = tip;
-            });
-    }
 }
 
 #[derive(Resource, Default)]
