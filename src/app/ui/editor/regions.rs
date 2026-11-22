@@ -7,6 +7,8 @@ use crate::app::{
 use bevy::prelude::*;
 use elmapa::scene::territories::{MAX_SPLIT_COUNT, pigment};
 
+pub(super) const PAPER_STRIP_CLEARANCE: f32 = 170.;
+
 pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
     let p = b.p;
     let paper = s.appearance == Appearance::Paper;

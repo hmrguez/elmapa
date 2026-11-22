@@ -455,11 +455,23 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
         &mut self,
         parent: Entity,
         value: impl Into<String>,
-        (decrease, increase): (Action, Action),
+        actions: (Action, Action),
         width: Val,
         font_size: f32,
     ) -> Entity {
-        self.button(parent, "minus", "", decrease, false);
+        self.stepper_with_pigment(parent, value, actions, (width, font_size), None)
+    }
+
+    pub(super) fn stepper_with_pigment(
+        &mut self,
+        parent: Entity,
+        value: impl Into<String>,
+        (decrease, increase): (Action, Action),
+        (width, font_size): (Val, f32),
+        pigment: impl Into<Option<u32>>,
+    ) -> Entity {
+        let pigment = pigment.into();
+        self.button_with_pigment(parent, "minus", "", decrease, false, pigment);
         let display = self.node(
             parent,
             Node {
@@ -469,7 +481,7 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             },
         );
         let label = self.text(display, value, font_size, self.p.text, false);
-        self.button(parent, "plus", "", increase, false);
+        self.button_with_pigment(parent, "plus", "", increase, false, pigment);
         label
     }
 

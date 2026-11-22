@@ -34,7 +34,7 @@ components:
 
 Elmapa offers two appearances. **Holo** is the default, with translucent floating panels, rounded controls, and tinted line icons. **Paper** takes its cues from small printed swatches laid out on a cartographer’s worktable. Muted pigment and fine paper grain give the controls a hand-printed feel. Crisp illustrations make them easy to scan while drawing. The artwork on the atlas carries the strongest detail.
 
-Choose **Holo** or **Paper** under **Appearance** in shelf Settings or the editor’s map menu. Paper styles the illustrated toolbar, editor header, map menu, brush and placement controls, Layers panel, and Regions controls.
+Choose **Holo** or **Paper** under **Appearance** in shelf Settings or the editor’s map menu. Paper styles the illustrated toolbar, editor header, map menu, brush and placement controls, Layers panel, Regions controls, and zoom panel.
 
 ## Paper colors
 
@@ -101,3 +101,7 @@ The Layers panel uses a warm, grained surface. A sand wash and two-pixel ink out
 The Regions strip uses the same paper surface and can wrap its controls at narrow widths. Sand marks border drawing, sea glass marks island assignment, sage marks creation and completion, and straw marks splitting and child regions. In the style picker and edit card, ochre identifies renaming and blue identifies color editing. Region swatches keep their atlas pigments in the tree, strip, and picker. The edit card uses a Baskerville heading and an ink outline around the focused field.
 
 The [shared Layers components](src/app/ui/components/layers.rs) style rows and their controls. The [Layers panel](src/app/ui/editor/layers.rs) and [region tree](src/app/ui/editor/layers/regions.rs) own the composition and actions.
+
+### Zoom panel
+
+The bottom-left zoom panel uses the shared grained surface. Blue pairs zoom out and zoom in around the live percentage. Sage identifies Fit artwork. At narrow widths, the Paper zoom panel sits above the Regions strip so all three controls remain accessible.

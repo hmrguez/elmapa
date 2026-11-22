@@ -16,7 +16,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, scroll: f32) {
     // Leave room for the Regions strip to wrap above the toolbar on narrow windows.
     let bottom = if s.appearance == Appearance::Paper && s.regions.active && s.bounds.size.x < 1024.
     {
-        170.
+        super::regions::PAPER_STRIP_CLEARANCE
     } else {
         110.
     };
