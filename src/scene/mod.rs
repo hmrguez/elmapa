@@ -9,6 +9,7 @@ mod noise;
 mod palette;
 mod paper;
 mod path_animation;
+mod raster;
 mod render;
 mod river_animation;
 mod shape;
@@ -26,6 +27,7 @@ pub use render::SceneRenderer;
 pub use river_animation::{RiverAnimation, RiverFlow};
 pub use shape::Shape;
 pub const PARCHMENT_COLOR: u32 = terrain::LAND;
+pub(crate) use raster::write_png;
 pub use svg::{to_svg, write_svg};
 pub use terrain::forest::{
     FOREST_SPECIMEN_COUNT, ForestTree, TreeId, forest_specimen, forest_specimen_svg,

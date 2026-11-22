@@ -1,6 +1,6 @@
 //! Route shortcuts after text input has had a chance to consume the key.
 use crate::app::{
-    files::Jobs,
+    files::{ExportFormat, Jobs},
     lettering::Field,
     replay::Replay,
     state::{Action, Studio, Tool},
@@ -98,7 +98,7 @@ pub(super) fn key_down(
             KeyCode::KeyZ => Some(if shift { Action::Redo } else { Action::Undo }),
             KeyCode::KeyS => Some(Action::Save),
             KeyCode::KeyO => Some(Action::Open),
-            KeyCode::KeyE => Some(Action::Export),
+            KeyCode::KeyE => Some(Action::Export(ExportFormat::Svg)),
             KeyCode::KeyR if shift => Some(Action::ReplayView),
             KeyCode::Digit0 => Some(Action::Fit),
             _ => None,

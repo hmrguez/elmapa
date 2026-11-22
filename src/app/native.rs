@@ -236,7 +236,7 @@ pub fn menu_actions(
     mut studio: bevy::prelude::ResMut<super::state::Studio>,
     mut jobs: bevy::prelude::ResMut<super::files::Jobs>,
 ) {
-    use super::state::Action;
+    use super::{files::ExportFormat, state::Action};
     let commands: Vec<_> = COMMANDS
         .lock()
         .unwrap_or_else(|e| e.into_inner())
@@ -272,7 +272,7 @@ pub fn menu_actions(
             1 => Action::Quit,
             2 if !studio.home => Action::Save,
             3 if !studio.home || !studio.settings => Action::Open,
-            4 if !studio.home => Action::Export,
+            4 if !studio.home => Action::Export(ExportFormat::Svg),
             5 if !studio.home => Action::Undo,
             6 if !studio.home => Action::Redo,
             7 if !studio.home => Action::Fit,

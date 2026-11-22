@@ -7,12 +7,15 @@ mod export {
         let root =
             std::env::temp_dir().join(format!("elmapa-export-cancel-{}", std::process::id()));
         std::fs::create_dir_all(&root).unwrap();
-        let path = root.join("world.svg");
-        std::fs::write(&path, b"existing export").unwrap();
-        let token = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(1));
-        assert!(export_svg(&path, &Document::demo(), Some((token, 0))).is_err());
-        assert_eq!(std::fs::read(&path).unwrap(), b"existing export");
-        assert_eq!(std::fs::read_dir(&root).unwrap().count(), 1);
+        for format in [ExportFormat::Svg, ExportFormat::Png] {
+            let path = root.join(format!("world.{}", format.extension()));
+            std::fs::write(&path, b"existing export").unwrap();
+            let token = Arc::new(AtomicU64::new(1));
+            assert!(format.write(&path, &Document::demo(), (token, 0)).is_err());
+            assert_eq!(std::fs::read(&path).unwrap(), b"existing export");
+            assert_eq!(std::fs::read_dir(&root).unwrap().count(), 1);
+            std::fs::remove_file(path).unwrap();
+        }
         std::fs::remove_dir_all(root).unwrap();
     }
 }

@@ -56,7 +56,7 @@ impl Studio {
                 | Action::LandmarkTool
                 | Action::SelectTool
                 | Action::Save
-                | Action::Export
+                | Action::Export(_)
                 | Action::AtlasStyle
                 | Action::Open
                 | Action::Home
@@ -309,9 +309,9 @@ impl Studio {
                 self.editor.set_atlas_style(style);
                 self.menu = false;
             }
-            Action::Export => {
+            Action::Export(format) => {
                 self.menu = false;
-                jobs.request(files::Request::Export(None));
+                jobs.request(files::Request::Export(format, None));
             }
         }
         if let Some(id) = self.text.selected

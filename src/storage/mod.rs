@@ -2,7 +2,7 @@
 //! existing destination when validation or writing fails.
 mod export;
 mod local;
-pub use export::export_svg;
+pub use export::{export_png, export_svg};
 pub use local::LocalDocumentStore;
 
 use crate::document::Document;
