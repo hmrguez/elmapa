@@ -34,7 +34,7 @@ components:
 
 Elmapa offers two appearances. **Holo** is the default, with translucent floating panels, rounded controls, and tinted line icons. **Paper** takes its cues from small printed swatches laid out on a cartographer’s worktable. Muted pigment and fine paper grain give the controls a hand-printed feel. Crisp illustrations make them easy to scan while drawing. The artwork on the atlas carries the strongest detail.
 
-Choose **Holo** or **Paper** under **Appearance** in shelf Settings or the editor’s map menu. Paper’s illustrated toolbar is the first surface with its own treatment. Both appearances share the existing styling on other surfaces.
+Choose **Holo** or **Paper** under **Appearance** in shelf Settings or the editor’s map menu. Paper has its own treatment for the illustrated toolbar, editor header, and map menu. The remaining surfaces share the existing styling.
 
 ## Paper colors
 
@@ -78,4 +78,10 @@ The [shared UI components](src/app/ui/components.rs) define the vocabulary for b
 
 The [editor toolbar](src/app/ui/editor/toolbar.rs) defines tool order, labels, actions, and contextual controls. The [toolbar components](src/app/ui/components/toolbar.rs) render Holo's shared tray and moving highlight or Paper's tinted tiles and moving ink outline. Paper tiles use the [illustrated tool symbols](assets/tool-icons/symbols.svg) and a fine grain. Both appearances use the same selection behavior and respect Reduced motion.
 
-Use the toolbar as the reference when adding Paper treatments to brush and placement pickers, the map menu, Layers, dialogs, and the atlas shelf. Check both appearances over real atlas artwork as each surface gains a Paper treatment.
+Use the toolbar as the reference when adding Paper treatments to brush and placement pickers, Layers, dialogs, and the atlas shelf. Check both appearances over real atlas artwork as each surface gains a Paper treatment.
+
+### Map menu and header
+
+The editor header, Atlases button, and map menu use warm paper surfaces with fine grain and a soft offset shadow. The atlas title uses Baskerville. Menu actions use Avenir Next labels and ink-tinted symbols. A sand-colored face and a two-pixel ink outline mark the open menu button and selected Biome pack and Appearance choices.
+
+The [Paper component styling](src/app/ui/components/paper.rs) supplies the panel and button treatments. The editor owns the [header layout](src/app/ui/editor/mod.rs) and [menu actions and animation](src/app/ui/editor/menu.rs). Reduced Motion opens and closes the menu immediately.

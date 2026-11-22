@@ -1,5 +1,5 @@
 //! Toolbar components with Holo and Paper faces.
-use super::{Appearance, BUTTON_HEIGHT, Builder, Hover, color, row};
+use super::{Appearance, BUTTON_HEIGHT, Builder, Hover, color, paper, row};
 use crate::app::{
     brush_motion::{BrushBubble, SelectedTool},
     state::Action,
@@ -8,7 +8,6 @@ use bevy::prelude::*;
 use elmapa::document::Brush;
 
 pub(in crate::app::ui) const PAPER_TOOL_SIZE: f32 = 44.;
-const PAPER_INK: u32 = 0x5c3a22;
 const PAPER_SYMBOL_CELL: f32 = 128.;
 
 #[derive(Clone, Copy)]
@@ -67,7 +66,7 @@ impl Builder<'_, '_, '_> {
                     ..default()
                 },
                 Color::NONE,
-                color(PAPER_INK, 1.),
+                color(paper::INK, 1.),
                 1,
             ),
         };
@@ -141,7 +140,7 @@ impl Builder<'_, '_, '_> {
             Node {
                 width: px(PAPER_TOOL_SIZE),
                 height: px(PAPER_TOOL_SIZE),
-                border_radius: BorderRadius::all(px(5.)),
+                border_radius: paper::corners(),
                 border: UiRect::all(px(1.)),
                 flex_shrink: 0.,
                 justify_content: JustifyContent::Center,
@@ -152,15 +151,14 @@ impl Builder<'_, '_, '_> {
             action,
             selected,
         );
-        self.commands.entity(button).insert((
-            BorderColor::all(color(PAPER_INK, 0.28)),
-            ImageNode {
-                image: self.assets.tool_paper.clone(),
-                flip_x: cell & 1 != 0,
-                flip_y: cell & 2 != 0,
-                ..default()
-            },
-        ));
+        let grain = ImageNode {
+            flip_x: cell & 1 != 0,
+            flip_y: cell & 2 != 0,
+            ..self.paper_grain()
+        };
+        self.commands
+            .entity(button)
+            .insert((BorderColor::all(color(paper::INK, 0.28)), grain));
         self.illustrated_tool_icon(button, cell);
         (button, pigment, pigment.mix(&Color::WHITE, 0.26))
     }

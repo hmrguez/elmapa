@@ -24,11 +24,11 @@ pub struct ZoomLabel;
 pub struct MenuArrow;
 
 pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, menu_progress: f32, scroll: f32) {
-    header(b, root, s);
+    b.with_paper(|b| header(b, root, s));
     layers::build(b, root, s, scroll);
     zoom(b, root, s);
     toolbar::build(b, root, s);
-    menu::build(b, root, s, menu_progress);
+    b.with_paper(|b| menu::build(b, root, s, menu_progress));
     status(b, root, s);
 }
 

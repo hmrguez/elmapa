@@ -1,4 +1,5 @@
 //! Shared UI components, layout helpers and appearance palettes.
+mod paper;
 mod toolbar;
 
 use super::{
@@ -101,6 +102,7 @@ pub(super) struct Builder<'a, 'w, 's> {
     pub(super) assets: &'a UiAssets,
     pub(super) p: Palette,
     appearance: Appearance,
+    paper: bool,
     order: u32,
     pub(super) atlas_style: AtlasStyle,
 }
@@ -115,6 +117,7 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             assets,
             p: Palette::holo(),
             appearance,
+            paper: false,
             order: 0,
             atlas_style: AtlasStyle::Classic,
         }
@@ -291,14 +294,22 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
         large: bool,
     ) -> Entity {
         node.border = UiRect::all(px(1.));
-        node.border_radius = BorderRadius::all(px(radius));
+        node.border_radius = if self.paper {
+            paper::corners()
+        } else {
+            BorderRadius::all(px(radius))
+        };
         node.padding = UiRect::all(px(padding));
         let id = self.node(parent, node);
-        self.commands.entity(id).insert((
-            BackgroundColor(color(self.p.surface, alpha)),
-            BorderColor::all(color(self.p.line, 0.85)),
-            shadow(large),
-        ));
+        if self.paper {
+            self.style_paper_panel(id, large);
+        } else {
+            self.commands.entity(id).insert((
+                BackgroundColor(color(self.p.surface, alpha)),
+                BorderColor::all(color(self.p.line, 0.85)),
+                shadow(large),
+            ));
+        }
         self.hit(id, None);
         id
     }
@@ -326,6 +337,9 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             action,
             active,
         );
+        if self.paper {
+            self.style_paper_button(id, active);
+        }
         let icon = if symbol.is_empty() {
             id
         } else {
@@ -402,10 +416,15 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             let choice = self.button(picker, "", label, Action::SetAppearance(appearance), active);
             let p = self.p;
             let mut entity = self.commands.entity(choice);
-            entity.entry::<Node>().and_modify(|mut node| {
-                node.min_width = px(57.);
-                node.border = UiRect::all(px(1.));
-            });
+            entity
+                .entry::<Node>()
+                .and_modify(|mut node| node.min_width = px(57.));
+            if self.paper {
+                continue;
+            }
+            entity
+                .entry::<Node>()
+                .and_modify(|mut node| node.border = UiRect::all(px(1.)));
             if active {
                 entity.insert(BorderColor::all(color(p.accent, 0.5)));
             } else {
@@ -414,6 +433,25 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
                 });
             }
         }
+    }
+
+    pub(super) fn compact_choice(
+        &mut self,
+        parent: Entity,
+        label: &str,
+        action: Action,
+        active: bool,
+    ) -> Entity {
+        let choice = self.button(parent, "", label, action, active);
+        let padding = if self.paper { 4. } else { 6. };
+        self.commands
+            .entity(choice)
+            .entry::<Node>()
+            .and_modify(move |mut node| {
+                node.height = px(26.);
+                node.padding = UiRect::horizontal(px(padding));
+            });
+        choice
     }
 
     pub(super) fn stepper(
