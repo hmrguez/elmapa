@@ -8,10 +8,9 @@ pub(super) fn profile(texture: Option<usize>) -> u32 {
     };
     // Keep these selectors in sync with water_surface.wgsl.
     match material.id.as_str() {
-        "shallow-ocean" => 1,
-        "lake" => 2,
-        "oasis-water" => 3,
-        "glacial-water" => 4,
+        "lake" => 1,
+        "oasis-water" => 2,
+        "glacial-water" => 3,
         _ => 0,
     }
 }
@@ -25,10 +24,10 @@ mod tests {
     fn only_animated_water_finishes_select_a_profile_in_both_palettes() {
         for (expected, id) in [
             (0, "ocean"),
-            (1, "shallow-ocean"),
-            (2, "lake"),
-            (3, "oasis-water"),
-            (4, "glacial-water"),
+            (0, "shallow-ocean"),
+            (1, "lake"),
+            (2, "oasis-water"),
+            (3, "glacial-water"),
             (0, "alpine-meadow"),
         ] {
             let index = brush_materials::catalog()
