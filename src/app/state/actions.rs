@@ -160,6 +160,10 @@ impl Studio {
                 self.dark = !self.dark;
                 jobs.preferences = true;
             }
+            Action::PaperUi => {
+                self.paper_ui = !self.paper_ui;
+                jobs.preferences = true;
+            }
             Action::Motion => {
                 self.reduced = !self.reduced;
                 self.wet_release = None;

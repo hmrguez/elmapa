@@ -15,8 +15,8 @@ use crate::app::{
 use bevy::prelude::*;
 
 pub use menu::{ChromeMotion, advance_motion, menu_animation};
-pub(super) use toolbar::TEXT_STYLE_BOTTOM;
 pub use toolbar::brush_icon;
+pub(super) use toolbar::text_style_bottom;
 
 #[derive(Component)]
 pub struct ZoomLabel;
