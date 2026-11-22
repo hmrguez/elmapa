@@ -1,11 +1,8 @@
-//! Glass orbit rendering and reveal animation shared by contextual tools.
+//! Orbit layout and reveal animation shared by contextual tools.
 use crate::app::{
     radial::{self, Item},
     state::{Action, Studio},
-    ui::{
-        components::{Builder, color, row, shadow},
-        feedback::Hover,
-    },
+    ui::components::{Builder, color, row},
 };
 use bevy::prelude::*;
 use elmapa::document::LabelFont;
@@ -89,7 +86,7 @@ impl RadialElement {
     }
 }
 
-fn glass_bubble(
+fn orbit_item(
     b: &mut Builder,
     parent: Entity,
     item: &Item<Action>,
@@ -98,28 +95,20 @@ fn glass_bubble(
 ) -> Entity {
     let active = item.active || selected_branch;
     let p = b.p;
-    let id = b.button(parent, "", "", action, active);
-    let base = color(if active { p.wash } else { p.surface }, 0.94);
-    b.commands.entity(id).insert((
+    let id = b.orbit_button(
+        parent,
         Node {
             position_type: PositionType::Absolute,
             width: px(36.),
             height: px(36.),
-            border: UiRect::all(px(1.)),
-            border_radius: BorderRadius::MAX,
             justify_content: JustifyContent::Center,
             ..row(0.)
         },
-        BorderColor::all(color(if active { p.accent } else { p.line }, 0.85)),
-        BackgroundColor(base),
-        shadow(false),
-        Hover {
-            base,
-            target: color(p.wash, 1.),
-            tip: item.title.clone(),
-            ..default()
-        },
-    ));
+        &item.title,
+        &item.icon,
+        action,
+        active,
+    );
     let hex = if active { p.accent } else { p.text };
     if let Action::BrushMaterial(Some(index)) = action {
         b.material_swatch(id, index, 23.);
@@ -191,21 +180,6 @@ fn glass_bubble(
             .entity(dot)
             .insert(BackgroundColor(color(p.accent, 0.65)));
     }
-    // A fine highlight gives each bubble the same layered glass as the chrome.
-    let glint = b.node(
-        id,
-        Node {
-            position_type: PositionType::Absolute,
-            top: px(2.),
-            left: px(10.),
-            width: px(14.),
-            height: px(1.),
-            ..default()
-        },
-    );
-    b.commands
-        .entity(glint)
-        .insert(BackgroundColor(color(0xffffff, 0.46)));
     id
 }
 
@@ -238,7 +212,7 @@ pub(super) fn action_orbit(
             .max(radial::single_ring_radius(bubbles) - depth as f32 * radial::RING_GAP);
         for (index, item) in items.iter().enumerate() {
             let action = item.action.unwrap_or_else(|| enter(depth, index));
-            let bubble = glass_bubble(
+            let bubble = orbit_item(
                 b,
                 orbit,
                 item,
@@ -257,7 +231,7 @@ pub(super) fn action_orbit(
                 "Close outer ring · Esc"
             };
             let item = Item::action(title, "close", back);
-            let bubble = glass_bubble(b, orbit, &item, back, false);
+            let bubble = orbit_item(b, orbit, &item, back, false);
             b.commands.entity(bubble).insert(RadialElement {
                 orbit,
                 kind: Element::Bubble {

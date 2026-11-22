@@ -47,15 +47,17 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
         b.text(prompt, "Type a name", 12., b.p.text, true);
         b.hit(prompt, Some(Action::LandmarkName));
     }
-    let orbit = action_orbit(
-        b,
-        root,
-        &s.landmark_actions(),
-        &s.landmarks.radial,
-        &format!("landmark/{:?}", s.landmarks.selected),
-        Action::LandmarkEnter,
-        Action::LandmarkBack,
-    );
+    let orbit = b.with_paper(|b| {
+        action_orbit(
+            b,
+            root,
+            &s.landmark_actions(),
+            &s.landmarks.radial,
+            &format!("landmark/{:?}", s.landmarks.selected),
+            Action::LandmarkEnter,
+            Action::LandmarkBack,
+        )
+    });
     b.commands.entity(orbit).insert(LandmarkOrbit);
 }
 pub fn landmark_selection_follow(

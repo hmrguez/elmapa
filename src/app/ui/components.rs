@@ -1,4 +1,5 @@
 //! Shared UI components, layout helpers and appearance palettes.
+mod orbit;
 mod paper;
 mod toolbar;
 
@@ -14,6 +15,7 @@ use elmapa::{
     brush_materials,
     document::{AtlasStyle, Brush},
 };
+pub(super) use paper::pigment;
 pub(super) use toolbar::{PAPER_TOOL_SIZE, ToolIcon};
 
 pub(super) const BUTTON_HEIGHT: f32 = 34.;
@@ -321,6 +323,18 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
         action: Action,
         active: bool,
     ) -> Entity {
+        self.button_with_pigment(parent, symbol, label, action, active, None)
+    }
+
+    pub(super) fn button_with_pigment(
+        &mut self,
+        parent: Entity,
+        symbol: &str,
+        label: &str,
+        action: Action,
+        active: bool,
+        pigment: impl Into<Option<u32>>,
+    ) -> Entity {
         let p = self.p;
         let id = self.action_button(
             parent,
@@ -338,7 +352,7 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             active,
         );
         if self.paper {
-            self.style_paper_button(id, active);
+            self.style_paper_button(id, active, false, pigment.into());
         }
         let icon = if symbol.is_empty() {
             id

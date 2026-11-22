@@ -48,11 +48,13 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
         selection_controls(b, bottom, s);
     }
     if s.advanced && s.tool == Tool::Brush && !s.regions.active {
-        advanced_controls(b, bottom, s);
+        b.with_paper(|b| advanced_controls(b, bottom, s));
     }
     if s.appearance == Appearance::Paper && !s.regions.active && s.tool != Tool::Select {
-        let strip = b.panel(bottom, row(2.), 11., PAPER_OPTIONS_PADDING, 0.98, false);
-        tool_options(b, strip, s);
+        b.with_paper(|b| {
+            let strip = b.panel(bottom, row(2.), 11., PAPER_OPTIONS_PADDING, 0.98, false);
+            tool_options(b, strip, s);
+        });
     }
     let toolbar = b.tool_row(bottom);
     for tool in tools(s) {
@@ -195,16 +197,24 @@ fn tool_options(b: &mut Builder, parent: Entity, s: &Studio) {
     };
     b.stepper(parent, format!("{size:.0}"), actions, width, font_size);
     if s.tool == Tool::Brush {
-        b.button(parent, "settings", "", Action::Advanced, s.advanced);
+        b.button_with_pigment(
+            parent,
+            "settings",
+            "",
+            Action::Advanced,
+            s.advanced,
+            ToolIcon::Brush(s.brush).pigment(),
+        );
     }
 }
 
 fn advanced_controls(b: &mut Builder, bottom: Entity, s: &Studio) {
     let p = b.p;
+    let paper = s.appearance == Appearance::Paper;
     let advanced = b.panel(
         bottom,
         Node {
-            width: px(510.),
+            width: px(if paper { 368. } else { 510. }),
             ..column(8.)
         },
         16.,
@@ -212,15 +222,17 @@ fn advanced_controls(b: &mut Builder, bottom: Entity, s: &Studio) {
         0.97,
         true,
     );
-    b.commands
-        .entity(advanced)
-        .insert(BorderColor::all(color(p.line, 1.)));
+    if !paper {
+        b.commands
+            .entity(advanced)
+            .insert(BorderColor::all(color(p.line, 1.)));
+    }
     b.text(
         advanced,
         format!("{} brush settings", s.brush.label()),
-        12.,
+        if paper { 18. } else { 12. },
         p.text,
-        false,
+        paper,
     );
     let strength = b.node(
         advanced,
@@ -255,12 +267,13 @@ fn advanced_controls(b: &mut Builder, bottom: Entity, s: &Studio) {
         let name = index.map_or(DEFAULT_RIVER_FINISH, |index| {
             &brush_materials::catalog()[index].name
         });
-        let button = b.button(
+        let button = b.button_with_pigment(
             material,
             "",
             name,
             Action::OpenBrushOrbit,
             s.brush_orbit.anchor.is_some(),
+            ToolIcon::Brush(s.brush).pigment(),
         );
         if let Some(index) = index {
             let swatch = b.material_swatch(button, index, 16.);
@@ -272,12 +285,13 @@ fn advanced_controls(b: &mut Builder, bottom: Entity, s: &Studio) {
 
 fn text_style_control(b: &mut Builder, parent: Entity, studio: &Studio) {
     let style = studio.text.style;
-    let choice = b.button(
+    let choice = b.button_with_pigment(
         parent,
         "",
         style.font.family(),
         Action::TextStyle,
         studio.text.style_open,
+        ToolIcon::Text.pigment(),
     );
     let ink = b.swatch(choice, style.ink.color_in(b.atlas_style), 9., None);
     let sample = b.text(choice, "Aa", 15., b.p.text, true);
