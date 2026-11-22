@@ -38,6 +38,8 @@ fn app() -> App {
             camera,
             display_camera: camera,
             icons: HashMap::new(),
+            tool_symbols: Handle::default(),
+            tool_paper: Handle::default(),
             landmark_ghosts: default(),
             brush_swatches: HashMap::new(),
             avenir: default(),

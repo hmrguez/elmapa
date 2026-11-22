@@ -245,7 +245,7 @@ pub(super) fn placement_style(b: &mut Builder, root: Entity, s: &Studio) {
         Node {
             position_type: PositionType::Absolute,
             left: px((s.bounds.size.x - width) / 2.),
-            bottom: px(82.),
+            bottom: px(crate::app::ui::editor::TEXT_STYLE_BOTTOM),
             width: px(width),
             ..column(7.)
         },

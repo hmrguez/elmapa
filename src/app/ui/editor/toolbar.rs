@@ -22,261 +22,317 @@ pub fn brush_icon(b: Brush) -> &'static str {
         Brush::Erase => "eraser",
     }
 }
+const TOOLBAR_BOTTOM: f32 = 23.;
+const TILE_SIZE: f32 = 44.;
+const OPTIONS_PADDING: f32 = 3.;
+const OPTIONS_HEIGHT: f32 = 34. + 2. * (OPTIONS_PADDING + 1.);
+const GAP: f32 = 8.;
+
+pub(in crate::app::ui) const TEXT_STYLE_BOTTOM: f32 =
+    TOOLBAR_BOTTOM + TILE_SIZE + OPTIONS_HEIGHT + 2. * GAP;
+
 pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
-    let p = b.p;
     let bottom = b.node(
         root,
         Node {
             position_type: PositionType::Absolute,
-            bottom: px(23.),
+            bottom: px(TOOLBAR_BOTTOM),
             left: px(0.),
             right: px(0.),
             align_items: AlignItems::Center,
-            ..column(9.)
+            ..column(GAP)
         },
     );
     if s.regions.active {
         super::regions::build(b, bottom, s);
-    } else if s.tool == Tool::Select && s.text.draft.is_none() {
-        selection_controls(b, bottom, s);
-    }
-    if s.advanced && s.tool == Tool::Brush && !s.regions.active {
-        let advanced = b.panel(
-            bottom,
-            Node {
-                width: px(510.),
-                ..column(8.)
-            },
-            16.,
-            14.,
-            0.97,
-            true,
-        );
-        b.commands
-            .entity(advanced)
-            .insert(BorderColor::all(color(p.line, 1.)));
-        b.text(
-            advanced,
-            format!("{} brush settings", s.brush.label()),
-            12.,
-            p.text,
-            false,
-        );
-        let strength = b.node(
-            advanced,
-            Node {
-                width: percent(100.),
-                justify_content: JustifyContent::SpaceBetween,
-                ..row(0.)
-            },
-        );
-        b.text(
-            strength,
-            format!("Strength  {:.0}%", s.strength * 100.),
-            12.,
-            p.text,
-            false,
-        );
-        let buttons = b.node(strength, row(0.));
-        b.button(buttons, "minus", "", Action::Strength(-0.1), false);
-        b.button(buttons, "plus", "", Action::Strength(0.1), false);
-
-        let materials: Vec<_> = biome_packs::materials(s.biome_pack, s.brush).collect();
-        if materials.len() > 1 || s.biome_pack.is_some() && !materials.is_empty() {
-            b.text(advanced, "Material", 11., p.muted, false);
-            let choices = b.node(
-                advanced,
-                Node {
-                    flex_wrap: FlexWrap::Wrap,
-                    row_gap: px(5.),
-                    ..row(5.)
-                },
-            );
-            let current = s.brush_orbit.current_index(s.brush, s.biome_pack);
-            for (index, material) in materials {
-                let active = current == Some(index);
-                let button = b.button(
-                    choices,
-                    "",
-                    &material.name,
-                    Action::AdvancedBrushMaterial(index),
-                    active,
-                );
-                let swatch = b.material_swatch(button, index, 16.);
-                b.commands.entity(button).insert_children(0, &[swatch]);
-                b.commands.entity(button).insert(BorderColor::all(color(
-                    if active { p.accent } else { p.line },
-                    0.75,
-                )));
-                b.commands
-                    .entity(button)
-                    .entry::<Node>()
-                    .and_modify(|mut node| {
-                        node.border = UiRect::all(px(1.));
-                        node.padding = UiRect::horizontal(px(7.));
-                    });
+    } else {
+        match s.tool {
+            Tool::Select if s.text.draft.is_none() => selection_controls(b, bottom, s),
+            Tool::Brush => {
+                if s.advanced {
+                    advanced_controls(b, bottom, s);
+                }
+                size_controls(b, bottom, s);
             }
+            Tool::Text => text_controls(b, bottom, s),
+            Tool::Landmarks => size_controls(b, bottom, s),
+            Tool::Select => {}
         }
     }
-    let toolbar = b.panel(bottom, row(3.), 21., 7., 0.93, true);
-    // A single decorative surface travels beneath the tool buttons. It has no Hit.
-    let bubble = b.node(
-        toolbar,
+    tool_tiles(b, bottom, s);
+}
+
+fn advanced_controls(b: &mut Builder, bottom: Entity, s: &Studio) {
+    let p = b.p;
+    let advanced = b.panel(
+        bottom,
         Node {
-            position_type: PositionType::Absolute,
-            width: px(34.),
-            height: px(34.),
-            border_radius: BorderRadius::all(px(10.)),
-            ..default()
+            width: px(510.),
+            ..column(8.)
         },
+        16.,
+        14.,
+        0.97,
+        true,
     );
     b.commands
-        .entity(bubble)
-        .insert((BrushBubble, BackgroundColor(color(p.wash, 1.))));
-    let selecting = s.tool == Tool::Select;
-    let select_tool = b.button(
-        toolbar,
-        "select",
-        if selecting { "Select" } else { "" },
-        Action::SelectTool,
-        selecting,
+        .entity(advanced)
+        .insert(BorderColor::all(color(p.line, 1.)));
+    b.text(
+        advanced,
+        format!("{} brush settings", s.brush.label()),
+        12.,
+        p.text,
+        false,
     );
-    tool_surface(b, select_tool, selecting);
-    for brush in Brush::ALL
-        .into_iter()
-        .filter(|&brush| brush != Brush::Erase)
-    {
-        brush_button(b, toolbar, s, brush);
-    }
-    let adding_text = s.tool == Tool::Text;
-    let text_tool = b.button(
-        toolbar,
-        "text",
-        if adding_text { "Text" } else { "" },
-        Action::TextTool,
-        adding_text,
+    let strength = b.node(
+        advanced,
+        Node {
+            width: percent(100.),
+            justify_content: JustifyContent::SpaceBetween,
+            ..row(0.)
+        },
     );
-    tool_surface(b, text_tool, adding_text);
-    let placing_landmarks = s.tool == Tool::Landmarks;
-    let landmark_tool = b.button(
-        toolbar,
-        "landmark",
-        if placing_landmarks { "Landmarks" } else { "" },
-        Action::LandmarkTool,
-        placing_landmarks,
+    b.text(
+        strength,
+        format!("Strength  {:.0}%", s.strength * 100.),
+        12.,
+        p.text,
+        false,
     );
-    tool_surface(b, landmark_tool, placing_landmarks);
-    brush_button(b, toolbar, s, Brush::Erase);
-    let regions = b.button(
-        toolbar,
-        "regions",
-        if s.regions.active { "Regions" } else { "" },
-        Action::Regions(RegionAction::Tool),
-        s.regions.active,
-    );
-    tool_surface(b, regions, s.regions.active);
-    if adding_text {
-        let style = s.text.style;
-        let choice = b.button(
-            toolbar,
-            "",
-            style.font.family(),
-            Action::TextStyle,
-            s.text.style_open,
-        );
-        let ink = b.swatch(choice, style.ink.color_in(b.atlas_style), 9., None);
-        let sample = b.text(choice, "Aa", 15., p.text, true);
-        let font = match style.font {
-            elmapa::document::LabelFont::Baskerville => b.assets.baskerville.clone(),
-            elmapa::document::LabelFont::Didot => b.assets.didot.clone(),
-            elmapa::document::LabelFont::Avenir => b.assets.avenir.clone(),
-        };
-        b.commands
-            .entity(sample)
-            .insert(TextFont::from_font_size(15.).with_font(font));
-        b.commands.entity(choice).insert_children(0, &[sample, ink]);
-        b.icon(choice, "chevron-down", p.muted, 13.);
-    }
-    if placing_landmarks {
-        b.button(toolbar, "minus", "", Action::LandmarkSize(-16.), false);
-        b.text(
-            toolbar,
-            format!("{:.0}", s.landmarks.placement.size),
-            11.,
-            p.text,
-            false,
-        );
-        b.button(toolbar, "plus", "", Action::LandmarkSize(16.), false);
-    }
-    if s.tool == Tool::Brush && !s.regions.active {
-        let divider = b.node(
-            toolbar,
+    let buttons = b.node(strength, row(0.));
+    b.button(buttons, "minus", "", Action::Strength(-0.1), false);
+    b.button(buttons, "plus", "", Action::Strength(0.1), false);
+
+    let materials: Vec<_> = biome_packs::materials(s.biome_pack, s.brush).collect();
+    if materials.len() > 1 || s.biome_pack.is_some() && !materials.is_empty() {
+        b.text(advanced, "Material", 11., p.muted, false);
+        let choices = b.node(
+            advanced,
             Node {
-                width: px(1.),
-                height: px(20.),
-                margin: UiRect::horizontal(px(5.)),
-                ..default()
+                flex_wrap: FlexWrap::Wrap,
+                row_gap: px(5.),
+                ..row(5.)
             },
         );
-        b.commands
-            .entity(divider)
-            .insert(BackgroundColor(color(p.muted, 0.45)));
-        b.button(toolbar, "minus", "", Action::Radius(-15.), false);
-        let radius = b.node(
-            toolbar,
-            Node {
-                width: px(31.),
-                justify_content: JustifyContent::Center,
-                ..row(0.)
-            },
-        );
-        b.text(radius, format!("{:.0}", s.radius), 10., p.text, false);
-        b.button(toolbar, "plus", "", Action::Radius(15.), false);
-        b.button(toolbar, "settings", "", Action::Advanced, s.advanced);
+        let current = s.brush_orbit.current_index(s.brush, s.biome_pack);
+        for (index, material) in materials {
+            let active = current == Some(index);
+            let button = b.button(
+                choices,
+                "",
+                &material.name,
+                Action::AdvancedBrushMaterial(index),
+                active,
+            );
+            let swatch = b.material_swatch(button, index, 16.);
+            b.commands.entity(button).insert_children(0, &[swatch]);
+            b.commands.entity(button).insert(BorderColor::all(color(
+                if active { p.accent } else { p.line },
+                0.75,
+            )));
+            b.commands
+                .entity(button)
+                .entry::<Node>()
+                .and_modify(|mut node| {
+                    node.border = UiRect::all(px(1.));
+                    node.padding = UiRect::horizontal(px(7.));
+                });
+        }
     }
 }
 
-fn brush_button(b: &mut Builder, toolbar: Entity, s: &Studio, brush: Brush) {
-    let selected = s.tool == Tool::Brush && !s.regions.active && s.brush == brush;
-    let button = b.button(
-        toolbar,
-        brush_icon(brush),
-        if selected { brush.label() } else { "" },
-        Action::Brush(brush),
-        selected,
+fn tool_tiles(b: &mut Builder, bottom: Entity, studio: &Studio) {
+    let tiles = b.node(bottom, row(6.));
+    let outline = b.node(
+        tiles,
+        Node {
+            position_type: PositionType::Absolute,
+            width: px(0.),
+            height: px(0.),
+            border: UiRect::all(px(2.)),
+            ..default()
+        },
     );
-    tool_surface(b, button, selected);
-    if biome_packs::materials(s.biome_pack, brush).nth(1).is_some() {
-        let modifier = if cfg!(target_os = "macos") {
-            "Option"
-        } else {
-            "Alt"
-        };
+    // The row has no fill or hit area. Only this outline moves between the tiles.
+    b.commands.entity(outline).insert((
+        BrushBubble,
+        ZIndex(1),
+        BorderColor::all(color(0x5c3a22, 1.)),
+    ));
+
+    let regions = studio.regions.active;
+    let brush = |brush: Brush, pigment| {
+        (
+            brush.label(),
+            Action::Brush(brush),
+            studio.tool == Tool::Brush && !regions && studio.brush == brush,
+            pigment,
+        )
+    };
+    // Keep the order in sync with the cells in assets/tool-icons/symbols.svg.
+    let tools = [
+        (
+            "Select",
+            Action::SelectTool,
+            studio.tool == Tool::Select && !regions,
+            color(0xd8caae, 1.),
+        ),
+        brush(Brush::Land, color(0xc9c99e, 1.)),
+        brush(Brush::Water, color(0xb2c8c3, 1.)),
+        brush(Brush::Forest, color(0xb7c3a7, 1.)),
+        brush(Brush::Mountain, color(0xccbcab, 1.)),
+        brush(Brush::River, color(0xb2c2ca, 1.)),
+        brush(Brush::Path, color(0xe0c9a2, 1.)),
+        (
+            "Text",
+            Action::TextTool,
+            studio.tool == Tool::Text && !regions,
+            color(0xdcbe96, 1.),
+        ),
+        (
+            "Landmarks",
+            Action::LandmarkTool,
+            studio.tool == Tool::Landmarks && !regions,
+            color(0xd4b19c, 1.),
+        ),
+        brush(Brush::Erase, color(0xd9b8ae, 1.)),
+        (
+            "Regions",
+            Action::Regions(RegionAction::Tool),
+            regions,
+            color(0xddcfa2, 1.),
+        ),
+    ];
+    for (index, (label, action, selected, pigment)) in tools.into_iter().enumerate() {
+        let button = b.action_button(
+            tiles,
+            Node {
+                width: px(TILE_SIZE),
+                height: px(TILE_SIZE),
+                border_radius: BorderRadius::all(px(5.)),
+                border: UiRect::all(px(1.)),
+                flex_shrink: 0.,
+                justify_content: JustifyContent::Center,
+                ..row(0.)
+            },
+            "",
+            label,
+            action,
+            selected,
+        );
+        let hover_face = pigment.mix(&Color::WHITE, 0.26);
+        b.commands.entity(button).insert((
+            BackgroundColor(pigment),
+            BorderColor::all(color(0x5c3a22, 0.28)),
+            ImageNode {
+                image: b.assets.tool_paper.clone(),
+                flip_x: index & 1 != 0,
+                flip_y: index & 2 != 0,
+                ..default()
+            },
+        ));
+        if selected {
+            b.commands.entity(button).insert(SelectedTool);
+        }
+        let pack = studio.biome_pack;
         b.commands
             .entity(button)
             .entry::<Hover>()
             .and_modify(move |mut hover| {
-                hover.tip = format!("{} · {modifier}-click or hold for materials", brush.label());
+                hover.base = pigment;
+                hover.target = hover_face;
+                if let Action::Brush(brush) = action
+                    && biome_packs::materials(pack, brush).nth(1).is_some()
+                {
+                    let modifier = if cfg!(target_os = "macos") {
+                        "Option"
+                    } else {
+                        "Alt"
+                    };
+                    hover.tip = format!("{label} · {modifier}-click or hold for materials");
+                }
             });
+        let x = index as f32 * 128.;
+        let symbol = b.node(
+            button,
+            Node {
+                width: px(31.),
+                height: px(31.),
+                flex_shrink: 0.,
+                ..default()
+            },
+        );
+        b.commands.entity(symbol).insert(ImageNode {
+            image: b.assets.tool_symbols.clone(),
+            rect: Some(Rect::new(x, 0., x + 128., 128.)),
+            ..default()
+        });
     }
 }
 
-fn tool_surface(b: &mut Builder, button: Entity, selected: bool) {
-    // Preserve hover and click targets; selection is painted by the shared bubble.
-    let target = color(b.p.wash, if selected { 0. } else { 0.45 });
+fn size_controls(b: &mut Builder, bottom: Entity, studio: &Studio) {
+    let strip = b.panel(bottom, row(2.), 11., OPTIONS_PADDING, 0.98, false);
+    let (label, size, decrease, increase) = if studio.tool == Tool::Landmarks {
+        (
+            "Landmark size",
+            studio.landmarks.placement.size,
+            Action::LandmarkSize(-16.),
+            Action::LandmarkSize(16.),
+        )
+    } else {
+        (
+            "Brush size",
+            studio.radius,
+            Action::Radius(-15.),
+            Action::Radius(15.),
+        )
+    };
+    let title = b.text(strip, label, 12., b.p.text, false);
     b.commands
-        .entity(button)
-        .insert(BackgroundColor(Color::NONE));
-    b.commands
-        .entity(button)
-        .entry::<Hover>()
-        .and_modify(move |mut hover| {
-            hover.base = Color::NONE;
-            hover.target = target;
+        .entity(title)
+        .entry::<Node>()
+        .and_modify(|mut node| {
+            node.margin = UiRect::horizontal(px(8.));
         });
-    if selected {
-        b.commands.entity(button).insert(SelectedTool);
+    b.button(strip, "minus", "", decrease, false);
+    let value = b.node(
+        strip,
+        Node {
+            width: px(30.),
+            justify_content: JustifyContent::Center,
+            ..row(0.)
+        },
+    );
+    b.text(value, format!("{size:.0}"), 12., b.p.text, false);
+    b.button(strip, "plus", "", increase, false);
+    if studio.tool == Tool::Brush {
+        b.button(strip, "settings", "", Action::Advanced, studio.advanced);
     }
+}
+
+fn text_controls(b: &mut Builder, bottom: Entity, studio: &Studio) {
+    let strip = b.panel(bottom, row(0.), 11., OPTIONS_PADDING, 0.98, false);
+    let style = studio.text.style;
+    let choice = b.button(
+        strip,
+        "",
+        style.font.family(),
+        Action::TextStyle,
+        studio.text.style_open,
+    );
+    let ink = b.swatch(choice, style.ink.color_in(b.atlas_style), 9., None);
+    let sample = b.text(choice, "Aa", 15., b.p.text, true);
+    let font = match style.font {
+        elmapa::document::LabelFont::Baskerville => b.assets.baskerville.clone(),
+        elmapa::document::LabelFont::Didot => b.assets.didot.clone(),
+        elmapa::document::LabelFont::Avenir => b.assets.avenir.clone(),
+    };
+    b.commands
+        .entity(sample)
+        .insert(TextFont::from_font_size(15.).with_font(font));
+    b.commands.entity(choice).insert_children(0, &[sample, ink]);
+    b.icon(choice, "chevron-down", b.p.muted, 13.);
 }
 
 fn selection_controls(b: &mut Builder, bottom: Entity, studio: &Studio) {
