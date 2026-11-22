@@ -5,12 +5,12 @@ mod regions;
 mod toolbar;
 
 use super::{
-    components::{Builder, Palette, absolute, color, column, row},
+    components::{Builder, Palette, absolute, color, column, pigment, row},
     feedback::{Fade, Hover},
 };
 use crate::app::{
     branding,
-    state::{Action, Studio, ViewReplay},
+    state::{Action, Appearance, Studio, ViewReplay},
 };
 use bevy::prelude::*;
 
@@ -25,8 +25,8 @@ pub struct MenuArrow;
 
 pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, menu_progress: f32, scroll: f32) {
     b.with_paper(|b| header(b, root, s));
-    layers::build(b, root, s, scroll);
-    zoom(b, root, s);
+    b.with_paper(|b| layers::build(b, root, s, scroll));
+    b.with_paper(|b| zoom(b, root, s));
     toolbar::build(b, root, s);
     b.with_paper(|b| menu::build(b, root, s, menu_progress));
     status(b, root, s);
@@ -86,33 +86,40 @@ fn header(b: &mut Builder, root: Entity, s: &Studio) {
 }
 
 fn zoom(b: &mut Builder, root: Entity, s: &Studio) {
-    let p = b.p;
+    let paper = s.appearance == Appearance::Paper;
+    let bottom = if paper && s.regions.active && s.bounds.size.x < 1180. {
+        regions::PAPER_STRIP_CLEARANCE
+    } else {
+        110.
+    };
     let zoom = b.panel(
         root,
         Node {
             position_type: PositionType::Absolute,
-            bottom: px(110.),
+            bottom: px(bottom),
             left: px(28.),
             ..row(4.)
         },
         12.,
-        0.,
+        if paper { 5. } else { 0. },
         0.88,
         false,
     );
-    b.commands.entity(zoom).remove::<BoxShadow>();
-    b.commands
-        .entity(zoom)
-        .insert(BorderColor::all(color(p.line, 0.7)));
-    let label = b.stepper(
+    if !paper {
+        b.commands.entity(zoom).remove::<BoxShadow>();
+        b.commands
+            .entity(zoom)
+            .insert(BorderColor::all(color(b.p.line, 0.7)));
+    }
+    let label = b.stepper_with_pigment(
         zoom,
         format!("{:.0}%", s.viewport.zoom * 100.),
         (Action::Zoom(0.8), Action::Zoom(1.25)),
-        px(38.),
-        10.,
+        (px(38.), if paper { 12. } else { 10. }),
+        pigment::BLUE,
     );
     b.commands.entity(label).insert(ZoomLabel);
-    b.button(zoom, "fit-artwork", "", Action::Fit, false);
+    b.button_with_pigment(zoom, "fit-artwork", "", Action::Fit, false, pigment::SAGE);
 }
 
 pub(super) fn replay_controls(

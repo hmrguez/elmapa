@@ -13,6 +13,7 @@ pub(in crate::app::ui) mod pigment {
     pub const SAND: u32 = 0xe0c9a2;
     pub const OCHRE: u32 = 0xdcbe96;
     pub const TERRACOTTA: u32 = 0xd4b19c;
+    pub const ROSE: u32 = 0xd9b8ae;
     pub const STRAW: u32 = 0xddcfa2;
 }
 
@@ -45,6 +46,22 @@ impl Builder<'_, '_, '_> {
 
     pub(super) fn paper_grain(&self) -> ImageNode {
         ImageNode::new(self.assets.tool_paper.clone())
+    }
+
+    pub(in crate::app::ui) fn focused_field(&mut self, parent: Entity, mut node: Node) -> Entity {
+        let (radius, stroke, outline) = if self.paper {
+            (corners(), 2., 1.)
+        } else {
+            (BorderRadius::all(px(9.)), 1., 0.7)
+        };
+        node.border_radius = radius;
+        node.border = UiRect::all(px(stroke));
+        let field = self.node(parent, node);
+        self.commands.entity(field).insert((
+            BackgroundColor(color(self.p.wash, 0.85)),
+            BorderColor::all(color(self.p.accent, outline)),
+        ));
+        field
     }
 
     pub(super) fn style_paper_panel(&mut self, entity: Entity, large: bool) {

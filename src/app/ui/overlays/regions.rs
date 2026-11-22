@@ -6,7 +6,7 @@ use super::{
 use crate::app::{
     regions::{RegionAction, StyleAction, StyleField},
     state::{Action, Studio},
-    ui::components::{Builder, color, column, row},
+    ui::components::{Builder, column, pigment, row},
 };
 use bevy::prelude::*;
 
@@ -54,22 +54,16 @@ pub(super) fn build(b: &mut Builder, root: Entity, studio: &Studio) {
     };
     b.text(panel, title, 16., b.p.text, true);
 
-    let field = b.node(
+    let field = b.focused_field(
         panel,
         Node {
             width: percent(100.),
             height: px(34.),
             padding: UiRect::horizontal(px(9.)),
-            border: UiRect::all(px(1.)),
-            border_radius: BorderRadius::all(px(9.)),
             overflow: Overflow::clip(),
             ..row(0.)
         },
     );
-    b.commands.entity(field).insert((
-        BackgroundColor(color(b.p.wash, 0.85)),
-        BorderColor::all(color(b.p.accent, 0.7)),
-    ));
     edit_text(b, field, &edit.input, &style.composition, 14.);
     if let Some(error) = &style.error {
         b.text(panel, error, 12., b.p.text, false);
@@ -83,12 +77,18 @@ pub(super) fn build(b: &mut Builder, root: Entity, studio: &Studio) {
         },
     );
     b.button(buttons, "", "Cancel", action(StyleAction::Cancel), false);
-    let apply = if edit.field == StyleField::Name {
-        "Rename"
-    } else {
-        "Apply"
+    let (apply, pigment) = match edit.field {
+        StyleField::Name => ("Rename", pigment::OCHRE),
+        StyleField::Color => ("Apply", pigment::BLUE),
     };
-    b.button(buttons, "check", apply, action(StyleAction::Apply), true);
+    b.button_with_pigment(
+        buttons,
+        "check",
+        apply,
+        action(StyleAction::Apply),
+        true,
+        pigment,
+    );
 }
 
 pub fn region_selection_follow(

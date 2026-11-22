@@ -34,7 +34,7 @@ components:
 
 Elmapa offers two appearances. **Holo** is the default, with translucent floating panels, rounded controls, and tinted line icons. **Paper** takes its cues from small printed swatches laid out on a cartographer’s worktable. Muted pigment and fine paper grain give the controls a hand-printed feel. Crisp illustrations make them easy to scan while drawing. The artwork on the atlas carries the strongest detail.
 
-Choose **Holo** or **Paper** under **Appearance** in shelf Settings or the editor’s map menu. Paper styles the illustrated toolbar, editor header, map menu, and the brush and placement controls. The remaining surfaces share the existing styling.
+Choose **Holo** or **Paper** under **Appearance** in shelf Settings or the editor’s map menu. Paper styles the illustrated toolbar, editor header, map menu, brush and placement controls, Layers panel, Regions controls, and zoom panel.
 
 ## Paper colors
 
@@ -78,7 +78,7 @@ The [shared UI components](src/app/ui/components.rs) define the vocabulary for b
 
 The [editor toolbar](src/app/ui/editor/toolbar.rs) defines tool order, labels, actions, and contextual controls. The [toolbar components](src/app/ui/components/toolbar.rs) render Holo's shared tray and moving highlight or Paper's tinted tiles and moving ink outline. Paper tiles use the [illustrated tool symbols](assets/tool-icons/symbols.svg) and a fine grain. Both appearances use the same selection behavior and respect Reduced motion.
 
-Use the toolbar as the reference when adding Paper treatments to Layers, dialogs, and the atlas shelf. Check both appearances over real atlas artwork as each surface gains a Paper treatment.
+Use the toolbar as the reference when adding Paper treatments to dialogs and the atlas shelf. Check both appearances over real atlas artwork as each surface gains a Paper treatment.
 
 ### Map menu and header
 
@@ -93,3 +93,15 @@ The contextual strip sits eight pixels above the illustrated tiles and groups th
 Brush Orbit, landmark choices, and lettering choices use small paper buttons that follow the existing rings around the pointer or selection. Sage, ochre, and blue distinguish Core, Desert, and Alpine. Landmark packs use straw, terracotta, and sage. Ochre, blue, and sea glass identify Typeface, Ink, and Advanced typography in the lettering orbit. A light border defines each quiet face. Hover lifts the pigment or adds a sand wash, and a two-pixel selection ink border marks an open branch or the chosen option. Material artwork, landmark illustrations, and ink swatches retain their own colors. Reduced motion reveals each ring immediately.
 
 The [shared orbit button](src/app/ui/components/orbit.rs) supplies the face and hover treatment. The [editor toolbar](src/app/ui/editor/toolbar.rs) owns the strip and Advanced settings layout. The [overlay renderer](src/app/ui/overlays/orbit.rs) owns ring positions and reveal timing, and the [lettering overlay](src/app/ui/overlays/text.rs) lays out the style cards.
+
+### Layers and Regions
+
+The Layers panel uses a warm, grained surface. A sand wash and two-pixel ink outline mark the active layer and selected region. Indentation and chevrons show the hierarchy. Artwork rows reuse the toolbar’s illustrations and pigments at a smaller size, so a layer’s brushes, text, and landmarks are recognizable by shape and color. Straw identifies Regions layers and linen identifies empty artwork layers. Hidden layer contents fade and the crossed-out eye gets a rose face. The tree scrolls above the fixed add and settings controls. Blue groups layer order, sea glass groups opacity, and rose marks deletion. The full panel shields the canvas from pointer input.
+
+The Regions strip uses the same paper surface and can wrap its controls at narrow widths. Sand marks border drawing, sea glass marks island assignment, sage marks creation and completion, and straw marks splitting and child regions. In the style picker and edit card, ochre identifies renaming and blue identifies color editing. Region swatches keep their atlas pigments in the tree, strip, and picker. The edit card uses a Baskerville heading and an ink outline around the focused field.
+
+The [shared Layers components](src/app/ui/components/layers.rs) style rows and their controls. The [Layers panel](src/app/ui/editor/layers.rs) and [region tree](src/app/ui/editor/layers/regions.rs) own the composition and actions.
+
+### Zoom panel
+
+The bottom-left zoom panel uses the shared grained surface. Blue pairs zoom out and zoom in around the live percentage. Sage identifies Fit artwork. At narrow widths, the Paper zoom panel sits above the Regions strip so all three controls remain accessible.
