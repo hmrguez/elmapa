@@ -3,8 +3,8 @@ mod settings;
 
 use super::{
     ScrollArea,
+    components::{Builder, Palette, color, column, row},
     feedback::{Hover, HoverFollow, HoverFrame},
-    widgets::{Builder, Palette, color, column, row},
 };
 use crate::app::{
     branding,
@@ -27,16 +27,10 @@ pub(super) fn build(
     scroll_offset: f32,
     pack_scroll: f32,
 ) {
-    let dark = s.dark;
-    let p = Palette::shelf(dark);
+    let p = Palette::shelf();
     let compact = s.bounds.size.x < 1100. || s.bounds.size.y < 760.;
     let ink = p.text;
     let surface = p.surface;
-    let (a, c, d) = if dark {
-        (0x121212, p.surface, 0x1a1a1a)
-    } else {
-        (0xe7eee6, 0xf5f4e9, 0xd8e5da)
-    };
     let background = b.node(
         root,
         Node {
@@ -50,7 +44,7 @@ pub(super) fn build(
         .entity(background)
         .insert(BackgroundGradient::from(LinearGradient {
             angle: 130_f32.to_radians(),
-            stops: vec![color(a, 1.).into(), color(c, 1.).into()],
+            stops: vec![color(0xe7eee6, 1.).into(), color(0xf5f4e9, 1.).into()],
             ..default()
         }));
     let ellipse = b.node(
@@ -69,7 +63,7 @@ pub(super) fn build(
         .entity(ellipse)
         .insert(BackgroundGradient::from(LinearGradient {
             angle: 40_f32.to_radians(),
-            stops: vec![color(d, 0.1).into(), color(d, 1.).into()],
+            stops: vec![color(0xd8e5da, 0.1).into(), color(0xd8e5da, 1.).into()],
             ..default()
         }));
     let shelf = b.node(
@@ -126,8 +120,8 @@ pub(super) fn build(
         .entity(rule)
         .insert(BackgroundColor(color(p.muted, 0.35)));
     let actions = b.node(header, row(10.));
-    b.shelf_button(actions, "folder-open", "Open atlas…", Action::Open, dark);
-    b.shelf_button(actions, "settings", "Settings", Action::Settings, dark);
+    b.shelf_button(actions, "folder-open", "Open atlas…", Action::Open);
+    b.shelf_button(actions, "settings", "Settings", Action::Settings);
     let scroll = b.node(
         shelf,
         Node {
@@ -178,7 +172,7 @@ pub(super) fn build(
                 BackgroundColor(base),
                 BorderColor::all(color(p.line, 0.85)),
                 BoxShadow(vec![ShadowStyle {
-                    color: color(if dark { 0x000000 } else { p.muted }, 0.1),
+                    color: color(p.muted, 0.1),
                     x_offset: px(0.),
                     y_offset: px(4.),
                     blur_radius: px(18.),
@@ -266,11 +260,11 @@ pub(super) fn build(
                 },
             );
             b.commands.entity(arrow).insert((
-                BackgroundColor(color(if dark { p.wash } else { 0x8fb4a5 }, 0.19)),
+                BackgroundColor(color(0x8fb4a5, 0.19)),
                 HoverFollow {
                     parent: card,
-                    from: color(if dark { p.wash } else { 0x8fb4a5 }, 0.19),
-                    to: color(if dark { p.wash } else { 0x8fb4a5 }, 0.31),
+                    from: color(0x8fb4a5, 0.19),
+                    to: color(0x8fb4a5, 0.31),
                 },
             ));
             b.icon(arrow, "chevron-right", ink, 17.);
@@ -334,71 +328,8 @@ pub(super) fn build(
     }
 }
 
-impl Builder<'_, '_, '_> {
-    fn shelf_button(
-        &mut self,
-        parent: Entity,
-        symbol: &str,
-        label: &str,
-        action: Action,
-        dark: bool,
-    ) -> Entity {
-        let p = Palette::shelf(dark);
-        let base = color(if dark { p.wash } else { p.surface }, 0.55);
-        let frame = color(p.line, if dark { 0.85 } else { 0.5 });
-        let id = self.button(parent, symbol, label, action, false);
-        self.commands.entity(id).insert((
-            Node {
-                height: px(42.),
-                width: if label.is_empty() { px(42.) } else { Val::Auto },
-                padding: UiRect::horizontal(px(if label.is_empty() { 0. } else { 17. })),
-                column_gap: px(9.),
-                border: UiRect::all(px(1.)),
-                border_radius: BorderRadius::all(px(100.)),
-                justify_content: JustifyContent::Center,
-                ..row(9.)
-            },
-            BorderColor::all(frame),
-            BackgroundColor(base),
-            Hover {
-                base,
-                target: color(p.wash, if dark { 1. } else { 0.35 }),
-                progress: 0.,
-                from: 0.,
-                started: 0.,
-                hovered: false,
-                tip: label.into(),
-            },
-        ));
-        self.commands.entity(id).insert(HoverFrame {
-            from: frame,
-            to: color(p.accent, 0.75),
-            card: false,
-        });
-        // Shelf controls share the canvas palette in dark appearance.
-        self.commands
-            .queue(move |world: &mut World| recolor(world, id, color(p.muted, 1.)));
-        id
-    }
-}
-
 pub fn cover_rect(frame: Vec2) -> Rect {
     let source = Vec2::new(512., 320.);
     let scale = (frame.x / source.x).max(frame.y / source.y);
     Rect::from_center_size(source / 2., frame / scale.max(0.0001))
-}
-
-fn recolor(world: &mut World, entity: Entity, ink: Color) {
-    if let Some(mut c) = world.get_mut::<TextColor>(entity) {
-        c.0 = ink;
-    }
-    if let Some(mut c) = world.get_mut::<ImageNode>(entity) {
-        c.color = ink;
-    }
-    if let Some(children) = world.get::<Children>(entity) {
-        let children: Vec<_> = children.iter().collect();
-        for child in children {
-            recolor(world, child, ink);
-        }
-    }
 }

@@ -1,7 +1,7 @@
 //! Screen-sized selection ink, the marquee and the group grip.
 use crate::app::{
     state::{Studio, Tool},
-    ui::widgets::{Builder, color, shadow},
+    ui::components::{Builder, color, shadow},
 };
 use bevy::prelude::*;
 use elmapa::document::{ContentBounds, SelectionId};

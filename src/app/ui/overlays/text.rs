@@ -3,7 +3,7 @@ use super::orbit::{Orbit, OrbitResize, RadialElement, action_orbit};
 use crate::app::{
     lettering::{Edit, Field, LabelStyle, selection_size},
     state::{Action, Studio, Tool},
-    ui::widgets::{Builder, color, column, row, shadow},
+    ui::components::{Builder, color, column, row, shadow},
 };
 use bevy::prelude::*;
 use elmapa::{
@@ -245,7 +245,7 @@ pub(super) fn placement_style(b: &mut Builder, root: Entity, s: &Studio) {
         Node {
             position_type: PositionType::Absolute,
             left: px((s.bounds.size.x - width) / 2.),
-            bottom: px(crate::app::ui::editor::text_style_bottom(s.paper_ui)),
+            bottom: px(crate::app::ui::editor::text_style_bottom(s.appearance)),
             width: px(width),
             ..column(7.)
         },

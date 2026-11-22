@@ -2,8 +2,8 @@
 use crate::app::{
     state::{Action, Studio},
     ui::{
+        components::{Builder, column, row},
         feedback::Hover,
-        widgets::{Builder, column, row},
     },
 };
 use bevy::{ecs::query::QueryData, prelude::*};
@@ -47,18 +47,19 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, menu_progress: f3
             ("redo", "Replay this view", Action::ReplayView),
             ("world-new", "New world", Action::Blank),
             ("world-example", "Example world", Action::Demo),
-            (
-                if s.dark { "sun" } else { "moon" },
-                if s.dark {
-                    "Light appearance"
-                } else {
-                    "Dark appearance"
-                },
-                Action::Theme,
-            ),
         ] {
             menu_button(b, menu, symbol, label, action);
         }
+        let appearance = b.node(
+            menu,
+            Node {
+                padding: UiRect::axes(px(6.), px(5.)),
+                justify_content: JustifyContent::SpaceBetween,
+                ..row(3.)
+            },
+        );
+        b.text(appearance, "Appearance", 11., b.p.muted, false);
+        b.appearance_picker(appearance);
         b.commands
             .queue(move |world: &mut World| mark_menu(world, menu));
     }

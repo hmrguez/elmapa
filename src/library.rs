@@ -52,8 +52,8 @@ pub struct AtlasRecord {
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct Shelf {
     pub atlases: Vec<AtlasRecord>,
-    pub dark: bool,
     pub reduced_motion: bool,
+    // Retain the preference key used by the original Paper toolbar preview.
     #[serde(default)]
     pub paper_ui: bool,
     #[serde(default)]
@@ -312,7 +312,6 @@ mod tests {
                 &document,
             )
             .unwrap();
-        library.shelf.dark = true;
         library.shelf.reduced_motion = true;
         library.shelf.paper_ui = true;
         library.shelf.shader_effects_disabled = true;
@@ -329,7 +328,7 @@ mod tests {
             record.camera.center
         );
         assert_eq!(restored.shelf.atlases[0].source, record.source);
-        assert!(restored.shelf.dark && restored.shelf.reduced_motion);
+        assert!(restored.shelf.reduced_motion);
         assert!(restored.shelf.shader_effects_disabled);
         assert!(restored.shelf.paper_ui);
         assert!(
@@ -344,9 +343,10 @@ mod tests {
     #[test]
     fn older_shelves_use_the_default_appearance_and_shader_preferences() {
         let shelf: Shelf =
-            serde_json::from_str(r#"{"atlases":[],"dark":false,"reduced_motion":false}"#).unwrap();
+            serde_json::from_str(r#"{"atlases":[],"dark":true,"reduced_motion":false}"#).unwrap();
         assert!(!shelf.shader_effects_disabled);
         assert!(!shelf.paper_ui);
+        assert!(serde_json::to_value(shelf).unwrap().get("dark").is_none());
     }
 
     #[test]

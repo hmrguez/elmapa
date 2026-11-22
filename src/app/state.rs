@@ -27,6 +27,14 @@ pub enum LayerBranch {
     Region(RegionParent),
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Appearance {
+    #[default]
+    Holo,
+    Paper,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Action {
     Brush(Brush),
@@ -64,7 +72,7 @@ pub enum Action {
     TextDuplicate,
     TextDelete,
     TextReset,
-    Theme,
+    SetAppearance(Appearance),
     Advanced,
     Menu,
     BiomePack(Option<usize>),
@@ -94,7 +102,6 @@ pub enum Action {
     Enter(u64),
     Settings,
     Motion,
-    PaperUi,
     ShaderEffects,
     Quit,
     CloseSettings,
@@ -132,9 +139,8 @@ pub struct Studio {
     pub brush: Brush,
     pub brush_orbit: super::brush_orbit::BrushOrbit,
     pub biome_pack: Option<usize>,
-    pub dark: bool,
     pub reduced: bool,
-    pub paper_ui: bool,
+    pub appearance: Appearance,
     pub shader_effects_disabled: bool,
     pub disabled_landmark_packs: HashSet<String>,
     pub home: bool,
@@ -189,9 +195,8 @@ impl Default for Studio {
             brush: Brush::Land,
             brush_orbit: default(),
             biome_pack: None,
-            dark: std::env::args().any(|a| a == "--dark"),
             reduced: false,
-            paper_ui: false,
+            appearance: Appearance::default(),
             shader_effects_disabled: false,
             disabled_landmark_packs: HashSet::new(),
             home: true,

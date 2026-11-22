@@ -2,7 +2,7 @@
 use super::{
     files::{Jobs, Request},
     render::Canvas,
-    state::{Action, Studio},
+    state::{Action, Appearance, Studio},
 };
 use bevy::{
     ecs::system::SystemParam,
@@ -55,7 +55,9 @@ enum Step {
         kind: elmapa::document::LandmarkKind,
     },
     Select,
-    Theme,
+    Appearance {
+        appearance: Appearance,
+    },
     Pan,
     Zoom {
         factor: f32,
@@ -180,7 +182,7 @@ pub fn advance(
             .find(&kind)
             .map(Action::LandmarkKind),
         Step::Select => Some(Action::SelectTool),
-        Step::Theme => Some(Action::Theme),
+        Step::Appearance { appearance } => Some(Action::SetAppearance(appearance)),
         Step::Pan => {
             // Legacy workload files select which button subsequent drags inject.
             // Panning itself still begins/ends with middle-button down/up events.

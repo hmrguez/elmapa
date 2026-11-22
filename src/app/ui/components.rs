@@ -1,11 +1,21 @@
-//! Shared widget construction and the palette used to style it.
-use super::{Hit, assets::UiAssets, editor::MenuArrow, feedback::Hover};
-use crate::app::state::Action;
+//! Shared UI components, layout helpers and appearance palettes.
+mod toolbar;
+
+use super::{
+    Hit,
+    assets::UiAssets,
+    editor::MenuArrow,
+    feedback::{Hover, HoverFrame},
+};
+use crate::app::state::{Action, Appearance};
 use bevy::prelude::*;
 use elmapa::{
     brush_materials,
     document::{AtlasStyle, Brush},
 };
+pub(super) use toolbar::{PAPER_TOOL_SIZE, ToolIcon};
+
+pub(super) const BUTTON_HEIGHT: f32 = 34.;
 
 pub fn color(hex: u32, alpha: f32) -> Color {
     Color::linear_rgba(
@@ -26,40 +36,25 @@ pub(super) struct Palette {
     pub(super) wash: u32,
 }
 impl Palette {
-    pub(super) fn new(dark: bool) -> Self {
-        if dark {
-            Self {
-                surface: 0x242424,
-                text: 0xf5f5f5,
-                muted: 0xa3a3a3,
-                line: 0x404040,
-                accent: 0xffffff,
-                wash: 0x383838,
-            }
-        } else {
-            Self {
-                surface: 0xf8f6ed,
-                text: 0x35382d,
-                muted: 0x676e5e,
-                line: 0xdbd8c7,
-                accent: 0x4f6241,
-                wash: 0xe1e6d3,
-            }
+    fn holo() -> Self {
+        Self {
+            surface: 0xf8f6ed,
+            text: 0x35382d,
+            muted: 0x676e5e,
+            line: 0xdbd8c7,
+            accent: 0x4f6241,
+            wash: 0xe1e6d3,
         }
     }
 
-    pub(super) fn shelf(dark: bool) -> Self {
-        if dark {
-            Self::new(true)
-        } else {
-            Self {
-                surface: 0xffffff,
-                text: 0x304742,
-                muted: 0x536d64,
-                line: 0xffffff,
-                accent: 0x547971,
-                wash: 0xafc7bb,
-            }
+    pub(super) fn shelf() -> Self {
+        Self {
+            surface: 0xffffff,
+            text: 0x304742,
+            muted: 0x536d64,
+            line: 0xffffff,
+            accent: 0x547971,
+            wash: 0xafc7bb,
         }
     }
 }
@@ -105,6 +100,7 @@ pub(super) struct Builder<'a, 'w, 's> {
     pub(super) commands: &'a mut Commands<'w, 's>,
     pub(super) assets: &'a UiAssets,
     pub(super) p: Palette,
+    appearance: Appearance,
     order: u32,
     pub(super) atlas_style: AtlasStyle,
 }
@@ -112,12 +108,13 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
     pub(super) fn new(
         commands: &'a mut Commands<'w, 's>,
         assets: &'a UiAssets,
-        p: Palette,
+        appearance: Appearance,
     ) -> Self {
         Self {
             commands,
             assets,
-            p,
+            p: Palette::holo(),
+            appearance,
             order: 0,
             atlas_style: AtlasStyle::Classic,
         }
@@ -317,7 +314,7 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
         let id = self.action_button(
             parent,
             Node {
-                height: px(34.),
+                height: px(BUTTON_HEIGHT),
                 padding: UiRect::horizontal(px(11.)),
                 border_radius: BorderRadius::all(px(10.)),
                 flex_shrink: 0.,
@@ -347,6 +344,98 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             );
         }
         id
+    }
+
+    pub(super) fn shelf_button(
+        &mut self,
+        parent: Entity,
+        symbol: &str,
+        label: &str,
+        action: Action,
+    ) -> Entity {
+        let p = Palette::shelf();
+        let base = color(p.surface, 0.55);
+        let frame = color(p.line, 0.5);
+        let button = self.action_button(
+            parent,
+            Node {
+                height: px(42.),
+                width: if label.is_empty() { px(42.) } else { Val::Auto },
+                padding: UiRect::horizontal(px(if label.is_empty() { 0. } else { 17. })),
+                border: UiRect::all(px(1.)),
+                border_radius: BorderRadius::MAX,
+                justify_content: JustifyContent::Center,
+                ..row(9.)
+            },
+            symbol,
+            label,
+            action,
+            false,
+        );
+        self.commands.entity(button).insert((
+            BackgroundColor(base),
+            BorderColor::all(frame),
+            HoverFrame {
+                from: frame,
+                to: color(p.accent, 0.75),
+                card: false,
+            },
+        ));
+        self.commands
+            .entity(button)
+            .entry::<Hover>()
+            .and_modify(move |mut hover| {
+                hover.base = base;
+                hover.target = color(p.wash, 0.35);
+            });
+        self.icon(button, symbol, p.muted, 17.);
+        if !label.is_empty() {
+            self.text(button, label, 12., p.muted, false);
+        }
+        button
+    }
+
+    pub(super) fn appearance_picker(&mut self, parent: Entity) {
+        let picker = self.node(parent, row(3.));
+        for (appearance, label) in [(Appearance::Holo, "Holo"), (Appearance::Paper, "Paper")] {
+            let active = self.appearance == appearance;
+            let choice = self.button(picker, "", label, Action::SetAppearance(appearance), active);
+            let p = self.p;
+            let mut entity = self.commands.entity(choice);
+            entity.entry::<Node>().and_modify(|mut node| {
+                node.min_width = px(57.);
+                node.border = UiRect::all(px(1.));
+            });
+            if active {
+                entity.insert(BorderColor::all(color(p.accent, 0.5)));
+            } else {
+                entity.entry::<Hover>().and_modify(move |mut hover| {
+                    hover.target = color(p.wash, 0.5);
+                });
+            }
+        }
+    }
+
+    pub(super) fn stepper(
+        &mut self,
+        parent: Entity,
+        value: impl Into<String>,
+        (decrease, increase): (Action, Action),
+        width: Val,
+        font_size: f32,
+    ) -> Entity {
+        self.button(parent, "minus", "", decrease, false);
+        let display = self.node(
+            parent,
+            Node {
+                width,
+                justify_content: JustifyContent::Center,
+                ..row(0.)
+            },
+        );
+        let label = self.text(display, value, font_size, self.p.text, false);
+        self.button(parent, "plus", "", increase, false);
+        label
     }
 
     pub(super) fn action_button(
@@ -401,6 +490,8 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             Action::TextTool => "Text · T / 8".into(),
             Action::TextDuplicate => "Duplicate label".into(),
             Action::TextDelete => "Delete label".into(),
+            Action::LandmarkSize(v) if v < 0. => "Smaller landmark".into(),
+            Action::LandmarkSize(_) => "Larger landmark".into(),
             Action::Radius(v) => {
                 if v < 0. {
                     "Smaller brush · [".into()

@@ -3,8 +3,7 @@ use super::{Action, Builder, Palette, ScrollArea, Studio, color, column, row};
 use bevy::prelude::*;
 
 pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, p: Palette, pack_scroll: f32) {
-    let dark = s.dark;
-    let ink = if dark { p.text } else { 0x304742 };
+    let ink = p.text;
     let overlay = b.node(
         root,
         Node {
@@ -16,10 +15,9 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, p: Palette, pack_
             ..default()
         },
     );
-    b.commands.entity(overlay).insert(BackgroundColor(color(
-        if dark { 0x000000 } else { 0x263c36 },
-        0.18,
-    )));
+    b.commands
+        .entity(overlay)
+        .insert(BackgroundColor(color(0x263c36, 0.18)));
     b.hit(overlay, None);
     let settings = b.panel(
         overlay,
@@ -34,14 +32,12 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, p: Palette, pack_
         0.98,
         true,
     );
-    b.commands.entity(settings).insert(BackgroundColor(color(
-        if dark { p.surface } else { 0xf8f8ef },
-        0.98,
-    )));
-    b.commands.entity(settings).insert(BorderColor::all(color(
-        p.line,
-        if dark { 0.85 } else { 0.65 },
-    )));
+    b.commands
+        .entity(settings)
+        .insert(BackgroundColor(color(0xf8f8ef, 0.98)));
+    b.commands
+        .entity(settings)
+        .insert(BorderColor::all(color(p.line, 0.65)));
     let header = b.node(
         settings,
         Node {
@@ -51,7 +47,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, p: Palette, pack_
         },
     );
     b.text(header, "Settings", 30., ink, true);
-    b.shelf_button(header, "close", "", Action::CloseSettings, dark);
+    b.shelf_button(header, "close", "", Action::CloseSettings);
     let appearance = b.node(
         settings,
         Node {
@@ -61,37 +57,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, p: Palette, pack_
         },
     );
     b.text(appearance, "Appearance", 12., ink, false);
-    b.shelf_button(
-        appearance,
-        if dark { "moon" } else { "sun" },
-        if dark { "Dark" } else { "Light" },
-        Action::Theme,
-        dark,
-    );
-    let paper_ui = b.node(
-        settings,
-        Node {
-            width: percent(100.),
-            justify_content: JustifyContent::SpaceBetween,
-            ..row(0.)
-        },
-    );
-    let paper_label = b.node(paper_ui, column(0.));
-    b.text(paper_label, "Paper UI (Preview)", 12., ink, false);
-    b.text(
-        paper_label,
-        "Try the illustrated paper toolbar.",
-        11.,
-        p.muted,
-        false,
-    );
-    b.shelf_button(
-        paper_ui,
-        if s.paper_ui { "check" } else { "minus" },
-        if s.paper_ui { "On" } else { "Off" },
-        Action::PaperUi,
-        dark,
-    );
+    b.appearance_picker(appearance);
     let motion = b.node(
         settings,
         Node {
@@ -106,7 +72,6 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, p: Palette, pack_
         if s.reduced { "check" } else { "minus" },
         if s.reduced { "On" } else { "Off" },
         Action::Motion,
-        dark,
     );
     let shader_effects = b.node(
         settings,
@@ -123,7 +88,6 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, p: Palette, pack_
         if enabled { "check" } else { "minus" },
         if enabled { "On" } else { "Off" },
         Action::ShaderEffects,
-        dark,
     );
     let catalog = elmapa::scene::landmark_catalog();
     let title = b.node(settings, column(3.));
@@ -184,7 +148,6 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, p: Palette, pack_
             if enabled { "check" } else { "minus" },
             if enabled { "On" } else { "Off" },
             Action::LandmarkPack(i),
-            dark,
         );
     }
     for error in &catalog.errors {

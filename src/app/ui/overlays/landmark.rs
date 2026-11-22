@@ -2,7 +2,7 @@
 use super::orbit::{Orbit, OrbitResize, action_orbit};
 use crate::app::{
     state::{Action, Studio},
-    ui::widgets::{Builder, color, row},
+    ui::components::{Builder, color, row},
 };
 use bevy::prelude::*;
 

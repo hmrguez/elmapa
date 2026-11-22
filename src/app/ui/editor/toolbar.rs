@@ -1,41 +1,35 @@
 //! Brush and placement toolbar, including advanced brush settings.
-mod paper;
-
 use crate::app::{
-    brush_motion::{BrushBubble, SelectedTool},
     regions::RegionAction,
-    state::{Action, Studio, Tool},
-    ui::{
-        feedback::Hover,
-        widgets::{Builder, color, column, row},
-    },
+    state::{Action, Appearance, Studio, Tool},
+    ui::components::{BUTTON_HEIGHT, Builder, PAPER_TOOL_SIZE, ToolIcon, color, column, row},
 };
 use bevy::prelude::*;
 use elmapa::{biome_packs, document::Brush};
 
 pub fn brush_icon(b: Brush) -> &'static str {
-    match b {
-        Brush::Land => "land",
-        Brush::Water => "water",
-        Brush::Forest => "forest",
-        Brush::Mountain => "mountain",
-        Brush::River => "river",
-        Brush::Path => "trail",
-        Brush::Erase => "eraser",
-    }
+    ToolIcon::Brush(b).symbol()
 }
-const TOOLBAR_BOTTOM: f32 = 23.;
 
-pub(in crate::app::ui) fn text_style_bottom(paper_ui: bool) -> f32 {
-    if paper_ui {
-        paper::TEXT_STYLE_BOTTOM
-    } else {
-        82.
+const TOOLBAR_BOTTOM: f32 = 23.;
+const PAPER_GAP: f32 = 8.;
+const PAPER_OPTIONS_PADDING: f32 = 3.;
+const PAPER_OPTIONS_HEIGHT: f32 = BUTTON_HEIGHT + 2. * (PAPER_OPTIONS_PADDING + 1.);
+
+pub(in crate::app::ui) fn text_style_bottom(appearance: Appearance) -> f32 {
+    match appearance {
+        Appearance::Holo => 82.,
+        Appearance::Paper => {
+            TOOLBAR_BOTTOM + PAPER_TOOL_SIZE + PAPER_OPTIONS_HEIGHT + 2. * PAPER_GAP
+        }
     }
 }
 
 pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
-    let gap = if s.paper_ui { paper::GAP } else { 9. };
+    let gap = match s.appearance {
+        Appearance::Holo => 9.,
+        Appearance::Paper => PAPER_GAP,
+    };
     let bottom = b.node(
         root,
         Node {
@@ -55,24 +49,53 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
     if s.advanced && s.tool == Tool::Brush && !s.regions.active {
         advanced_controls(b, bottom, s);
     }
-    if s.paper_ui {
-        paper::build(b, bottom, s);
-    } else {
-        classic_toolbar(b, bottom, s);
+    if s.appearance == Appearance::Paper && !s.regions.active && s.tool != Tool::Select {
+        let strip = b.panel(bottom, row(2.), 11., PAPER_OPTIONS_PADDING, 0.98, false);
+        tool_options(b, strip, s);
+    }
+    let toolbar = b.tool_row(bottom);
+    for tool in tools(s) {
+        let tip = match tool.action {
+            Action::Brush(brush)
+                if biome_packs::materials(s.biome_pack, brush).nth(1).is_some() =>
+            {
+                let modifier = if cfg!(target_os = "macos") {
+                    "Option"
+                } else {
+                    "Alt"
+                };
+                Some(format!(
+                    "{} · {modifier}-click or hold for materials",
+                    tool.label
+                ))
+            }
+            _ => None,
+        };
+        b.tool_button(
+            toolbar,
+            tool.icon,
+            tool.label,
+            tool.action,
+            tool.selected,
+            tip,
+        );
+    }
+    if s.appearance == Appearance::Holo {
+        tool_options(b, toolbar, s);
     }
 }
 
 #[derive(Clone, Copy)]
 struct ToolButton {
-    symbol: &'static str,
+    icon: ToolIcon,
     label: &'static str,
     action: Action,
     selected: bool,
 }
 
 fn tools(s: &Studio) -> [ToolButton; 11] {
-    let button = |symbol, label, action, selected| ToolButton {
-        symbol,
+    let button = |icon, label, action, selected| ToolButton {
+        icon,
         label,
         action,
         selected,
@@ -80,16 +103,15 @@ fn tools(s: &Studio) -> [ToolButton; 11] {
     let regions = s.regions.active;
     let brush = |brush: Brush| {
         button(
-            brush_icon(brush),
+            ToolIcon::Brush(brush),
             brush.label(),
             Action::Brush(brush),
             s.tool == Tool::Brush && !regions && s.brush == brush,
         )
     };
-    // This order also matches the icon cells in assets/tool-icons/symbols.svg.
     [
         button(
-            "select",
+            ToolIcon::Select,
             "Select",
             Action::SelectTool,
             s.tool == Tool::Select && !regions,
@@ -101,20 +123,20 @@ fn tools(s: &Studio) -> [ToolButton; 11] {
         brush(Brush::River),
         brush(Brush::Path),
         button(
-            "text",
+            ToolIcon::Text,
             "Text",
             Action::TextTool,
             s.tool == Tool::Text && !regions,
         ),
         button(
-            "landmark",
+            ToolIcon::Landmarks,
             "Landmarks",
             Action::LandmarkTool,
             s.tool == Tool::Landmarks && !regions,
         ),
         brush(Brush::Erase),
         button(
-            "regions",
+            ToolIcon::Regions,
             "Regions",
             Action::Regions(RegionAction::Tool),
             regions,
@@ -122,83 +144,40 @@ fn tools(s: &Studio) -> [ToolButton; 11] {
     ]
 }
 
-fn tool_surface(
-    b: &mut Builder,
-    button: Entity,
-    studio: &Studio,
-    tool: ToolButton,
-    base: Color,
-    target: Color,
-) {
-    let pack = studio.biome_pack;
-    b.commands.entity(button).insert(BackgroundColor(base));
-    b.commands
-        .entity(button)
-        .entry::<Hover>()
-        .and_modify(move |mut hover| {
-            hover.base = base;
-            hover.target = target;
-            if let Action::Brush(brush) = tool.action
-                && biome_packs::materials(pack, brush).nth(1).is_some()
-            {
-                let modifier = if cfg!(target_os = "macos") {
-                    "Option"
-                } else {
-                    "Alt"
-                };
-                hover.tip = format!("{} · {modifier}-click or hold for materials", tool.label);
-            }
-        });
-    if tool.selected {
-        b.commands.entity(button).insert(SelectedTool);
-    }
-}
-
-fn classic_toolbar(b: &mut Builder, bottom: Entity, s: &Studio) {
-    let p = b.p;
-    let toolbar = b.panel(bottom, row(3.), 21., 7., 0.93, true);
-    // A single decorative surface travels beneath the tool buttons. It has no Hit.
-    let bubble = b.node(
-        toolbar,
-        Node {
-            position_type: PositionType::Absolute,
-            width: px(34.),
-            height: px(34.),
-            border_radius: BorderRadius::all(px(10.)),
-            ..default()
-        },
-    );
-    b.commands
-        .entity(bubble)
-        .insert((BrushBubble, BackgroundColor(color(p.wash, 1.))));
-    for tool in tools(s) {
-        let button = b.button(
-            toolbar,
-            tool.symbol,
-            if tool.selected { tool.label } else { "" },
-            tool.action,
-            tool.selected,
-        );
-        let hover = color(p.wash, if tool.selected { 0. } else { 0.45 });
-        tool_surface(b, button, s, tool, Color::NONE, hover);
-    }
-    if s.tool == Tool::Text {
-        text_style_control(b, toolbar, s);
-    }
-    if s.tool == Tool::Landmarks {
-        b.button(toolbar, "minus", "", Action::LandmarkSize(-16.), false);
-        b.text(
-            toolbar,
-            format!("{:.0}", s.landmarks.placement.size),
+fn tool_options(b: &mut Builder, parent: Entity, s: &Studio) {
+    let paper = s.appearance == Appearance::Paper;
+    let (label, size, actions, width, font_size) = match s.tool {
+        Tool::Text => {
+            text_style_control(b, parent, s);
+            return;
+        }
+        Tool::Landmarks => (
+            "Landmark size",
+            s.landmarks.placement.size,
+            (Action::LandmarkSize(-16.), Action::LandmarkSize(16.)),
+            Val::Auto,
             11.,
-            p.text,
-            false,
-        );
-        b.button(toolbar, "plus", "", Action::LandmarkSize(16.), false);
-    }
-    if s.tool == Tool::Brush && !s.regions.active {
+        ),
+        Tool::Brush if !s.regions.active => (
+            "Brush size",
+            s.radius,
+            (Action::Radius(-15.), Action::Radius(15.)),
+            px(31.),
+            10.,
+        ),
+        _ => return,
+    };
+    if paper {
+        let title = b.text(parent, label, 12., b.p.text, false);
+        b.commands
+            .entity(title)
+            .entry::<Node>()
+            .and_modify(|mut node| {
+                node.margin = UiRect::horizontal(px(8.));
+            });
+    } else if s.tool == Tool::Brush {
         let divider = b.node(
-            toolbar,
+            parent,
             Node {
                 width: px(1.),
                 height: px(20.),
@@ -208,19 +187,16 @@ fn classic_toolbar(b: &mut Builder, bottom: Entity, s: &Studio) {
         );
         b.commands
             .entity(divider)
-            .insert(BackgroundColor(color(p.muted, 0.45)));
-        b.button(toolbar, "minus", "", Action::Radius(-15.), false);
-        let radius = b.node(
-            toolbar,
-            Node {
-                width: px(31.),
-                justify_content: JustifyContent::Center,
-                ..row(0.)
-            },
-        );
-        b.text(radius, format!("{:.0}", s.radius), 10., p.text, false);
-        b.button(toolbar, "plus", "", Action::Radius(15.), false);
-        b.button(toolbar, "settings", "", Action::Advanced, s.advanced);
+            .insert(BackgroundColor(color(b.p.muted, 0.45)));
+    }
+    let (width, font_size) = if paper {
+        (px(30.), 12.)
+    } else {
+        (width, font_size)
+    };
+    b.stepper(parent, format!("{size:.0}"), actions, width, font_size);
+    if s.tool == Tool::Brush {
+        b.button(parent, "settings", "", Action::Advanced, s.advanced);
     }
 }
 

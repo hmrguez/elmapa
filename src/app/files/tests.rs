@@ -105,7 +105,7 @@ mod lifecycle {
         paint(&mut app);
         {
             let mut s = app.world_mut().resource_mut::<Studio>();
-            s.dark = true;
+            s.appearance = crate::app::state::Appearance::Paper;
             s.viewport.pan.x = 37.;
         }
         app.world_mut()
@@ -116,7 +116,7 @@ mod lifecycle {
         assert!(s.home);
         assert!(s.editor.can_undo());
         let library = Library::load(root.clone()).unwrap();
-        assert!(library.shelf.dark);
+        assert!(library.shelf.paper_ui);
         assert_eq!(library.read(1).unwrap(), *s.editor.document());
         let mut jobs = app.world_mut().remove_resource::<Jobs>().unwrap();
         app.world_mut()

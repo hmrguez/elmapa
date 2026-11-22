@@ -271,7 +271,8 @@
     "delta": 0.4
   },
   {
-    "action": "theme"
+    "action": "appearance",
+    "appearance": "paper"
   },
   {
     "action": "ready"
@@ -282,10 +283,11 @@
   },
   {
     "action": "screenshot",
-    "path": "/tmp/elmapa-landmark-dark.png"
+    "path": "/tmp/elmapa-landmark-paper.png"
   },
   {
-    "action": "theme"
+    "action": "appearance",
+    "appearance": "holo"
   },
   {
     "action": "reduced_motion",

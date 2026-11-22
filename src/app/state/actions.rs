@@ -156,13 +156,11 @@ impl Studio {
                     jobs.preferences = true;
                 }
             }
-            Action::Theme => {
-                self.dark = !self.dark;
-                jobs.preferences = true;
-            }
-            Action::PaperUi => {
-                self.paper_ui = !self.paper_ui;
-                jobs.preferences = true;
+            Action::SetAppearance(appearance) => {
+                if self.appearance != appearance {
+                    self.appearance = appearance;
+                    jobs.preferences = true;
+                }
             }
             Action::Motion => {
                 self.reduced = !self.reduced;

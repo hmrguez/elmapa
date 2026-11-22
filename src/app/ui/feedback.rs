@@ -1,4 +1,4 @@
-//! Hover and opacity feedback shared by shelf and editor widgets.
+//! Hover and opacity feedback shared by shelf and editor components.
 use super::{Hit, color, contains};
 use crate::app::state::Studio;
 use bevy::{ecs::query::QueryData, prelude::*};

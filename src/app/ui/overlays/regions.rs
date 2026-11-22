@@ -6,7 +6,7 @@ use super::{
 use crate::app::{
     regions::{RegionAction, StyleAction, StyleField},
     state::{Action, Studio},
-    ui::widgets::{Builder, color, column, row},
+    ui::components::{Builder, color, column, row},
 };
 use bevy::prelude::*;
 

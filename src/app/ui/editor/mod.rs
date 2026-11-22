@@ -5,8 +5,8 @@ mod regions;
 mod toolbar;
 
 use super::{
+    components::{Builder, Palette, absolute, color, column, row},
     feedback::{Fade, Hover},
-    widgets::{Builder, Palette, absolute, color, column, row},
 };
 use crate::app::{
     branding,
@@ -104,24 +104,14 @@ fn zoom(b: &mut Builder, root: Entity, s: &Studio) {
     b.commands
         .entity(zoom)
         .insert(BorderColor::all(color(p.line, 0.7)));
-    b.button(zoom, "minus", "", Action::Zoom(0.8), false);
-    let label = b.node(
+    let label = b.stepper(
         zoom,
-        Node {
-            width: px(38.),
-            justify_content: JustifyContent::Center,
-            ..row(0.)
-        },
-    );
-    let label = b.text(
-        label,
         format!("{:.0}%", s.viewport.zoom * 100.),
+        (Action::Zoom(0.8), Action::Zoom(1.25)),
+        px(38.),
         10.,
-        p.text,
-        false,
     );
     b.commands.entity(label).insert(ZoomLabel);
-    b.button(zoom, "plus", "", Action::Zoom(1.25), false);
     b.button(zoom, "fit-artwork", "", Action::Fit, false);
 }
 
