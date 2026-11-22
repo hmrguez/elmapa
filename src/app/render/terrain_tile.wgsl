@@ -3,7 +3,7 @@
     mesh2d_view_bindings::globals,
 }
 #import elmapa::dune_surface::dune_light
-#import elmapa::grass_wind::grass_shade
+#import elmapa::grass_wind::heath_shade
 #import elmapa::water_surface
 #import elmapa::palette_transition::{PaletteTransition, blend}
 
@@ -34,14 +34,12 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
         color = blend(color, point, tile.transition, palette, palette_sampler);
     }
     let moving = tile.shader_mode == SHADER_ANIMATED;
-    if tile.shader_mode != SHADER_OFF && tile.profile != 0u
-        && (moving || tile.profile == 101u || tile.profile == 103u) {
+    if tile.shader_mode != SHADER_OFF && tile.profile != 0u && (moving || tile.profile == 103u) {
         let footprint = max(length(dpdx(point)), length(dpdy(point)));
         if tile.profile >= 1u && tile.profile <= 3u {
             color += water_surface::surface_light(tile.profile, point, globals.time, footprint);
-        } else if tile.profile == 101u || tile.profile == 102u {
-            let time = select(0.0, globals.time, moving);
-            color *= grass_shade(point, footprint, time, tile.profile == 102u);
+        } else if tile.profile == 102u {
+            color *= heath_shade(point, footprint, globals.time);
         } else if tile.profile == 103u {
             color += dune_light(point, footprint);
         }

@@ -27,7 +27,7 @@ Mountain finishes use transparent sprites in a single horizontal PNG strip per f
 
 ## Texture sources
 
-Ocean, Shallow Ocean, Lake, Dune Sand, Alpine Meadow, Oasis Water, and Glacial Water use original procedural Elmapa tiles. The Desert Scrub finish uses original vector specimens. Ochre Sands, Lichen Heath, and Weathered Shale are warm sepia, reduced-resolution adaptations of diffuse maps available under the [Poly Haven CC0 license](https://polyhaven.com/license).
+Ocean, Shallow Ocean, Lake, Dune Sand, Oasis Water, and Glacial Water use original procedural Elmapa tiles. Alpine Meadow uses a solid color tile. The Desert Scrub finish uses original vector specimens. Ochre Sands, Lichen Heath, and Weathered Shale are warm sepia, reduced-resolution adaptations of diffuse maps available under the [Poly Haven CC0 license](https://polyhaven.com/license).
 
 - Ochre Sands uses [Sand 01](https://polyhaven.com/a/sand_01).
 - Lichen Heath uses [Forest Ground 01](https://polyhaven.com/a/forrest_ground_01).
