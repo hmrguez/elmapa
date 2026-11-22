@@ -8,11 +8,9 @@ pub(super) fn profile(texture: Option<usize>) -> u32 {
     };
     // Keep these selectors in sync with water_surface.wgsl.
     match material.id.as_str() {
-        "ocean" => 1,
-        "shallow-ocean" => 2,
-        "lake" => 3,
-        "oasis-water" => 4,
-        "glacial-water" => 5,
+        "lake" => 1,
+        "oasis-water" => 2,
+        "glacial-water" => 3,
         _ => 0,
     }
 }
@@ -23,13 +21,13 @@ mod tests {
     use elmapa::document::AtlasStyle;
 
     #[test]
-    fn explicit_water_finishes_keep_their_own_motion_in_each_palette() {
+    fn only_animated_water_finishes_select_a_profile_in_both_palettes() {
         for (expected, id) in [
-            (1, "ocean"),
-            (2, "shallow-ocean"),
-            (3, "lake"),
-            (4, "oasis-water"),
-            (5, "glacial-water"),
+            (0, "ocean"),
+            (0, "shallow-ocean"),
+            (1, "lake"),
+            (2, "oasis-water"),
+            (3, "glacial-water"),
             (0, "alpine-meadow"),
         ] {
             let index = brush_materials::catalog()

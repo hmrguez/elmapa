@@ -37,7 +37,7 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     if tile.shader_mode != SHADER_OFF && tile.profile != 0u
         && (moving || tile.profile == 101u || tile.profile == 103u) {
         let footprint = max(length(dpdx(point)), length(dpdy(point)));
-        if tile.profile >= 1u && tile.profile <= 5u {
+        if tile.profile >= 1u && tile.profile <= 3u {
             color += water_surface::surface_light(tile.profile, point, globals.time, footprint);
         } else if tile.profile == 101u || tile.profile == 102u {
             let time = select(0.0, globals.time, moving);
