@@ -155,7 +155,12 @@ fn brush_settings_opens_pack_branches_and_renders_only_the_open_pack_finishes() 
 
 #[test]
 fn settings_and_map_menu_offer_both_appearances() {
-    for (home, selected) in [(true, Appearance::Holo), (false, Appearance::Paper)] {
+    for (home, selected) in [
+        (true, Appearance::Holo),
+        (true, Appearance::Paper),
+        (false, Appearance::Holo),
+        (false, Appearance::Paper),
+    ] {
         let mut app = ui_app(Studio {
             home,
             settings: home,
@@ -167,20 +172,33 @@ fn settings_and_map_menu_offer_both_appearances() {
 
         let world = app.world_mut();
         let choices: Vec<_> = world
-            .query::<(&Hit, &Children, &BackgroundColor)>()
+            .query::<(&Hit, &Children, &BackgroundColor, &Node)>()
             .iter(world)
-            .filter_map(|(hit, children, background)| {
+            .filter_map(|(hit, children, background, node)| {
                 let Action::SetAppearance(appearance) = hit.action? else {
                     return None;
                 };
                 let text = children.iter().find_map(|id| world.get::<Text>(id))?;
-                Some((appearance, text.0.as_str(), background.0.alpha()))
+                Some((
+                    appearance,
+                    text.0.as_str(),
+                    background.0.alpha(),
+                    node.border.left,
+                ))
             })
             .collect();
         assert_eq!(choices.len(), 2);
+        let paper = !home && selected == Appearance::Paper;
         for (appearance, label) in [(Appearance::Holo, "Holo"), (Appearance::Paper, "Paper")] {
-            let alpha = if appearance == selected { 1. } else { 0.1 };
-            assert!(choices.contains(&(appearance, label, alpha)));
+            let alpha = if appearance == selected {
+                1.
+            } else if paper {
+                0.
+            } else {
+                0.1
+            };
+            let border = px(if paper { 2. } else { 1. });
+            assert!(choices.contains(&(appearance, label, alpha, border)));
         }
     }
 }

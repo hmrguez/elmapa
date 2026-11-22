@@ -228,8 +228,18 @@ mod tests {
                 BackgroundColor(Color::NONE),
             ))
             .id();
-        mark_menu(app.world_mut(), text);
-        mark_menu(app.world_mut(), icon);
+        let panel = app
+            .world_mut()
+            .spawn((
+                Node::default(),
+                MenuSurface,
+                ImageNode::solid_color(Color::WHITE.with_alpha(0.32)),
+                BackgroundColor(color(0xf3e7cf, 1.)),
+                BorderColor::all(color(0x9a7b59, 0.65)),
+            ))
+            .add_children(&[text, icon])
+            .id();
+        mark_menu(app.world_mut(), panel);
         app.update();
         assert_eq!(
             app.world().get::<TextColor>(text).unwrap().0,
@@ -246,5 +256,9 @@ mod tests {
             app.world().get::<BackgroundColor>(text).unwrap().0.alpha(),
             0.
         );
+        let world = app.world();
+        assert_eq!(world.get::<ImageNode>(panel).unwrap().color.alpha(), 0.16);
+        assert_eq!(world.get::<BackgroundColor>(panel).unwrap().0.alpha(), 0.5);
+        assert_eq!(world.get::<BorderColor>(panel).unwrap().left.alpha(), 0.325);
     }
 }
