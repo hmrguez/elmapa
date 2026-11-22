@@ -68,6 +68,30 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, p: Palette, pack_
         Action::Theme,
         dark,
     );
+    let paper_ui = b.node(
+        settings,
+        Node {
+            width: percent(100.),
+            justify_content: JustifyContent::SpaceBetween,
+            ..row(0.)
+        },
+    );
+    let paper_label = b.node(paper_ui, column(0.));
+    b.text(paper_label, "Paper UI (Preview)", 12., ink, false);
+    b.text(
+        paper_label,
+        "Try the illustrated paper toolbar.",
+        11.,
+        p.muted,
+        false,
+    );
+    b.shelf_button(
+        paper_ui,
+        if s.paper_ui { "check" } else { "minus" },
+        if s.paper_ui { "On" } else { "Off" },
+        Action::PaperUi,
+        dark,
+    );
     let motion = b.node(
         settings,
         Node {

@@ -16,6 +16,7 @@ use bevy::prelude::*;
 
 pub use menu::{ChromeMotion, advance_motion, menu_animation};
 pub use toolbar::brush_icon;
+pub(super) use toolbar::text_style_bottom;
 
 #[derive(Component)]
 pub struct ZoomLabel;

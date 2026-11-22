@@ -314,7 +314,7 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
         active: bool,
     ) -> Entity {
         let p = self.p;
-        let id = self.node(
+        let id = self.action_button(
             parent,
             Node {
                 height: px(34.),
@@ -324,7 +324,42 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
                 justify_content: JustifyContent::Center,
                 ..row(8.)
             },
+            symbol,
+            label,
+            action,
+            active,
         );
+        let icon = if symbol.is_empty() {
+            id
+        } else {
+            self.icon(id, symbol, if active { p.accent } else { p.muted }, 17.)
+        };
+        if matches!(action, Action::Menu) {
+            self.commands.entity(icon).insert(MenuArrow);
+        }
+        if !label.is_empty() {
+            self.text(
+                id,
+                label,
+                12.,
+                if active { p.accent } else { p.text },
+                false,
+            );
+        }
+        id
+    }
+
+    pub(super) fn action_button(
+        &mut self,
+        parent: Entity,
+        node: Node,
+        symbol: &str,
+        label: &str,
+        action: Action,
+        active: bool,
+    ) -> Entity {
+        let p = self.p;
+        let id = self.node(parent, node);
         let base = color(
             if active { p.wash } else { p.surface },
             if active { 1. } else { 0.1 },
@@ -394,23 +429,6 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
             },
         ));
         self.hit(id, Some(action));
-        let icon = if symbol.is_empty() {
-            id
-        } else {
-            self.icon(id, symbol, if active { p.accent } else { p.muted }, 17.)
-        };
-        if matches!(action, Action::Menu) {
-            self.commands.entity(icon).insert(MenuArrow);
-        }
-        if !label.is_empty() {
-            self.text(
-                id,
-                label,
-                12.,
-                if active { p.accent } else { p.text },
-                false,
-            );
-        }
         id
     }
 }

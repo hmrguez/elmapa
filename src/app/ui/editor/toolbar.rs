@@ -1,4 +1,6 @@
 //! Brush and placement toolbar, including advanced brush settings.
+mod paper;
+
 use crate::app::{
     brush_motion::{BrushBubble, SelectedTool},
     regions::RegionAction,
@@ -22,17 +24,27 @@ pub fn brush_icon(b: Brush) -> &'static str {
         Brush::Erase => "eraser",
     }
 }
+const TOOLBAR_BOTTOM: f32 = 23.;
+
+pub(in crate::app::ui) fn text_style_bottom(paper_ui: bool) -> f32 {
+    if paper_ui {
+        paper::TEXT_STYLE_BOTTOM
+    } else {
+        82.
+    }
+}
+
 pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
-    let p = b.p;
+    let gap = if s.paper_ui { paper::GAP } else { 9. };
     let bottom = b.node(
         root,
         Node {
             position_type: PositionType::Absolute,
-            bottom: px(23.),
+            bottom: px(TOOLBAR_BOTTOM),
             left: px(0.),
             right: px(0.),
             align_items: AlignItems::Center,
-            ..column(9.)
+            ..column(gap)
         },
     );
     if s.regions.active {
@@ -41,83 +53,109 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
         selection_controls(b, bottom, s);
     }
     if s.advanced && s.tool == Tool::Brush && !s.regions.active {
-        let advanced = b.panel(
-            bottom,
-            Node {
-                width: px(510.),
-                ..column(8.)
-            },
-            16.,
-            14.,
-            0.97,
-            true,
-        );
-        b.commands
-            .entity(advanced)
-            .insert(BorderColor::all(color(p.line, 1.)));
-        b.text(
-            advanced,
-            format!("{} brush settings", s.brush.label()),
-            12.,
-            p.text,
-            false,
-        );
-        let strength = b.node(
-            advanced,
-            Node {
-                width: percent(100.),
-                justify_content: JustifyContent::SpaceBetween,
-                ..row(0.)
-            },
-        );
-        b.text(
-            strength,
-            format!("Strength  {:.0}%", s.strength * 100.),
-            12.,
-            p.text,
-            false,
-        );
-        let buttons = b.node(strength, row(0.));
-        b.button(buttons, "minus", "", Action::Strength(-0.1), false);
-        b.button(buttons, "plus", "", Action::Strength(0.1), false);
-
-        let materials: Vec<_> = biome_packs::materials(s.biome_pack, s.brush).collect();
-        if materials.len() > 1 || s.biome_pack.is_some() && !materials.is_empty() {
-            b.text(advanced, "Material", 11., p.muted, false);
-            let choices = b.node(
-                advanced,
-                Node {
-                    flex_wrap: FlexWrap::Wrap,
-                    row_gap: px(5.),
-                    ..row(5.)
-                },
-            );
-            let current = s.brush_orbit.current_index(s.brush, s.biome_pack);
-            for (index, material) in materials {
-                let active = current == Some(index);
-                let button = b.button(
-                    choices,
-                    "",
-                    &material.name,
-                    Action::AdvancedBrushMaterial(index),
-                    active,
-                );
-                let swatch = b.material_swatch(button, index, 16.);
-                b.commands.entity(button).insert_children(0, &[swatch]);
-                b.commands.entity(button).insert(BorderColor::all(color(
-                    if active { p.accent } else { p.line },
-                    0.75,
-                )));
-                b.commands
-                    .entity(button)
-                    .entry::<Node>()
-                    .and_modify(|mut node| {
-                        node.border = UiRect::all(px(1.));
-                        node.padding = UiRect::horizontal(px(7.));
-                    });
-            }
-        }
+        advanced_controls(b, bottom, s);
     }
+    if s.paper_ui {
+        paper::build(b, bottom, s);
+    } else {
+        classic_toolbar(b, bottom, s);
+    }
+}
+
+#[derive(Clone, Copy)]
+struct ToolButton {
+    symbol: &'static str,
+    label: &'static str,
+    action: Action,
+    selected: bool,
+}
+
+fn tools(s: &Studio) -> [ToolButton; 11] {
+    let button = |symbol, label, action, selected| ToolButton {
+        symbol,
+        label,
+        action,
+        selected,
+    };
+    let regions = s.regions.active;
+    let brush = |brush: Brush| {
+        button(
+            brush_icon(brush),
+            brush.label(),
+            Action::Brush(brush),
+            s.tool == Tool::Brush && !regions && s.brush == brush,
+        )
+    };
+    // This order also matches the icon cells in assets/tool-icons/symbols.svg.
+    [
+        button(
+            "select",
+            "Select",
+            Action::SelectTool,
+            s.tool == Tool::Select && !regions,
+        ),
+        brush(Brush::Land),
+        brush(Brush::Water),
+        brush(Brush::Forest),
+        brush(Brush::Mountain),
+        brush(Brush::River),
+        brush(Brush::Path),
+        button(
+            "text",
+            "Text",
+            Action::TextTool,
+            s.tool == Tool::Text && !regions,
+        ),
+        button(
+            "landmark",
+            "Landmarks",
+            Action::LandmarkTool,
+            s.tool == Tool::Landmarks && !regions,
+        ),
+        brush(Brush::Erase),
+        button(
+            "regions",
+            "Regions",
+            Action::Regions(RegionAction::Tool),
+            regions,
+        ),
+    ]
+}
+
+fn tool_surface(
+    b: &mut Builder,
+    button: Entity,
+    studio: &Studio,
+    tool: ToolButton,
+    base: Color,
+    target: Color,
+) {
+    let pack = studio.biome_pack;
+    b.commands.entity(button).insert(BackgroundColor(base));
+    b.commands
+        .entity(button)
+        .entry::<Hover>()
+        .and_modify(move |mut hover| {
+            hover.base = base;
+            hover.target = target;
+            if let Action::Brush(brush) = tool.action
+                && biome_packs::materials(pack, brush).nth(1).is_some()
+            {
+                let modifier = if cfg!(target_os = "macos") {
+                    "Option"
+                } else {
+                    "Alt"
+                };
+                hover.tip = format!("{} · {modifier}-click or hold for materials", tool.label);
+            }
+        });
+    if tool.selected {
+        b.commands.entity(button).insert(SelectedTool);
+    }
+}
+
+fn classic_toolbar(b: &mut Builder, bottom: Entity, s: &Studio) {
+    let p = b.p;
     let toolbar = b.panel(bottom, row(3.), 21., 7., 0.93, true);
     // A single decorative surface travels beneath the tool buttons. It has no Hit.
     let bubble = b.node(
@@ -133,71 +171,21 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
     b.commands
         .entity(bubble)
         .insert((BrushBubble, BackgroundColor(color(p.wash, 1.))));
-    let selecting = s.tool == Tool::Select;
-    let select_tool = b.button(
-        toolbar,
-        "select",
-        if selecting { "Select" } else { "" },
-        Action::SelectTool,
-        selecting,
-    );
-    tool_surface(b, select_tool, selecting);
-    for brush in Brush::ALL
-        .into_iter()
-        .filter(|&brush| brush != Brush::Erase)
-    {
-        brush_button(b, toolbar, s, brush);
-    }
-    let adding_text = s.tool == Tool::Text;
-    let text_tool = b.button(
-        toolbar,
-        "text",
-        if adding_text { "Text" } else { "" },
-        Action::TextTool,
-        adding_text,
-    );
-    tool_surface(b, text_tool, adding_text);
-    let placing_landmarks = s.tool == Tool::Landmarks;
-    let landmark_tool = b.button(
-        toolbar,
-        "landmark",
-        if placing_landmarks { "Landmarks" } else { "" },
-        Action::LandmarkTool,
-        placing_landmarks,
-    );
-    tool_surface(b, landmark_tool, placing_landmarks);
-    brush_button(b, toolbar, s, Brush::Erase);
-    let regions = b.button(
-        toolbar,
-        "regions",
-        if s.regions.active { "Regions" } else { "" },
-        Action::Regions(RegionAction::Tool),
-        s.regions.active,
-    );
-    tool_surface(b, regions, s.regions.active);
-    if adding_text {
-        let style = s.text.style;
-        let choice = b.button(
+    for tool in tools(s) {
+        let button = b.button(
             toolbar,
-            "",
-            style.font.family(),
-            Action::TextStyle,
-            s.text.style_open,
+            tool.symbol,
+            if tool.selected { tool.label } else { "" },
+            tool.action,
+            tool.selected,
         );
-        let ink = b.swatch(choice, style.ink.color_in(b.atlas_style), 9., None);
-        let sample = b.text(choice, "Aa", 15., p.text, true);
-        let font = match style.font {
-            elmapa::document::LabelFont::Baskerville => b.assets.baskerville.clone(),
-            elmapa::document::LabelFont::Didot => b.assets.didot.clone(),
-            elmapa::document::LabelFont::Avenir => b.assets.avenir.clone(),
-        };
-        b.commands
-            .entity(sample)
-            .insert(TextFont::from_font_size(15.).with_font(font));
-        b.commands.entity(choice).insert_children(0, &[sample, ink]);
-        b.icon(choice, "chevron-down", p.muted, 13.);
+        let hover = color(p.wash, if tool.selected { 0. } else { 0.45 });
+        tool_surface(b, button, s, tool, Color::NONE, hover);
     }
-    if placing_landmarks {
+    if s.tool == Tool::Text {
+        text_style_control(b, toolbar, s);
+    }
+    if s.tool == Tool::Landmarks {
         b.button(toolbar, "minus", "", Action::LandmarkSize(-16.), false);
         b.text(
             toolbar,
@@ -236,47 +224,107 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
     }
 }
 
-fn brush_button(b: &mut Builder, toolbar: Entity, s: &Studio, brush: Brush) {
-    let selected = s.tool == Tool::Brush && !s.regions.active && s.brush == brush;
-    let button = b.button(
-        toolbar,
-        brush_icon(brush),
-        if selected { brush.label() } else { "" },
-        Action::Brush(brush),
-        selected,
+fn advanced_controls(b: &mut Builder, bottom: Entity, s: &Studio) {
+    let p = b.p;
+    let advanced = b.panel(
+        bottom,
+        Node {
+            width: px(510.),
+            ..column(8.)
+        },
+        16.,
+        14.,
+        0.97,
+        true,
     );
-    tool_surface(b, button, selected);
-    if biome_packs::materials(s.biome_pack, brush).nth(1).is_some() {
-        let modifier = if cfg!(target_os = "macos") {
-            "Option"
-        } else {
-            "Alt"
-        };
-        b.commands
-            .entity(button)
-            .entry::<Hover>()
-            .and_modify(move |mut hover| {
-                hover.tip = format!("{} · {modifier}-click or hold for materials", brush.label());
-            });
+    b.commands
+        .entity(advanced)
+        .insert(BorderColor::all(color(p.line, 1.)));
+    b.text(
+        advanced,
+        format!("{} brush settings", s.brush.label()),
+        12.,
+        p.text,
+        false,
+    );
+    let strength = b.node(
+        advanced,
+        Node {
+            width: percent(100.),
+            justify_content: JustifyContent::SpaceBetween,
+            ..row(0.)
+        },
+    );
+    b.text(
+        strength,
+        format!("Strength  {:.0}%", s.strength * 100.),
+        12.,
+        p.text,
+        false,
+    );
+    let buttons = b.node(strength, row(0.));
+    b.button(buttons, "minus", "", Action::Strength(-0.1), false);
+    b.button(buttons, "plus", "", Action::Strength(0.1), false);
+
+    let materials: Vec<_> = biome_packs::materials(s.biome_pack, s.brush).collect();
+    if materials.len() > 1 || s.biome_pack.is_some() && !materials.is_empty() {
+        b.text(advanced, "Material", 11., p.muted, false);
+        let choices = b.node(
+            advanced,
+            Node {
+                flex_wrap: FlexWrap::Wrap,
+                row_gap: px(5.),
+                ..row(5.)
+            },
+        );
+        let current = s.brush_orbit.current_index(s.brush, s.biome_pack);
+        for (index, material) in materials {
+            let active = current == Some(index);
+            let button = b.button(
+                choices,
+                "",
+                &material.name,
+                Action::AdvancedBrushMaterial(index),
+                active,
+            );
+            let swatch = b.material_swatch(button, index, 16.);
+            b.commands.entity(button).insert_children(0, &[swatch]);
+            b.commands.entity(button).insert(BorderColor::all(color(
+                if active { p.accent } else { p.line },
+                0.75,
+            )));
+            b.commands
+                .entity(button)
+                .entry::<Node>()
+                .and_modify(|mut node| {
+                    node.border = UiRect::all(px(1.));
+                    node.padding = UiRect::horizontal(px(7.));
+                });
+        }
     }
 }
 
-fn tool_surface(b: &mut Builder, button: Entity, selected: bool) {
-    // Preserve hover and click targets; selection is painted by the shared bubble.
-    let target = color(b.p.wash, if selected { 0. } else { 0.45 });
+fn text_style_control(b: &mut Builder, parent: Entity, studio: &Studio) {
+    let style = studio.text.style;
+    let choice = b.button(
+        parent,
+        "",
+        style.font.family(),
+        Action::TextStyle,
+        studio.text.style_open,
+    );
+    let ink = b.swatch(choice, style.ink.color_in(b.atlas_style), 9., None);
+    let sample = b.text(choice, "Aa", 15., b.p.text, true);
+    let font = match style.font {
+        elmapa::document::LabelFont::Baskerville => b.assets.baskerville.clone(),
+        elmapa::document::LabelFont::Didot => b.assets.didot.clone(),
+        elmapa::document::LabelFont::Avenir => b.assets.avenir.clone(),
+    };
     b.commands
-        .entity(button)
-        .insert(BackgroundColor(Color::NONE));
-    b.commands
-        .entity(button)
-        .entry::<Hover>()
-        .and_modify(move |mut hover| {
-            hover.base = Color::NONE;
-            hover.target = target;
-        });
-    if selected {
-        b.commands.entity(button).insert(SelectedTool);
-    }
+        .entity(sample)
+        .insert(TextFont::from_font_size(15.).with_font(font));
+    b.commands.entity(choice).insert_children(0, &[sample, ink]);
+    b.icon(choice, "chevron-down", b.p.muted, 13.);
 }
 
 fn selection_controls(b: &mut Builder, bottom: Entity, studio: &Studio) {

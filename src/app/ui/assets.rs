@@ -28,6 +28,8 @@ pub struct UiAssets {
     pub(super) camera: Entity,
     pub(super) display_camera: Entity,
     pub(super) icons: HashMap<String, Handle<Image>>,
+    pub(super) tool_symbols: Handle<Image>,
+    pub(super) tool_paper: Handle<Image>,
     pub(super) landmark_ghosts: Vec<(Handle<Image>, Vec2)>,
     pub(super) brush_swatches: HashMap<usize, Handle<Image>>,
     pub(super) avenir: Handle<Font>,
@@ -97,6 +99,34 @@ pub fn setup(
         "landmark".into(),
         images.add(render::rgba_image(96, 96, pixels)),
     );
+    let tool_symbols = usvg::Tree::from_str(
+        include_str!("../../../assets/tool-icons/symbols.svg"),
+        &usvg::Options::default(),
+    )
+    .expect("toolbar symbols");
+    let size = tool_symbols.size().to_int_size().scale_by(4.).unwrap();
+    let mut pixmap = Pixmap::new(size.width(), size.height()).expect("toolbar symbols");
+    resvg::render(
+        &tool_symbols,
+        Transform::from_scale(4., 4.),
+        &mut pixmap.as_mut(),
+    );
+    let tool_symbols = images.add(render::rgba_image(
+        size.width(),
+        size.height(),
+        unpremultiply(pixmap.take()),
+    ));
+    let paper = image::load_from_memory_with_format(
+        include_bytes!("../../../assets/tool-icons/paper.png"),
+        image::ImageFormat::Png,
+    )
+    .expect("toolbar paper")
+    .into_rgba8();
+    let tool_paper = images.add(render::rgba_image(
+        paper.width(),
+        paper.height(),
+        paper.into_raw(),
+    ));
     let catalog = elmapa::scene::landmark_catalog();
     let previews = catalog
         .items
@@ -178,6 +208,8 @@ pub fn setup(
         camera: *camera,
         display_camera: *display_camera,
         icons,
+        tool_symbols,
+        tool_paper,
         landmark_ghosts,
         brush_swatches,
         avenir,

@@ -11,6 +11,8 @@ fn ui_app(studio: Studio) -> App {
             camera,
             display_camera: camera,
             icons: HashMap::new(),
+            tool_symbols: Handle::default(),
+            tool_paper: Handle::default(),
             landmark_ghosts: default(),
             brush_swatches: HashMap::new(),
             avenir: default(),
@@ -23,6 +25,44 @@ fn ui_app(studio: Studio) -> App {
         .init_resource::<ScrollOffsets>()
         .add_systems(Update, rebuild);
     app
+}
+
+#[test]
+fn paper_preview_rebuilds_the_toolbar_in_either_appearance() {
+    use elmapa::document::Brush;
+
+    let mut app = ui_app(Studio {
+        home: false,
+        ..default()
+    });
+    let land_has_paper = |world: &mut World| {
+        let (_, texture) = world
+            .query::<(&Hit, Option<&ImageNode>)>()
+            .iter(world)
+            .find(|(hit, _)| hit.action == Some(Action::Brush(Brush::Land)))
+            .expect("Land tool");
+        texture.is_some()
+    };
+    let click = |app: &mut App, action| {
+        app.world_mut()
+            .resource_scope(|world, mut studio: Mut<Studio>| {
+                studio.act(action, &mut world.resource_mut::<Jobs>());
+            });
+        app.update();
+    };
+
+    app.update();
+    let initial_dark = app.world().resource::<Studio>().dark;
+    assert!(!land_has_paper(app.world_mut()));
+    click(&mut app, Action::PaperUi);
+    assert!(app.world().resource::<Jobs>().preferences);
+    assert_eq!(app.world().resource::<Studio>().dark, initial_dark);
+    assert!(land_has_paper(app.world_mut()));
+    click(&mut app, Action::Theme);
+    assert!(land_has_paper(app.world_mut()));
+    click(&mut app, Action::PaperUi);
+    assert!(!land_has_paper(app.world_mut()));
+    assert_ne!(app.world().resource::<Studio>().dark, initial_dark);
 }
 
 #[test]

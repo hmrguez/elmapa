@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="352" height="32" viewBox="0 0 352 32">
+  <!-- Each symbol occupies one 32 px tile, in toolbar order. -->
+  <g stroke="#594836" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Select: a brass nib -->
+    <g>
+      <path fill="#a48457" d="m7 5 19 12-9 1-3 8-7-17Z"/>
+      <path fill="#f6dfaa" d="m7 5 19 12-10-1-4 8Z"/>
+      <path fill="none" stroke="#fff2ce" d="m9 8 3.5 11"/>
+    </g>
+    <!-- Land: a contour island -->
+    <g transform="translate(32)">
+      <path fill="#ad925f" d="M4 17c0-4 5-6 9-6s3-5 7-5 9 3 8 7c-1 3-4 3-6 7-1 3-5 6-9 5s-3-4-6-4c-2 0-3-2-3-4Z"/>
+      <path fill="#b5b67d" d="M5 15c1-2 4-4 8-4s3-5 7-5 9 3 8 6c-1 3-4 3-6 6-1 3-5 6-8 5s-4-4-7-4c-2 0-3-2-2-4Z"/>
+      <path fill="none" stroke="#f3e5b4" d="M9 15c2-1 5 0 7-2s2-4 5-4c3 0 4 2 3 3m-9 6c2 0 4-1 5-3"/>
+    </g>
+    <!-- Water: waves on a blue-green swatch -->
+    <g transform="translate(64)">
+      <path fill="#709b9a" d="m4 12 12-6 12 6v9l-12 6-12-6Z"/>
+      <path fill="#a4c4b9" d="m4 12 12-6 12 6-12 6Z"/>
+      <path fill="none" stroke="#e5eee0" d="M9 13c2-3 4 2 6 0s3-2 5-1m-11 7c2-2 4 2 6 0s3-2 5-1m-4 5 8-4"/>
+    </g>
+    <!-- Forest: two engraved firs -->
+    <g transform="translate(96)">
+      <path fill="#9c9562" d="M20 24v3h2v-3Z"/>
+      <path fill="#a0aa7d" d="m21 8 5 7h-2l4 7-7 3-6-3 3-7h-2Z"/>
+      <path fill="#b19465" d="M10 23v5h3v-5Z"/>
+      <path fill="#6d8668" d="m12 3 6 9h-3l5 7h-3l4 4-9 2-9-2 4-4H4l5-7H6Z"/>
+      <path fill="none" stroke="#dce2ac" d="m12 7-3 5m2 2-3 5m4 0-3 3m12-10 3 5"/>
+    </g>
+    <!-- Mountains: two shaded peaks -->
+    <g transform="translate(128)">
+      <path fill="#b69575" d="m12 23 9-15 8 14-7 4Z"/>
+      <path fill="#a07860" d="m21 8 1 18 7-4Z"/>
+      <path fill="#b99a79" d="m3 23 11-19 9 20-10 4Z"/>
+      <path fill="#94725c" d="m14 4-1 24 10-4Z"/>
+      <path fill="#f4e9cd" d="m14 4-5 9 3-1 2 2 2-2 2 2Zm7 4-3 5 3-1 3 2Z"/>
+      <path fill="none" stroke="#e2c399" d="m9 18-2 4m10-4 2 5"/>
+    </g>
+    <!-- River: a winding blue course -->
+    <g transform="translate(160)">
+      <path fill="#a5c6bd" d="M20 3h7c1 8-14 7-14 12s10 3 10 8c0 2-2 4-4 6h-7c2-3 6-4 5-6s-12-1-12-7C5 9 21 9 20 3Z"/>
+      <path fill="none" stroke="#5c8887" d="M23 5c-1 5-13 7-14 10-2 5 11 4 11 8 0 2-2 3-3 4"/>
+    </g>
+    <!-- Trail: a dashed course and round waypoints -->
+    <g transform="translate(192)">
+      <path fill="none" stroke="#b68a59" stroke-width="4" d="M6 24c1-8 16-1 15-9s-8-2-9-8"/>
+      <path fill="none" stroke="#684b39" stroke-width="1.3" stroke-dasharray="2 3" d="M6 24c1-8 16-1 15-9s-8-2-9-8"/>
+      <circle fill="#f2deae" cx="6" cy="24" r="2.8"/>
+      <circle fill="#f2deae" cx="12" cy="7" r="2.8"/>
+    </g>
+    <!-- Text: a specimen of letterpress type -->
+    <g transform="translate(224)">
+      <path fill="#aa855e" d="M5 6h22v6h-3l-1-2h-4v13l3 1v3H10v-3l3-1V10H9l-1 2H5Z"/>
+      <path fill="#f3dbab" d="M5 5h22v5h-2l-1-2h-6v15l3 1v2H11v-2l3-1V8H8l-1 2H5Z"/>
+    </g>
+    <!-- Landmarks: a roofed gate -->
+    <g transform="translate(256)">
+      <path fill="#9a8769" d="m6 25 10-3 11 2-10 4Z"/>
+      <path fill="#ddc7a4" d="M8 13h14v11l-5 2-9-2Z"/>
+      <path fill="#b49a76" d="M22 13h4v10l-4 2Z"/>
+      <path fill="#805d47" d="M13 25v-5a3 3 0 0 1 6 0v6Z"/>
+      <path fill="#9e624d" d="m16 5 7 1 5 8-6 2-7-2-9 1Z"/>
+      <path fill="#c08065" d="m16 5 6 11-7-2-9 1Z"/>
+      <path fill="none" stroke="#eed5aa" d="m10 17 1 .2m10 2v3"/>
+    </g>
+    <!-- Eraser: red rubber in a paper sleeve -->
+    <g transform="translate(288)">
+      <path fill="#bd8575" d="m5 18 12-12a3 3 0 0 1 4 0l6 6a3 3 0 0 1 0 4L16 27H11l-6-5a3 3 0 0 1 0-4Z"/>
+      <path fill="#f1ddba" d="m12 11 11 9-7 7h-5l-6-5a3 3 0 0 1 0-4Z"/>
+      <path fill="none" stroke="#f5c9a8" d="m16 10 3-3 5 5"/>
+      <path fill="none" d="M16 27h11"/>
+    </g>
+    <!-- Regions: a three-part map -->
+    <g transform="translate(320)">
+      <path fill="#b4ae7e" d="m3 9 8-4 9 3 9-4v19l-9 4-9-3-8 4Z"/>
+      <path fill="#d9b987" d="m11 5 9 3v19l-9-3Z"/>
+      <path fill="#a0b4a7" d="m20 8 9-4v19l-9 4Z"/>
+      <path fill="none" stroke="#fff1cd" d="m6 12 3-2m5 6 3 1m6 3 3-2"/>
+    </g>
+  </g>
+</svg>

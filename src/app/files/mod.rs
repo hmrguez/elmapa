@@ -129,6 +129,7 @@ pub fn poll(
                     if let Some(library) = &studio.library {
                         let dark = library.shelf.dark || studio.dark;
                         let reduced = library.shelf.reduced_motion;
+                        let paper_ui = library.shelf.paper_ui;
                         let shader_effects_disabled = library.shelf.shader_effects_disabled;
                         let pack = library
                             .shelf
@@ -140,6 +141,7 @@ pub fn poll(
                         studio.set_biome_pack(pack);
                         studio.dark = dark;
                         studio.reduced = reduced;
+                        studio.paper_ui = paper_ui;
                         studio.shader_effects_disabled = shader_effects_disabled;
                     }
                     studio.status = "Choose a world to explore.".into();
@@ -207,6 +209,7 @@ pub fn poll(
             };
             library.shelf.dark = studio.dark;
             library.shelf.reduced_motion = studio.reduced;
+            library.shelf.paper_ui = studio.paper_ui;
             library.shelf.shader_effects_disabled = studio.shader_effects_disabled;
             library.shelf.disabled_landmark_packs = studio.disabled_landmark_packs.clone();
             library.shelf.biome_pack = studio
