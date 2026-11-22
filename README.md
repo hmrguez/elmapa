@@ -22,7 +22,7 @@ cd elmapa-public
 cargo run --release --locked
 ```
 
-Open **España · Pinceladas** on a new shelf, or choose **Example world** in the editor menu to open a fresh copy. In the example, choose **Replay this view** to watch Iberia, the Canaries and the Balearics take shape. Choose **New atlas** to start with blank parchment. Drag the Land brush to paint, scroll to zoom, and drag the middle mouse button to pan. Use the map menu to save an editable file or export your artwork as SVG or PNG.
+Choose **New atlas** to start with blank parchment, or **Open atlas…** to add an existing atlas. Drag the Land brush to paint, scroll to zoom, and drag the middle mouse button to pan. Use the map menu to save an editable file or export your artwork as SVG or PNG. To explore **España · Pinceladas**, choose **Example world** in the map menu. In the example, choose **Replay this view** to watch Iberia, the Canaries and the Balearics take shape.
 
 ![The atlas shelf with a preview of The Stillwater Isles and the New atlas card](docs/images/atlas-shelf.png)
 

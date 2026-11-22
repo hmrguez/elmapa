@@ -29,6 +29,9 @@ def check(binary):
             {"action": "move", "x": 0.50, "y": 0.55}, {"action": "up", "x": 0.58, "y": 0.5},
             ready, {"action": "save"}, ready, *exports,
         ])
+        shelf = json.loads((library / "shelf.json").read_bytes())
+        if len(shelf["atlases"]) != 1:
+            raise ValueError("A fresh shelf should contain only the atlas created by the replay")
         document = json.loads((library / "native-save.elmapa").read_bytes())
         strokes = [stroke for layer in document["layers"] for stroke in layer["strokes"]]
         if not any(stroke["brush"] == "path" and len(stroke["points"]) >= 2 for stroke in strokes):

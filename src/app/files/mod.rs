@@ -119,23 +119,7 @@ pub fn poll(
     if !jobs.started {
         jobs.started = true;
         jobs.task = Some(IoTaskPool::get().spawn(async {
-            let result = (|| {
-                let mut library = Library::load(Library::default_path())?;
-                if library.shelf.atlases.is_empty() {
-                    let doc = Document::spain_example()?;
-                    library.checkpoint(
-                        AtlasRecord {
-                            id: 1,
-                            name: doc.name.clone(),
-                            source: None,
-                            camera: Camera::for_document(&doc),
-                        },
-                        &doc,
-                    )?;
-                }
-                Ok::<_, String>(library)
-            })();
-            match result {
+            match Library::load(Library::default_path()) {
                 Ok(library) => Completion {
                     library: Some(library),
                     result: Ok(Outcome::Loaded),
