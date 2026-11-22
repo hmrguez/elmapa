@@ -8,7 +8,7 @@ use crate::{
     brush_materials,
     document::{AtlasStyle, Brush, ContentBounds, Layer, Point, Stroke},
     scene::{
-        Shape, generation,
+        Shape, TerrainPalette, generation,
         noise::noise,
         terrain::{
             contours::RegionGrid,
@@ -102,6 +102,7 @@ struct Field {
 pub(in crate::scene::cache) struct TileRegion {
     pub surface: Arc<Contours>,
     pub batches: Vec<Batch>,
+    pub palette: Option<Arc<TerrainPalette>>,
 }
 
 #[derive(Clone, Default)]
@@ -338,6 +339,12 @@ impl TerrainTiles {
                     + tile
                         .regions
                         .iter()
+                        .filter_map(|region| region.palette.as_ref())
+                        .map(|palette| palette.pixels.capacity())
+                        .sum::<usize>()
+                    + tile
+                        .regions
+                        .iter()
                         .flat_map(|region| region.surface.iter())
                         .map(|ring| ring.capacity() * std::mem::size_of::<[f64; 2]>())
                         .sum::<usize>()
@@ -424,7 +431,7 @@ impl Tile {
                         }
                     }
                 }
-                let (surface, batches) = regions::build(
+                let (surface, batches, palette) = regions::build(
                     coverage,
                     brush,
                     &masks,
@@ -436,6 +443,13 @@ impl Tile {
                 let prior = old
                     .map(|old| &old.regions[index])
                     .filter(|prior| !prior.batches.is_empty());
+                let old_palette = prior.and_then(|old| old.palette.as_ref());
+                let palette_unchanged = old_palette.map(Arc::as_ref) == palette.as_ref();
+                let palette = if palette_unchanged {
+                    old_palette.cloned()
+                } else {
+                    palette.map(Arc::new)
+                };
                 regions[index] = TileRegion {
                     surface: prior
                         .filter(|old| *old.surface == surface)
@@ -443,7 +457,11 @@ impl Tile {
                     batches: batches
                         .into_iter()
                         .map(|batch| {
+                            // The retained material is keyed to the batch. A palette
+                            // change can reach it even when its contours stay fixed.
+                            let uses_palette = matches!(&batch[..], [shape] if TerrainPalette::pigment(shape).is_some());
                             prior
+                                .filter(|_| palette_unchanged || !uses_palette)
                                 .and_then(|old| {
                                     old.batches
                                         .iter()
@@ -453,6 +471,7 @@ impl Tile {
                                 .unwrap_or_else(|| Arc::new(batch))
                         })
                         .collect(),
+                    palette,
                 };
             }
         }

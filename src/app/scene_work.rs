@@ -2,8 +2,7 @@
 use super::{
     render::{
         self,
-        terrain_tile::TerrainTile,
-        tile_upload::{SceneMesh, TileUploads},
+        tile_upload::{SceneMesh, TerrainAssets, TileUploads},
         wet_edge::WetMeshes,
     },
     state::Studio,
@@ -225,8 +224,7 @@ pub fn resolve_scene(
     time: Res<Time<Real>>,
     uploads: Res<TileUploads>,
     mut canvas: ResMut<render::Canvas>,
-    mut mesh_assets: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<TerrainTile>>,
+    mut terrain: TerrainAssets,
 ) {
     let published = publish_ready(&mut studio, time.elapsed_secs());
     if studio.scene.staged.is_some() {
@@ -244,8 +242,7 @@ pub fn resolve_scene(
                     &scene,
                     meshes,
                     &mut canvas,
-                    &mut mesh_assets,
-                    &mut materials,
+                    &mut terrain,
                     studio.shader_mode(),
                 );
                 studio.scene.staged = Some(StagedScene {

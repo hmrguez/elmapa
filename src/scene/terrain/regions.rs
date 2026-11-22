@@ -2,6 +2,7 @@
 use super::{
     contours::RegionGrid,
     materials::{self, Contours, Masks},
+    palette_transition::TerrainPalette,
     shore_wash,
 };
 use crate::{
@@ -47,17 +48,17 @@ pub(in crate::scene) fn build(
     water_finishes: &Masks,
     bounds: ContentBounds,
     style: AtlasStyle,
-) -> (Contours, Vec<Vec<Shape>>) {
+) -> (Contours, Vec<Vec<Shape>>, Option<TerrainPalette>) {
     let subject = contours(grid);
     if subject.is_empty() || generation::stopped() {
-        return (Vec::new(), Vec::new());
+        return (Vec::new(), Vec::new(), None);
     }
     super::super::work::update(|work| work.region_batches += 1);
 
     let coast = coast.map_or_else(Vec::new, |land| contours(land));
     let regions = subject.overlay_as::<i64>(&coast, OverlayRule::Difference, FillRule::EvenOdd);
     if regions.is_empty() {
-        return (Vec::new(), Vec::new());
+        return (Vec::new(), Vec::new(), None);
     }
 
     let fallback = if brush == Brush::Land {
@@ -67,6 +68,12 @@ pub(in crate::scene) fn build(
     };
     let (finishes, details) = materials::partition(&regions, masks, fallback);
     let surface: Contours = regions.into_iter().flatten().collect();
+    let plain_available = details.first().is_some_and(Shape::granulated);
+    let palette = if finishes.len() + usize::from(plain_available) > 1 {
+        TerrainPalette::build(bounds, &surface, &finishes, fallback)
+    } else {
+        None
+    };
     let frame = rectangle(bounds);
     let finishes = finishes.into_iter().filter_map(|shape| {
         let mut batch = Vec::new();
@@ -74,8 +81,14 @@ pub(in crate::scene) fn build(
         (!batch.is_empty()).then_some(batch)
     });
     let mut clipped_details = Vec::new();
+    let mut plain = Vec::new();
     for shape in details {
-        clip_shape(&mut clipped_details, shape, &frame);
+        let batch = if palette.is_some() && shape.granulated() {
+            &mut plain
+        } else {
+            &mut clipped_details
+        };
+        clip_shape(batch, shape, &frame);
     }
     if brush == Brush::Land {
         clipped_details.extend(shore_wash::build(
@@ -101,9 +114,10 @@ pub(in crate::scene) fn build(
         );
     }
     let batches = finishes
+        .chain((!plain.is_empty()).then_some(plain))
         .chain((!clipped_details.is_empty()).then_some(clipped_details))
         .collect();
-    (clip(&surface, &frame), batches)
+    (clip(&surface, &frame), batches, palette)
 }
 
 fn ink_style(width: f64) -> StrokeStyle<[f64; 2]> {

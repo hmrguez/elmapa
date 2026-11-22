@@ -4,6 +4,7 @@ pub(in crate::scene) mod forest;
 pub(in crate::scene) mod linear;
 pub(in crate::scene) mod materials;
 pub(in crate::scene) mod mountains;
+pub(in crate::scene) mod palette_transition;
 pub(in crate::scene) mod regions;
 pub(in crate::scene) mod rivers;
 pub(in crate::scene) mod roads;

@@ -6,7 +6,7 @@ use super::{
 use crate::{
     document::{AtlasStyle, Brush, Layer, Point},
     scene::{
-        Shape,
+        Shape, TerrainPalette,
         builder::relief_order,
         terrain::{
             field_index::FieldIndex,
@@ -307,6 +307,24 @@ impl MaterialLayer {
             .chain(self.line_batches(Brush::River))
             .chain(relief_order(peaks, trees))
             .chain(self.line_batches(Brush::Path))
+    }
+
+    pub(super) fn terrain_palettes(
+        &self,
+    ) -> impl Iterator<Item = (usize, Arc<TerrainPalette>)> + '_ {
+        (0..REGIONS.len()).flat_map(|index| {
+            self.terrain
+                .regions(index)
+                .filter_map(|(_, region)| Some((region.palette.as_ref()?, &region.batches)))
+                .flat_map(|(palette, batches)| {
+                    batches
+                        .iter()
+                        .filter(|batch| {
+                            matches!(batch.as_slice(), [shape] if TerrainPalette::pigment(shape).is_some())
+                        })
+                        .map(move |batch| (Arc::as_ptr(batch) as usize, palette.clone()))
+                })
+        })
     }
 
     fn line_batches(&self, brush: Brush) -> impl Iterator<Item = Batch> + '_ {

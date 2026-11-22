@@ -5,6 +5,7 @@
 #import elmapa::dune_surface::dune_light
 #import elmapa::grass_wind::grass_shade
 #import elmapa::water_surface
+#import elmapa::palette_transition::{PaletteTransition, blend}
 
 // ShaderMode in state.rs
 const SHADER_OFF = 0u;
@@ -14,20 +15,27 @@ struct Tile {
     opacity: f32,
     shader_mode: u32,
     profile: u32,
+    transition: PaletteTransition,
 };
 
 @group(#{MATERIAL_BIND_GROUP}) @binding(0) var<uniform> tile: Tile;
 @group(#{MATERIAL_BIND_GROUP}) @binding(1) var pigment: texture_2d<f32>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(2) var pigment_sampler: sampler;
 
+@group(#{MATERIAL_BIND_GROUP}) @binding(3) var palette: texture_2d<f32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(4) var palette_sampler: sampler;
+
 @fragment
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     let ink = textureSample(pigment, pigment_sampler, mesh.uv) * mesh.color;
     var color = ink.rgb;
+    let point = mesh.world_position.xy * vec2(1.0, -1.0);
+    if tile.shader_mode != SHADER_OFF {
+        color = blend(color, point, tile.transition, palette, palette_sampler);
+    }
     let moving = tile.shader_mode == SHADER_ANIMATED;
     if tile.shader_mode != SHADER_OFF && tile.profile != 0u
         && (moving || tile.profile == 101u || tile.profile == 103u) {
-        let point = mesh.world_position.xy * vec2(1.0, -1.0);
         let footprint = max(length(dpdx(point)), length(dpdy(point)));
         if tile.profile >= 1u && tile.profile <= 5u {
             color += water_surface::surface_light(tile.profile, point, globals.time, footprint);
