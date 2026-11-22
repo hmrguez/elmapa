@@ -40,7 +40,7 @@ impl ToolIcon {
             Self::Brush(Brush::Path) => ("trail", 6, pigment::SAND),
             Self::Text => ("text", 7, pigment::OCHRE),
             Self::Landmarks => ("landmark", 8, pigment::TERRACOTTA),
-            Self::Brush(Brush::Erase) => ("eraser", 9, 0xd9b8ae),
+            Self::Brush(Brush::Erase) => ("eraser", 9, pigment::ROSE),
             Self::Regions => ("regions", 10, pigment::STRAW),
         }
     }
@@ -137,8 +137,7 @@ impl Builder<'_, '_, '_> {
         action: Action,
         selected: bool,
     ) -> (Entity, Color, Color) {
-        let (_, cell, pigment) = icon.artwork();
-        let pigment = color(pigment, 1.);
+        let pigment = color(icon.pigment(), 1.);
         let button = self.action_button(
             parent,
             Node {
@@ -155,25 +154,26 @@ impl Builder<'_, '_, '_> {
             action,
             selected,
         );
+        self.paper_tool_art(button, icon, 31.);
+        (button, pigment, pigment.mix(&Color::WHITE, 0.26))
+    }
+
+    pub(super) fn paper_tool_art(&mut self, tile: Entity, icon: ToolIcon, size: f32) {
+        let (_, cell, _) = icon.artwork();
         let grain = ImageNode {
             flip_x: cell & 1 != 0,
             flip_y: cell & 2 != 0,
             ..self.paper_grain()
         };
         self.commands
-            .entity(button)
+            .entity(tile)
             .insert((BorderColor::all(color(paper::INK, 0.28)), grain));
-        self.illustrated_tool_icon(button, cell);
-        (button, pigment, pigment.mix(&Color::WHITE, 0.26))
-    }
-
-    fn illustrated_tool_icon(&mut self, parent: Entity, cell: usize) {
         let x = cell as f32 * PAPER_SYMBOL_CELL;
         let icon = self.node(
-            parent,
+            tile,
             Node {
-                width: px(31.),
-                height: px(31.),
+                width: px(size),
+                height: px(size),
                 flex_shrink: 0.,
                 ..default()
             },

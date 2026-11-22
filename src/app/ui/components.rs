@@ -1,4 +1,5 @@
 //! Shared UI components, layout helpers and appearance palettes.
+mod layers;
 mod orbit;
 mod paper;
 mod toolbar;
@@ -15,6 +16,7 @@ use elmapa::{
     brush_materials,
     document::{AtlasStyle, Brush},
 };
+pub(super) use layers::{DISCLOSURE_WIDTH, LayerRow};
 pub(super) use paper::pigment;
 pub(super) use toolbar::{PAPER_TOOL_SIZE, ToolIcon};
 

@@ -1,5 +1,6 @@
 //! Appearance of a standalone button in a contextual orbit.
 use super::{Action, Builder, Hover, color, pigment, shadow};
+use crate::app::regions::{RegionAction, StyleAction};
 use bevy::prelude::*;
 
 impl Builder<'_, '_, '_> {
@@ -78,6 +79,12 @@ fn branch_pigment(action: Action, symbol: &str) -> Option<u32> {
             "typography" => Some(pigment::SEA_GLASS),
             _ => None,
         },
+        Action::Regions(RegionAction::Style(StyleAction::Rename)) => Some(pigment::OCHRE),
+        Action::Regions(RegionAction::Style(StyleAction::CustomColor | StyleAction::Enter(..))) => {
+            Some(pigment::BLUE)
+        }
+        Action::Regions(RegionAction::Style(StyleAction::ToggleLabel)) => Some(pigment::LINEN),
+        Action::Regions(RegionAction::ChildRegions) => Some(pigment::STRAW),
         _ => None,
     }
 }

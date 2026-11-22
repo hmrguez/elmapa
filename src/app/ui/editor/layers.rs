@@ -1,19 +1,25 @@
 //! Layer stack, visibility and layer settings.
 mod regions;
-use super::toolbar::brush_icon;
 use crate::app::{
     regions::RegionAction,
-    state::{Action, LayerBranch, Studio},
+    state::{Action, Appearance, LayerBranch, Studio},
     ui::{
         ScrollArea,
-        components::{Builder, color, column, row},
-        feedback::{Fade, Hover},
+        components::{Builder, LayerRow, ToolIcon, column, row},
+        feedback::Fade,
     },
 };
 use bevy::prelude::*;
-use elmapa::document::{Brush, Layer};
+use elmapa::document::Layer;
 
 pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, scroll: f32) {
+    // Leave room for the Regions strip to wrap above the toolbar on narrow windows.
+    let bottom = if s.appearance == Appearance::Paper && s.regions.active && s.bounds.size.x < 1024.
+    {
+        170.
+    } else {
+        110.
+    };
     let layers = b.panel(
         root,
         Node {
@@ -21,7 +27,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, scroll: f32) {
             top: px(78.),
             right: px(20.),
             width: px(220.),
-            max_height: px((s.bounds.size.y - 188.).max(90.)),
+            max_height: px((s.bounds.size.y - 78. - bottom).max(90.)),
             ..column(0.)
         },
         16.,
@@ -64,17 +70,16 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, scroll: f32) {
             ..row(0.)
         },
     );
-    b.button(controls, "layer-add", "", Action::AddLayer, false);
+    b.layer_panel_button(controls, "layer-add", Action::AddLayer, false);
     if s.regions.active {
-        b.button(
+        b.layer_panel_button(
             controls,
             "regions-layer-add",
-            "",
             Action::Regions(RegionAction::NewLayer),
             false,
         );
     }
-    b.button(controls, "settings", "", Action::LayerTools, s.layer_tools);
+    b.layer_panel_button(controls, "settings", Action::LayerTools, s.layer_tools);
     if s.layer_tools {
         let controls = b.node(
             layers,
@@ -92,7 +97,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, scroll: f32) {
             ("plus", Action::Opacity(0.1)),
             ("delete", Action::DeleteLayer),
         ] {
-            b.button(controls, icon, "", action, false);
+            b.layer_panel_button(controls, icon, action, false);
         }
     }
 }
@@ -107,7 +112,25 @@ fn layer_row(
 ) {
     let p = b.p;
     let selected = layer.id == s.editor.active_layer();
-    let row = b.node(
+    let tip = if let Some(regions) = &layer.territories {
+        format!(
+            "{} · {} regions · {:.0}% opacity",
+            layer.name,
+            regions.names.len(),
+            layer.opacity * 100.
+        )
+    } else {
+        format!(
+            "{} · {} strokes · {} labels · {} landmarks · {:.0}% opacity{}",
+            layer.name,
+            layer.strokes.len(),
+            layer.labels.len(),
+            layer.landmarks.len(),
+            layer.opacity * 100.,
+            if layer.visible { "" } else { " · Hidden" }
+        )
+    };
+    let row = b.layer_row(
         list,
         Node {
             height: px(36.),
@@ -117,43 +140,13 @@ fn layer_row(
                 right: px(3.),
                 ..default()
             },
-            border: UiRect::all(px(1.)),
-            border_radius: BorderRadius::all(px(10.)),
             flex_shrink: 0.,
             ..row(5.)
         },
+        LayerRow::Layer,
+        selected,
+        tip,
     );
-    let base = color(p.wash, if selected { 0.95 } else { 0. });
-    b.commands.entity(row).insert((
-        BackgroundColor(base),
-        BorderColor::all(color(p.accent, if selected { 0.32 } else { 0. })),
-        Hover {
-            base,
-            target: color(p.wash, 0.65),
-            progress: 0.,
-            from: 0.,
-            started: 0.,
-            hovered: false,
-            tip: if let Some(regions) = &layer.territories {
-                format!(
-                    "{} · {} regions · {:.0}% opacity",
-                    layer.name,
-                    regions.names.len(),
-                    layer.opacity * 100.
-                )
-            } else {
-                format!(
-                    "{} · {} strokes · {} labels · {} landmarks · {:.0}% opacity{}",
-                    layer.name,
-                    layer.strokes.len(),
-                    layer.labels.len(),
-                    layer.landmarks.len(),
-                    layer.opacity * 100.,
-                    if layer.visible { "" } else { " · Hidden" }
-                )
-            },
-        },
-    ));
     b.hit(row, Some(Action::SelectLayer(layer.id)));
     if let Some((branch, expanded)) = disclosure {
         regions::disclosure(b, row, branch, expanded, &layer.name);
@@ -170,13 +163,17 @@ fn layer_row(
         b.commands.entity(icons).insert(Fade(0.35));
     }
     let brushes = layer.brushes();
+    let has_labels = !layer.labels.is_empty();
+    let has_landmarks = !layer.landmarks.is_empty();
+    let icon_count = brushes.len() + usize::from(has_labels) + usize::from(has_landmarks);
+    let icon_size = if icon_count > 7 { 15. } else { 20. };
     if let Some(regions) = &layer.territories {
         let icon = if regions.parent.is_some() {
             "layer"
         } else {
             "land"
         };
-        b.icon(icons, icon, p.accent, 19.);
+        b.layer_type_icon(icons, icon, true);
         let name = b.text(icons, &layer.name, 12., p.text, false);
         b.commands.entity(name).insert(Node {
             flex_shrink: 1.,
@@ -184,99 +181,17 @@ fn layer_row(
             overflow: Overflow::clip(),
             ..default()
         });
-    } else if brushes.is_empty() && layer.labels.is_empty() {
-        let icon = b.node(
-            icons,
-            Node {
-                width: px(24.),
-                height: px(24.),
-                border: UiRect::all(px(1.)),
-                border_radius: BorderRadius::all(px(7.)),
-                justify_content: JustifyContent::Center,
-                ..self::row(0.)
-            },
-        );
-        b.commands
-            .entity(icon)
-            .insert(BorderColor::all(color(p.line, 1.)));
-        b.icon(icon, "layer", p.muted, 17.);
+    } else if brushes.is_empty() && !has_labels {
+        b.layer_type_icon(icons, "layer", false);
     }
     for brush in brushes {
-        let hex = brush_color(brush);
-        let icon = b.node(
-            icons,
-            Node {
-                width: px(20.),
-                height: px(20.),
-                border_radius: BorderRadius::all(px(7.)),
-                justify_content: JustifyContent::Center,
-                ..self::row(0.)
-            },
-        );
-        b.commands
-            .entity(icon)
-            .insert(BackgroundColor(color(hex, 0.13)));
-        b.icon(icon, brush_icon(brush), hex, 17.);
+        b.layer_tool_icon(icons, ToolIcon::Brush(brush), icon_size);
     }
-    if !layer.landmarks.is_empty() {
-        b.icon(icons, "landmark", p.accent, 20.);
+    if has_landmarks {
+        b.layer_tool_icon(icons, ToolIcon::Landmarks, icon_size);
     }
-    if !layer.labels.is_empty() {
-        let swatch = b.node(
-            icons,
-            Node {
-                width: px(20.),
-                height: px(20.),
-                border_radius: BorderRadius::all(px(7.)),
-                justify_content: JustifyContent::Center,
-                ..self::row(0.)
-            },
-        );
-        b.commands
-            .entity(swatch)
-            .insert(BackgroundColor(color(p.accent, 0.13)));
-        b.icon(swatch, "text", p.accent, 17.);
+    if has_labels {
+        b.layer_tool_icon(icons, ToolIcon::Text, icon_size);
     }
-    let eye = b.node(
-        row,
-        Node {
-            width: px(30.),
-            height: px(30.),
-            border_radius: BorderRadius::all(px(8.)),
-            justify_content: JustifyContent::Center,
-            flex_shrink: 0.,
-            ..self::row(0.)
-        },
-    );
-    b.commands.entity(eye).insert((
-        BackgroundColor(Color::NONE),
-        Hover {
-            base: Color::NONE,
-            target: color(p.line, 0.5),
-            progress: 0.,
-            from: 0.,
-            started: 0.,
-            hovered: false,
-            tip: "Toggle visibility".into(),
-        },
-    ));
-    b.hit(eye, Some(Action::Visibility(layer.id)));
-    b.icon(
-        eye,
-        if layer.visible { "eye" } else { "eye-off" },
-        p.muted,
-        17.,
-    );
-}
-
-fn brush_color(b: Brush) -> u32 {
-    match b {
-        Brush::Land => 0x856d46,
-        Brush::Water => 0x4e746f,
-        Brush::Forest => 0x59694b,
-        Brush::Mountain => 0x78644e,
-        Brush::River => 0x48766e,
-        Brush::Path => 0x89603c,
-        Brush::Erase => 0x8c7478,
-    }
+    b.layer_visibility(row, layer.visible, Action::Visibility(layer.id));
 }

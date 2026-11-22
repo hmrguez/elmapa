@@ -25,7 +25,7 @@ pub struct MenuArrow;
 
 pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, menu_progress: f32, scroll: f32) {
     b.with_paper(|b| header(b, root, s));
-    layers::build(b, root, s, scroll);
+    b.with_paper(|b| layers::build(b, root, s, scroll));
     zoom(b, root, s);
     toolbar::build(b, root, s);
     b.with_paper(|b| menu::build(b, root, s, menu_progress));

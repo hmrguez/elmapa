@@ -4,8 +4,8 @@ use crate::app::{
     regions::RegionAction,
     state::{Action, LayerBranch, Studio},
     ui::{
-        components::{Builder, color, row},
-        feedback::{Fade, Hover},
+        components::{Builder, DISCLOSURE_WIDTH, LayerRow, color, row},
+        feedback::Fade,
     },
 };
 use bevy::prelude::*;
@@ -77,31 +77,21 @@ impl<'a> Tree<'a> {
                     .copied()
                     .unwrap_or(false);
             let selected = selected_owner == Some(owner);
-            let item = b.node(
+            let item = b.layer_row(
                 list,
                 Node {
                     margin: UiRect::left(px(indent(depth))),
                     height: px(32.),
                     min_width: px(0.),
                     padding: UiRect::horizontal(px(5.)),
-                    border: UiRect::all(px(1.)),
-                    border_radius: BorderRadius::all(px(8.)),
                     flex_shrink: 0.,
                     ..row(5.)
                 },
+                LayerRow::Region,
+                selected,
+                name.clone(),
             );
             let p = b.p;
-            let base = color(p.wash, if selected { 1. } else { 0. });
-            b.commands.entity(item).insert((
-                BackgroundColor(base),
-                BorderColor::all(color(p.accent, if selected { 0.58 } else { 0. })),
-                Hover {
-                    base,
-                    target: color(p.wash, 0.74),
-                    tip: name.clone(),
-                    ..default()
-                },
-            ));
             b.hit(
                 item,
                 Some(Action::Regions(RegionAction::SelectRegion(region))),
@@ -112,7 +102,7 @@ impl<'a> Tree<'a> {
                 b.node(
                     item,
                     Node {
-                        width: px(22.),
+                        width: px(DISCLOSURE_WIDTH),
                         flex_shrink: 0.,
                         ..default()
                     },
@@ -162,37 +152,10 @@ pub(super) fn disclosure(
     expanded: bool,
     label: &str,
 ) {
-    let p = b.p;
-    let button = b.node(
+    b.layer_disclosure(
         parent,
-        Node {
-            width: px(22.),
-            height: px(28.),
-            flex_shrink: 0.,
-            border_radius: BorderRadius::all(px(6.)),
-            justify_content: JustifyContent::Center,
-            ..row(0.)
-        },
+        expanded,
+        label,
+        Action::SetLayerBranch(branch, !expanded),
     );
-    let verb = if expanded { "Collapse" } else { "Expand" };
-    b.commands.entity(button).insert((
-        BackgroundColor(Color::NONE),
-        Hover {
-            base: Color::NONE,
-            target: color(p.line, 0.55),
-            tip: format!("{verb} {label}"),
-            ..default()
-        },
-    ));
-    b.icon(
-        button,
-        if expanded {
-            "chevron-down"
-        } else {
-            "chevron-right"
-        },
-        p.accent,
-        13.,
-    );
-    b.hit(button, Some(Action::SetLayerBranch(branch, !expanded)));
 }

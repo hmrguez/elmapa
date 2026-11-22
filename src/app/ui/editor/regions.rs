@@ -1,15 +1,27 @@
 //! Show the current region action and its next step above the toolbar.
 use crate::app::{
     regions::{Mode, RegionAction},
-    state::{Action, Studio},
-    ui::components::{Builder, color, row},
+    state::{Action, Appearance, Studio},
+    ui::components::{Builder, color, pigment as paper, row},
 };
 use bevy::prelude::*;
 use elmapa::scene::territories::{MAX_SPLIT_COUNT, pigment};
 
 pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
     let p = b.p;
-    let strip = b.panel(root, row(5.), 13., 5., 0.96, false);
+    let paper = s.appearance == Appearance::Paper;
+    let strip_layout = if paper {
+        Node {
+            max_width: percent(95.),
+            flex_wrap: FlexWrap::Wrap,
+            justify_content: JustifyContent::Center,
+            row_gap: px(3.),
+            ..row(5.)
+        }
+    } else {
+        row(5.)
+    };
+    let strip = b.panel(root, strip_layout, 13., 5., 0.96, false);
     if let Some(count) = s.regions.split_count() {
         split_controls(b, strip, s, count);
         return;
@@ -18,12 +30,13 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
         .active_region_parent()
         .and_then(|parent| s.editor.document().region_name(parent));
     if parent_name.is_some() {
-        b.button(
+        b.button_with_pigment(
             strip,
             "arrow-up",
             "",
             Action::Regions(RegionAction::ParentLayer),
             false,
+            paper::LINEN,
         );
     }
     let selection = s.regions.selection.as_ref();
@@ -39,6 +52,11 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
         strip,
         Node {
             padding: UiRect::horizontal(px(8.)),
+            flex_wrap: if paper {
+                FlexWrap::Wrap
+            } else {
+                FlexWrap::NoWrap
+            },
             ..row(7.)
         },
     );
@@ -88,21 +106,57 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
     if hidden {
         return;
     }
-    let button = |b: &mut Builder, label, action, active| {
-        b.button(strip, "", label, Action::Regions(action), active);
+    let button = |b: &mut Builder, label, action, active, pigment| {
+        b.button_with_pigment(strip, "", label, Action::Regions(action), active, pigment);
     };
     match s.regions.mode {
-        Mode::Draw => button(b, "Cancel", RegionAction::Done, false),
-        Mode::Assign(_) => button(b, "Done", RegionAction::Done, true),
+        Mode::Draw => button(b, "Cancel", RegionAction::Done, false, None),
+        Mode::Assign(_) => button(b, "Done", RegionAction::Done, true, Some(paper::SAGE)),
         Mode::Select if owner.is_some() => {
-            button(b, "Draw border", RegionAction::Draw, false);
-            button(b, "Add islands", RegionAction::AddIslands, false);
-            button(b, "Split into…", RegionAction::Split, true);
+            button(
+                b,
+                "Draw border",
+                RegionAction::Draw,
+                false,
+                Some(paper::SAND),
+            );
+            button(
+                b,
+                "Add islands",
+                RegionAction::AddIslands,
+                false,
+                Some(paper::SEA_GLASS),
+            );
+            button(
+                b,
+                "Split into…",
+                RegionAction::Split,
+                true,
+                Some(paper::STRAW),
+            );
         }
         Mode::Select if selection.is_some() => {
-            button(b, "Make region", RegionAction::Make, false);
-            button(b, "Draw border", RegionAction::Draw, false);
-            button(b, "Split into…", RegionAction::Split, true);
+            button(
+                b,
+                "Make region",
+                RegionAction::Make,
+                false,
+                Some(paper::SAGE),
+            );
+            button(
+                b,
+                "Draw border",
+                RegionAction::Draw,
+                false,
+                Some(paper::SAND),
+            );
+            button(
+                b,
+                "Split into…",
+                RegionAction::Split,
+                true,
+                Some(paper::STRAW),
+            );
         }
         Mode::Select | Mode::Split => {}
     }
@@ -135,12 +189,13 @@ fn split_controls(b: &mut Builder, strip: Entity, s: &Studio, count: usize) {
         if delta > 0 {
             b.text(stepper, format!("{count} regions"), 14., b.p.text, true);
         }
-        let item = b.button(
+        let item = b.button_with_pigment(
             stepper,
             icon,
             "",
             Action::Regions(RegionAction::SplitCount(delta)),
             false,
+            paper::BLUE,
         );
         if !enabled {
             b.hit(item, None);
@@ -174,7 +229,7 @@ fn split_controls(b: &mut Builder, strip: Entity, s: &Studio, count: usize) {
         Action::Regions(RegionAction::Done),
         false,
     );
-    b.button(
+    b.button_with_pigment(
         strip,
         "",
         if parent.is_some() {
@@ -184,6 +239,7 @@ fn split_controls(b: &mut Builder, strip: Entity, s: &Studio, count: usize) {
         },
         Action::Regions(RegionAction::ApplySplit),
         true,
+        paper::STRAW,
     );
 }
 

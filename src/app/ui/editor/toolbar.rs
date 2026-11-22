@@ -43,7 +43,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
         },
     );
     if s.regions.active {
-        super::regions::build(b, bottom, s);
+        b.with_paper(|b| super::regions::build(b, bottom, s));
     } else if s.tool == Tool::Select && s.text.draft.is_none() {
         selection_controls(b, bottom, s);
     }
