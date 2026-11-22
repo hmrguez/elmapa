@@ -16,37 +16,19 @@ fn surface_light(profile: u32, point: vec2<f32>, time: f32, footprint: f32) -> v
     let hour = time / 3600.0;
     switch profile {
         case 1u: {
-            // Ocean. Two slow, oblique swells with a longer, uneven crest.
-            let bend = wave(point, vec2(0.0028, -0.0015), hour, 121.0);
-            let swell = sin(TAU * (dot(point, vec2(0.0019, 0.0072)) - hour * 463.0) + bend * 0.62);
-            let cross_swell = wave(point, vec2(-0.0029, 0.0107), hour, 641.0);
-            let light = 0.023 * swell * resolve_detail(footprint, 134.0)
-                + 0.009 * cross_swell * resolve_detail(footprint, 90.0);
-            return vec3(light);
-        }
-        case 2u: {
-            // Shallow Ocean. Short ripples taper into broken runs.
-            let choppy = wave(point, vec2(0.0063, 0.0236), hour, 832.0);
-            let broken = smoothstep(-0.55, 0.65, wave(point, vec2(0.016, -0.003), hour, -213.0));
-            let undercurrent = wave(point, vec2(-0.0062, 0.0164), hour, 598.0);
-            let light = 0.017 * choppy * broken * resolve_detail(footprint, 41.0)
-                + 0.003 * undercurrent * resolve_detail(footprint, 57.0);
-            return vec3(light);
-        }
-        case 3u: {
             // Lake. Broad, faint undulations with a quiet, slightly crosswise echo.
             let slow = wave(point, vec2(0.0013, 0.0108), hour, 308.0);
             let echo = wave(point, vec2(0.0059, 0.0037), hour, -199.0);
             return vec3((0.007 * slow + 0.0035 * echo) * resolve_detail(footprint, 92.0));
         }
-        case 4u: {
+        case 2u: {
             // Oasis Water. A sheltered surface with occasional soft glints.
             let drift = wave(point, vec2(0.0011, 0.0128), hour, 167.0);
             let shelter = smoothstep(-0.15, 0.80, wave(point, vec2(0.008, 0.003), hour, 83.0));
             let glint = drift * drift * drift * shelter;
             return vec3(0.0045 * glint * resolve_detail(footprint, 78.0));
         }
-        case 5u: {
+        case 3u: {
             // Glacial Water. Fine mineral-blue crests with a pale, restrained highlight.
             let ripple = wave(point, vec2(-0.0067, 0.024), hour, 600.0);
             let patches = 0.55 + 0.45 * wave(point, vec2(0.0127, 0.0011), hour, 228.0);
