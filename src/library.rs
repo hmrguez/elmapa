@@ -60,8 +60,6 @@ pub struct Shelf {
     pub shader_effects_disabled: bool,
     #[serde(default)]
     pub disabled_landmark_packs: std::collections::HashSet<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub biome_pack: Option<String>,
 }
 
 #[derive(Clone)]
@@ -320,6 +318,12 @@ mod tests {
             .disabled_landmark_packs
             .insert("elmapa.basic".into());
         library.save_preferences().unwrap();
+        // Older shelves can still contain a global biome preference.
+        let path = root.join("shelf.json");
+        let mut shelf: serde_json::Value =
+            serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        shelf["biome_pack"] = "alpine".into();
+        fs::write(&path, serde_json::to_vec(&shelf).unwrap()).unwrap();
         let restored = Library::load(root.clone()).unwrap();
         assert_eq!(restored.read(record.id).unwrap(), document);
         assert_eq!(restored.shelf.atlases.len(), 1);

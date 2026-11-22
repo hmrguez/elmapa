@@ -88,9 +88,7 @@ impl Studio {
         self.wet_release = None;
         self.stroke = Some(Stroke {
             creation_id: Some(self.editor.document().next_id),
-            material: self
-                .brush_orbit
-                .stroke_material(self.brush, self.biome_pack),
+            material: self.brush_orbit.stroke_material(self.brush),
             brush: self.brush,
             points: vec![point].into(),
             size: self.radius,

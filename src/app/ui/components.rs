@@ -435,25 +435,6 @@ impl<'a, 'w, 's> Builder<'a, 'w, 's> {
         }
     }
 
-    pub(super) fn compact_choice(
-        &mut self,
-        parent: Entity,
-        label: &str,
-        action: Action,
-        active: bool,
-    ) -> Entity {
-        let choice = self.button(parent, "", label, action, active);
-        let padding = if self.paper { 4. } else { 6. };
-        self.commands
-            .entity(choice)
-            .entry::<Node>()
-            .and_modify(move |mut node| {
-                node.height = px(26.);
-                node.padding = UiRect::horizontal(px(padding));
-            });
-        choice
-    }
-
     pub(super) fn stepper(
         &mut self,
         parent: Entity,

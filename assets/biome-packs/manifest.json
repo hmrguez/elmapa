@@ -2,6 +2,18 @@
   "schema_version": 1,
   "packs": [
     {
+      "id": "core",
+      "name": "Core",
+      "description": "Parchment, coastal waters, woodland groves and engraved relief.",
+      "materials": {
+        "land": ["parchment", "ochre-sands", "lichen-heath", "weathered-shale"],
+        "water": ["ocean", "shallow-ocean", "lake"],
+        "forest": ["mixed-woodland", "fir-grove", "oak-grove"],
+        "mountain": ["engraved-peaks", "alpine-crags", "ochre-escarpments", "weathered-highlands"]
+      },
+      "landmarks": []
+    },
+    {
       "id": "desert",
       "name": "Desert",
       "description": "Wind-carved sand, mineral springs, low scrub and ochre cliffs.",

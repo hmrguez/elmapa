@@ -1,7 +1,6 @@
 //! Tool cursors, material picker and hover tooltips.
 use super::orbit::{Orbit, action_orbit};
 use crate::app::{
-    radial,
     state::{Action, Studio, Tool},
     ui::{
         components::{Builder, color, shadow},
@@ -138,14 +137,11 @@ pub(super) fn brush_orbit(b: &mut Builder, root: Entity, studio: &Studio) {
     let orbit = action_orbit(
         b,
         root,
-        &studio.brush_orbit.items(studio.brush, studio.biome_pack),
-        &radial::Navigation::default(),
-        &format!(
-            "brush/{}/{}",
-            studio.brush_orbit.generation, studio.brush_orbit.page
-        ),
-        |_, _| Action::CloseBrushOrbit,
-        Action::CloseBrushOrbit,
+        &studio.brush_orbit.items(studio.brush),
+        &studio.brush_orbit.navigation,
+        &format!("brush/{}", studio.brush_orbit.generation),
+        Action::BrushOrbitEnter,
+        Action::BrushOrbitBack,
     );
     b.commands
         .entity(orbit)

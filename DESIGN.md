@@ -82,6 +82,6 @@ Use the toolbar as the reference when adding Paper treatments to brush and place
 
 ### Map menu and header
 
-The editor header, Atlases button, and map menu use warm paper surfaces with fine grain and a soft offset shadow. The atlas title uses Baskerville. Menu actions use Avenir Next labels and ink-tinted symbols. A sand-colored face and a two-pixel ink outline mark the open menu button and selected Biome pack and Appearance choices.
+The editor header, Atlases button, and map menu use warm paper surfaces with fine grain and a soft offset shadow. The atlas title uses Baskerville. Menu actions use Avenir Next labels and ink-tinted symbols. A sand-colored face and a two-pixel ink outline mark the open menu button and selected appearance.
 
 The [Paper component styling](src/app/ui/components/paper.rs) supplies the panel and button treatments. The editor owns the [header layout](src/app/ui/editor/mod.rs) and [menu actions and animation](src/app/ui/editor/menu.rs). Reduced Motion opens and closes the menu immediately.

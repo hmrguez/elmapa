@@ -1,6 +1,6 @@
 //! Shared canvas gesture and material picker state for paint tools.
 use super::{
-    radial::Item,
+    radial::{Item, Navigation},
     state::{Action, Studio},
     ui,
 };
@@ -10,7 +10,8 @@ use std::{sync::Arc, time::Duration};
 
 const HOLD: Duration = Duration::from_millis(1500);
 const SLOP: f32 = 5.;
-const PAGE_SIZE: usize = 6;
+const CORE_PACK: usize = 0;
+pub const DEFAULT_RIVER_FINISH: &str = "Default channel";
 
 pub struct BrushPress {
     pub start: Vec2,
@@ -40,74 +41,98 @@ impl BrushPress {
     }
 }
 
+#[derive(Clone, Copy)]
+struct Selection {
+    pack: usize,
+    material: Option<usize>,
+}
+
 #[derive(Default)]
 pub struct BrushOrbit {
     pub anchor: Option<Vec2>,
-    pub page: usize,
+    pub navigation: Navigation,
     pub generation: u64,
-    selected: [Option<usize>; Brush::ALL.len()],
+    selected: [Option<Selection>; Brush::ALL.len()],
 }
 
 impl BrushOrbit {
-    pub(super) fn reset_picker(&mut self) {
-        *self = Self {
-            generation: self.generation,
-            ..Self::default()
-        };
+    pub fn supports(brush: Brush) -> bool {
+        matches!(
+            brush,
+            Brush::Land | Brush::Water | Brush::Forest | Brush::Mountain | Brush::River
+        )
     }
 
-    pub(super) fn current_index(&self, brush: Brush, pack: Option<usize>) -> Option<usize> {
-        self.selected[brush as usize].or_else(|| {
-            biome_packs::materials(pack, brush)
+    fn selection(&self, brush: Brush) -> Selection {
+        self.selected[brush as usize].unwrap_or_else(|| Selection {
+            pack: CORE_PACK,
+            material: brush_materials::for_brush(brush)
                 .next()
-                .map(|(index, _)| index)
+                .map(|(index, _)| index),
         })
     }
 
-    pub fn stroke_material(&self, brush: Brush, pack: Option<usize>) -> Option<Arc<str>> {
-        self.current_index(brush, pack)
+    pub fn current_index(&self, brush: Brush) -> Option<usize> {
+        self.selection(brush).material
+    }
+
+    pub fn stroke_material(&self, brush: Brush) -> Option<Arc<str>> {
+        self.current_index(brush)
             .map(|index| &brush_materials::catalog()[index])
-            .filter(|material| {
-                pack.is_some() || material.texture.is_some() || material.forest.is_some()
-            })
+            .filter(|material| material.texture.is_some() || material.forest.is_some())
             .map(|material| Arc::from(material.id.as_str()))
     }
 
-    pub fn select(&mut self, brush: Brush, pack: Option<usize>, index: usize) {
-        if biome_packs::materials(pack, brush).any(|(option, _)| option == index) {
-            self.selected[brush as usize] = Some(index);
+    pub fn enter(&mut self, brush: Brush, depth: usize, index: usize) {
+        self.navigation.enter_at(&self.items(brush), depth, index);
+    }
+
+    pub fn select(&mut self, brush: Brush, material: Option<usize>) {
+        if let Some(&pack) = self.navigation.path.first()
+            && self
+                .navigation
+                .items(&self.items(brush))
+                .iter()
+                .any(|item| item.action == Some(Action::BrushMaterial(material)))
+        {
+            self.selected[brush as usize] = Some(Selection { pack, material });
         }
     }
 
-    pub fn items(&self, brush: Brush, pack: Option<usize>) -> Vec<Item<Action>> {
-        let total = biome_packs::materials(pack, brush).count();
-        let current = self.current_index(brush, pack);
-        let mut actions: Vec<_> = biome_packs::materials(pack, brush)
-            .skip(self.page * PAGE_SIZE)
-            .take(PAGE_SIZE)
-            .map(|(index, material)| {
-                let mut item = Item::action(
-                    &material.name,
-                    ui::brush_icon(brush),
-                    Action::BrushMaterial(index),
-                );
-                item.active = current == Some(index);
-                item
+    pub fn items(&self, brush: Brush) -> Vec<Item<Action>> {
+        let selected = self.selection(brush);
+        let icon = ui::brush_icon(brush);
+        let mut packs = biome_packs::catalog()
+            .iter()
+            .enumerate()
+            .filter_map(|(pack, entry)| {
+                let mut materials = biome_packs::materials(Some(pack), brush).peekable();
+                let color = materials.peek()?.1.color;
+                let mut children = Vec::new();
+                if brush == Brush::River && pack == CORE_PACK {
+                    let mut default =
+                        Item::action(DEFAULT_RIVER_FINISH, icon, Action::BrushMaterial(None));
+                    default.active = selected.material.is_none();
+                    children.push(default);
+                }
+                children.extend(materials.map(|(index, material)| {
+                    let mut item =
+                        Item::action(&material.name, icon, Action::BrushMaterial(Some(index)));
+                    item.active = selected.pack == pack && selected.material == Some(index);
+                    item
+                }));
+                let mut branch = Item::branch(&entry.name, icon, children);
+                branch.swatch = Some(color);
+                branch.active = selected.pack == pack;
+                Some(branch)
             })
-            .collect();
-        if total > PAGE_SIZE {
-            actions.push(Item::action(
-                "More materials",
-                "chevron-right",
-                Action::BrushOrbitPage((self.page + 1) % total.div_ceil(PAGE_SIZE)),
-            ));
-        }
-        actions.push(Item::action(
+            .collect::<Vec<_>>();
+        packs.push(Item::action(
             "Close materials · Esc",
             "close",
             Action::CloseBrushOrbit,
         ));
-        actions
+        packs
     }
 }
 
@@ -120,14 +145,12 @@ impl Studio {
             && self.drag.is_none()
             && self.tool == super::state::Tool::Brush
             && !self.regions.active
-            && biome_packs::materials(self.biome_pack, self.brush)
-                .nth(1)
-                .is_some()
+            && BrushOrbit::supports(self.brush)
     }
 
     pub fn open_brush_orbit(&mut self, point: Vec2) {
         self.brush_orbit.anchor = Some(point);
-        self.brush_orbit.page = 0;
+        self.brush_orbit.navigation.reset();
         self.brush_orbit.generation = self.brush_orbit.generation.wrapping_add(1);
         self.ui_dirty = true;
     }

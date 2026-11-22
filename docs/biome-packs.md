@@ -30,14 +30,15 @@ Coastal Wetlands and Volcanic Highlands are landscape themes. Their artwork shou
 
 ## Authoring behavior
 
-Desert and Alpine are workspace palettes for placing new brush strokes and landmarks. Classic and Woodland remain the atlas-wide styles for paper, trail and lettering pigments. The selected pack's default water finish also sets the channel color of new river strokes. Choose a palette to reach its materials and landmarks while painting, and switch palettes to paint a different environment on the same atlas. Previously placed content keeps its saved material or landmark ID.
+The brush Orbit shows Core, Desert, and Alpine for Land, Water, Forest, Mountains, and River. Choose a pack, then a finish for the current brush. River groups channel colors using the Water finishes, and Core also offers the original channel color. Classic and Woodland control atlas-wide pigments. Landmark artwork is browsed through the Landmark Orbit and its own packs.
 
-Define each palette once in the [biome pack manifest](../assets/biome-packs/manifest.json), with a stable ID, display name and references to brush materials and landmarks. For each material brush, list the default finish first. Reuse an artwork ID where packs share a finish or landmark. Keep authored geometry and texture choices usable across the editor, shelf and SVG.
+Define each biome in the [biome pack manifest](../assets/biome-packs/manifest.json), with a stable ID, display name, and references to brush materials. For each brush, list the representative finish first. Reuse an artwork ID where packs share a finish. The biome catalog also lists complementary landmark IDs for discovery through MCP. Keep authored geometry and texture choices usable across the editor, shelf, and SVG.
 
 ## Starter packs
 
 | Pack | New artwork | Reused artwork |
 | --- | --- | --- |
+| Core | | Parchment, Ocean, Mixed Woodland, Engraved Peaks, and the other original finishes |
 | Desert | Dune Sand, Oasis Water, Desert Scrub | Ochre Escarpments and landmarks from HeRo's Nature pack, such as the oasis, dunes and canyon |
 | Alpine | Alpine Meadow, Glacial Water | Fir Grove, Alpine Crags and landmarks from HeRo's Nature pack, such as the glacier and waterfall |
 
