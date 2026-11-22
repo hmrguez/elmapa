@@ -136,7 +136,7 @@ impl Layer {
     }
 }
 
-/// Controls the map's artwork independently of the editor's light or dark appearance.
+/// Controls the map's artwork independently of the editor's UI appearance.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AtlasStyle {

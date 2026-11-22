@@ -1,10 +1,10 @@
 //! Native UI composition and systems registered by the app.
 mod assets;
+mod components;
 mod editor;
 mod feedback;
 mod overlays;
 mod shelf;
-mod widgets;
 
 use super::{
     files::Jobs,
@@ -12,9 +12,10 @@ use super::{
     state::{Action, Studio},
 };
 use bevy::prelude::*;
-use widgets::{Builder, Palette};
+use components::Builder;
 
 pub use assets::{setup, snap_text_glyphs};
+pub use components::color;
 pub use editor::{ChromeMotion, advance_motion, brush_icon, menu_animation};
 pub use feedback::{alpha, hover, hover_follow};
 pub use overlays::{
@@ -22,7 +23,6 @@ pub use overlays::{
     region_selection_follow, selection_follow, text_ime, text_selection_follow, tooltips,
 };
 pub use shelf::{PreviewSlot, cover_rect};
-pub use widgets::color;
 
 #[cfg(test)]
 mod tests;
@@ -92,7 +92,7 @@ pub fn rebuild(
             },
         ))
         .id();
-    let mut b = Builder::new(&mut commands, &assets, Palette::new(studio.dark));
+    let mut b = Builder::new(&mut commands, &assets, studio.appearance);
     b.atlas_style = studio.editor.document().style;
     // Build in hit order so overlays take precedence over the editor chrome.
     if let Some(replay) = studio.replay_view {

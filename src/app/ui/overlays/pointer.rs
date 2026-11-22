@@ -4,9 +4,9 @@ use crate::app::{
     radial,
     state::{Action, Studio, Tool},
     ui::{
+        components::{Builder, color, shadow},
         contains,
         feedback::Hover,
-        widgets::{Builder, color, shadow},
     },
 };
 use bevy::prelude::*;
@@ -34,10 +34,9 @@ pub(in crate::app::ui) fn build_feedback(b: &mut Builder, root: Entity, studio: 
             ..default()
         },
     );
-    b.commands.entity(cursor).insert((
-        Cursor,
-        BorderColor::all(color(if studio.dark { 0x555555 } else { 0x75654f }, 0.65)),
-    ));
+    b.commands
+        .entity(cursor)
+        .insert((Cursor, BorderColor::all(color(0x75654f, 0.65))));
     if studio.tool == Tool::Landmarks
         && let Some(index) = studio.placement_landmark()
         && let Some((image, size)) = b.assets.landmark_ghosts.get(index)

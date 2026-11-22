@@ -3,8 +3,8 @@ use crate::app::{
     radial::{self, Item},
     state::{Action, Studio},
     ui::{
+        components::{Builder, color, row, shadow},
         feedback::Hover,
-        widgets::{Builder, color, row, shadow},
     },
 };
 use bevy::prelude::*;

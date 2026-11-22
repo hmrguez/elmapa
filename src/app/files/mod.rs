@@ -1,7 +1,10 @@
 //! Single bounded I/O worker. Switch/quit waits for a durable local checkpoint.
 mod previews;
 
-use super::{state::Studio, ui};
+use super::{
+    state::{Appearance, Studio},
+    ui,
+};
 use bevy::{
     app::AppExit,
     prelude::*,
@@ -127,9 +130,12 @@ pub fn poll(
             match completion.result {
                 Ok(Outcome::Loaded) => {
                     if let Some(library) = &studio.library {
-                        let dark = library.shelf.dark || studio.dark;
                         let reduced = library.shelf.reduced_motion;
-                        let paper_ui = library.shelf.paper_ui;
+                        let appearance = if library.shelf.paper_ui {
+                            Appearance::Paper
+                        } else {
+                            Appearance::Holo
+                        };
                         let shader_effects_disabled = library.shelf.shader_effects_disabled;
                         let pack = library
                             .shelf
@@ -139,9 +145,8 @@ pub fn poll(
                         studio.disabled_landmark_packs =
                             library.shelf.disabled_landmark_packs.clone();
                         studio.set_biome_pack(pack);
-                        studio.dark = dark;
                         studio.reduced = reduced;
-                        studio.paper_ui = paper_ui;
+                        studio.appearance = appearance;
                         studio.shader_effects_disabled = shader_effects_disabled;
                     }
                     studio.status = "Choose a world to explore.".into();
@@ -207,9 +212,8 @@ pub fn poll(
                 }
                 return;
             };
-            library.shelf.dark = studio.dark;
             library.shelf.reduced_motion = studio.reduced;
-            library.shelf.paper_ui = studio.paper_ui;
+            library.shelf.paper_ui = studio.appearance == Appearance::Paper;
             library.shelf.shader_effects_disabled = studio.shader_effects_disabled;
             library.shelf.disabled_landmark_packs = studio.disabled_landmark_packs.clone();
             library.shelf.biome_pack = studio

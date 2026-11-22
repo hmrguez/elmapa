@@ -51,7 +51,7 @@ The trace is bounded to 131,072 events. Reject overflow or incomplete replays. `
 
 ## Native workflow and visual review
 
-Exercise shelf reflow/scrolling, book transition/reduced motion, all brushes, pan and pointer-anchored zoom, UI occlusion, release over panels, layers/visibility/order/opacity/deletion, undo/redo, light/dark appearance, external save/open, SVG export/cancellation, return/reentry and graceful close/quit. Verify outputs by reopening the files. Use the same camera and window geometry for old/new visual review.
+Exercise shelf reflow/scrolling, book transition/reduced motion, all brushes, pan and pointer-anchored zoom, UI occlusion, release over panels, layers/visibility/order/opacity/deletion, undo/redo, Holo and Paper appearances, external save/open, SVG export/cancellation, return/reentry and graceful close/quit. Verify outputs by reopening the files. Use the same camera and window geometry for old/new visual review.
 
 Check Avenir Next/Baskerville text, small icon edges, logical panel widths, radii, line heights, translucency, two-layer shadows, gradients and clipping. Font hinting and gamma-space compositing are explicit design requirements; default linear compositing changes partially covered text/icon contrast. Confirm physical render size and UI device scale on Retina and ordinary displays when available. Different font rasterizers can still produce different glyph coverage; do not claim a zero-pixel image diff without that evidence.
 

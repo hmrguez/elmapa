@@ -2,7 +2,7 @@
 use crate::app::{
     regions::{Mode, RegionAction},
     state::{Action, Studio},
-    ui::widgets::{Builder, color, row},
+    ui::components::{Builder, color, row},
 };
 use bevy::prelude::*;
 use elmapa::scene::territories::{MAX_SPLIT_COUNT, pigment};

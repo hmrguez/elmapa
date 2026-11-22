@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 #[derive(Default)]
 pub struct Overlay {
-    key: Option<(u64, u32, bool)>,
+    key: Option<(u64, u32)>,
     entity: Option<Entity>,
     material: Handle<ColorMaterial>,
 }
@@ -19,11 +19,7 @@ pub fn region_overlay(mut graphics: Graphics, studio: Res<Studio>, mut overlay: 
         && studio.opening.is_none()
         && studio.replay_view.is_none();
     let scale = studio.viewport.zoom.max(0.0001);
-    let key = show.then_some((
-        studio.regions.overlay_revision,
-        scale.to_bits(),
-        studio.dark,
-    ));
+    let key = show.then_some((studio.regions.overlay_revision, scale.to_bits()));
     if overlay.key == key {
         return;
     }

@@ -7,7 +7,7 @@ mod regions;
 mod selection;
 mod text;
 
-use super::widgets::Builder;
+use super::components::Builder;
 use crate::app::state::Studio;
 use bevy::prelude::*;
 

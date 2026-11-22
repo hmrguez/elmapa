@@ -4,8 +4,8 @@ use crate::app::{
     regions::RegionAction,
     state::{Action, LayerBranch, Studio},
     ui::{
+        components::{Builder, color, row},
         feedback::{Fade, Hover},
-        widgets::{Builder, color, row},
     },
 };
 use bevy::prelude::*;

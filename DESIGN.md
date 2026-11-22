@@ -1,5 +1,5 @@
 ---
-name: Elmapa Paper UI
+name: Elmapa UI
 description: Pale pigments, fine paper grain, and crisp ink illustrations for the atlas editor.
 colors:
   selection-ink: "#5c3a22"
@@ -32,40 +32,50 @@ components:
 
 ## Overview
 
-Paper UI is Elmapa’s preview appearance. Think of small printed swatches laid out on a cartographer’s worktable. Muted pigment and fine paper grain give the controls a hand-printed feel. Crisp illustrations make them easy to scan while drawing. The artwork on the atlas carries the strongest detail.
+Elmapa offers two appearances. **Holo** is the default, with translucent floating panels, rounded controls, and tinted line icons. **Paper** takes its cues from small printed swatches laid out on a cartographer’s worktable. Muted pigment and fine paper grain give the controls a hand-printed feel. Crisp illustrations make them easy to scan while drawing. The artwork on the atlas carries the strongest detail.
 
-The toolbar is the visual reference for this direction. Enable **Paper UI (Preview)** in **Settings** to see it in the editor. The setting defaults to Off and works with both Light and Dark appearance.
+Choose **Holo** or **Paper** under **Appearance** in shelf Settings or the editor’s map menu. Paper’s illustrated toolbar is the first surface with its own treatment. Both appearances share the existing styling on other surfaces.
 
-## Colors
+## Paper colors
 
 Use quiet, pale pigments on the faces of controls. In the toolbar, sage identifies Forest, sea glass identifies Water, and rose identifies Eraser. Apply color to a whole control face and let the illustration communicate its purpose as well. When a menu introduces a new role, start with the existing pigments and give the role a consistent hue.
 
 Use selection ink for the active outline. Give a hovered tile a slight lift in brightness and leave enough contrast for a clear active state. On larger panels, give paper colors a quieter role so text, icons, and selection stay easy to read.
 
-## Typography
+## Paper typography
 
 Use Avenir Next for concise control labels, values, and instructions. Let the illustrated icon lead in compact tool rows and use a tooltip to name its action. Give menus visible text whenever choices need to be read or compared. Use the editor’s Baskerville for titles when a panel needs a heading.
 
-## Layout
+## Paper layout
 
 The toolbar is a row of individual square controls. The atlas shows in the spaces between them. Keep the row steady when the active tool changes. Put controls for the current tool in a compact strip above the row, where the relationship is easy to see.
 
 For upcoming menus, carry over the spacing, icon treatment, and contained grain from the toolbar. Give related options a shared, quiet surface when that makes the group easier to scan.
 
-## Elevation & Depth
+## Paper elevation & depth
 
 Use the fine, stationary [paper grain](assets/tool-icons/paper.png) as a face texture. Keep it inside the control edges and subtle enough for the icon to read at its normal size. Use minimal depth for individual controls. A soft offset shadow is appropriate for a floating menu where it helps distinguish the menu from the atlas.
 
-## Shapes
+## Paper shapes
 
 Use near-square corners and thin borders. The selected tool gets a two-pixel ink outline that follows selection and snaps into place with Reduced motion.
 
 ## Components
 
-### Paper toolbar
+The [shared UI components](src/app/ui/components.rs) define the vocabulary for both appearances. Use the same component for the same interaction so layout, styling, and input stay consistent across editor surfaces.
+
+| Component | Role |
+| --- | --- |
+| Panel | Groups related controls on a surface and blocks pointer input from reaching the canvas underneath. |
+| Icon | Shows a symbol, with a tinted glyph or an authored illustration depending on its role. |
+| Button | Invokes an action and owns its hit area, hover, tooltip, and selected state. A tool button specializes this for tool selection. |
+| Appearance picker | Shows Holo and Paper and highlights the current choice. Settings and the map menu use the same picker. |
+| Stepper | Shows a numeric value with buttons for discrete decreases and increases. A slider is the component for direct adjustment along a track when a surface needs one. |
+
+### Toolbar
 
 ![Elmapa editor close-up showing the Paper UI toolbar](docs/images/paper-ui-toolbar.png)
 
-The implemented reference is the [Paper toolbar component](src/app/ui/editor/toolbar/paper.rs). It pairs the [illustrated tool symbols](assets/tool-icons/symbols.svg) with tinted paper faces. The [shared toolbar](src/app/ui/editor/toolbar.rs) defines the tool order, labels, actions, and selection for both appearances.
+The [editor toolbar](src/app/ui/editor/toolbar.rs) defines tool order, labels, actions, and contextual controls. The [toolbar components](src/app/ui/components/toolbar.rs) render Holo's shared tray and moving highlight or Paper's tinted tiles and moving ink outline. Paper tiles use the [illustrated tool symbols](assets/tool-icons/symbols.svg) and a fine grain. Both appearances use the same selection behavior and respect Reduced motion.
 
-Use this component as the starting point for the brush and placement pickers, followed by the map menu and Layers panel. Apply the same principles to dialogs and the atlas shelf as those surfaces adopt the preview. Check the composition over real atlas artwork in both Light and Dark.
+Use the toolbar as the reference when adding Paper treatments to brush and placement pickers, the map menu, Layers, dialogs, and the atlas shelf. Check both appearances over real atlas artwork as each surface gains a Paper treatment.

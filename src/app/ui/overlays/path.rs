@@ -1,7 +1,7 @@
 //! Glass handles and a contextual orbit for an editable river or trail.
 use crate::app::{
     state::Studio,
-    ui::widgets::{Builder, color, shadow},
+    ui::components::{Builder, color, shadow},
 };
 use bevy::prelude::*;
 

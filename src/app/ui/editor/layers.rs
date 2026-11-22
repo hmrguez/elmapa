@@ -6,8 +6,8 @@ use crate::app::{
     state::{Action, LayerBranch, Studio},
     ui::{
         ScrollArea,
+        components::{Builder, color, column, row},
         feedback::{Fade, Hover},
-        widgets::{Builder, color, column, row},
     },
 };
 use bevy::prelude::*;
@@ -202,7 +202,7 @@ fn layer_row(
         b.icon(icon, "layer", p.muted, 17.);
     }
     for brush in brushes {
-        let hex = brush_color(brush, s.dark);
+        let hex = brush_color(brush);
         let icon = b.node(
             icons,
             Node {
@@ -269,21 +269,14 @@ fn layer_row(
     );
 }
 
-fn brush_color(b: Brush, dark: bool) -> u32 {
-    match (b, dark) {
-        (Brush::Land, false) => 0x856d46,
-        (Brush::Land, true) => 0xd4c18e,
-        (Brush::Water, false) => 0x4e746f,
-        (Brush::Water, true) => 0x9fbfb5,
-        (Brush::Forest, false) => 0x59694b,
-        (Brush::Forest, true) => 0xa2bb89,
-        (Brush::Mountain, false) => 0x78644e,
-        (Brush::Mountain, true) => 0xcab7a0,
-        (Brush::River, false) => 0x48766e,
-        (Brush::River, true) => 0x9cc1ba,
-        (Brush::Path, false) => 0x89603c,
-        (Brush::Path, true) => 0xd7aa83,
-        (Brush::Erase, false) => 0x8c7478,
-        (Brush::Erase, true) => 0xc7a7ae,
+fn brush_color(b: Brush) -> u32 {
+    match b {
+        Brush::Land => 0x856d46,
+        Brush::Water => 0x4e746f,
+        Brush::Forest => 0x59694b,
+        Brush::Mountain => 0x78644e,
+        Brush::River => 0x48766e,
+        Brush::Path => 0x89603c,
+        Brush::Erase => 0x8c7478,
     }
 }

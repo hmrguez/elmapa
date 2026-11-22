@@ -1,6 +1,6 @@
 use super::*;
+use crate::app::state::Appearance;
 use assets::UiAssets;
-use feedback::{Hover, HoverFollow, HoverFrame};
 use std::collections::HashMap;
 
 fn ui_app(studio: Studio) -> App {
@@ -28,20 +28,35 @@ fn ui_app(studio: Studio) -> App {
 }
 
 #[test]
-fn paper_preview_rebuilds_the_toolbar_in_either_appearance() {
+fn appearance_switch_rebuilds_the_same_tools_with_the_chosen_faces() {
     use elmapa::document::Brush;
 
     let mut app = ui_app(Studio {
         home: false,
+        menu: true,
         ..default()
     });
-    let land_has_paper = |world: &mut World| {
-        let (_, texture) = world
-            .query::<(&Hit, Option<&ImageNode>)>()
+    let tools = |world: &mut World| {
+        use crate::app::brush_motion::SelectedTool;
+        let mut tools: Vec<_> = world
+            .query::<(&Hit, Option<&ImageNode>, Option<&SelectedTool>)>()
             .iter(world)
-            .find(|(hit, _)| hit.action == Some(Action::Brush(Brush::Land)))
-            .expect("Land tool");
-        texture.is_some()
+            .filter_map(|(hit, face, selected)| match hit.action? {
+                action @ (Action::Brush(_)
+                | Action::SelectTool
+                | Action::TextTool
+                | Action::LandmarkTool
+                | Action::Regions(crate::app::regions::RegionAction::Tool)) => {
+                    Some((hit.order, action, face.is_some(), selected.is_some()))
+                }
+                _ => None,
+            })
+            .collect();
+        tools.sort_by_key(|(order, ..)| *order);
+        tools
+            .into_iter()
+            .map(|(_, action, paper, selected)| (action, paper, selected))
+            .collect::<Vec<_>>()
     };
     let click = |app: &mut App, action| {
         app.world_mut()
@@ -52,17 +67,24 @@ fn paper_preview_rebuilds_the_toolbar_in_either_appearance() {
     };
 
     app.update();
-    let initial_dark = app.world().resource::<Studio>().dark;
-    assert!(!land_has_paper(app.world_mut()));
-    click(&mut app, Action::PaperUi);
+    let holo = tools(app.world_mut());
+    assert_eq!(holo.len(), 11);
+    assert!(holo.iter().all(|&(_, paper, _)| !paper));
+    assert!(
+        holo.iter()
+            .any(|&(action, _, selected)| action == Action::Brush(Brush::Land) && selected)
+    );
+
+    click(&mut app, Action::SetAppearance(Appearance::Paper));
     assert!(app.world().resource::<Jobs>().preferences);
-    assert_eq!(app.world().resource::<Studio>().dark, initial_dark);
-    assert!(land_has_paper(app.world_mut()));
-    click(&mut app, Action::Theme);
-    assert!(land_has_paper(app.world_mut()));
-    click(&mut app, Action::PaperUi);
-    assert!(!land_has_paper(app.world_mut()));
-    assert_ne!(app.world().resource::<Studio>().dark, initial_dark);
+    assert_eq!(
+        tools(app.world_mut()),
+        holo.iter()
+            .map(|&(action, _, selected)| (action, true, selected))
+            .collect::<Vec<_>>()
+    );
+    click(&mut app, Action::SetAppearance(Appearance::Holo));
+    assert_eq!(tools(app.world_mut()), holo);
 }
 
 #[test]
@@ -131,90 +153,35 @@ fn map_menu_and_advanced_settings_show_biome_choices() {
 }
 
 #[test]
-fn dark_shelf_chrome_matches_neutral_canvas_panels() {
-    let mut library =
-        elmapa::library::Library::load(std::env::temp_dir().join("elmapa-palette-test-no-files"))
-            .unwrap();
-    library.shelf.atlases.push(elmapa::library::AtlasRecord {
-        id: 1,
-        name: "Test atlas".into(),
-        source: None,
-        camera: elmapa::library::Camera::for_document(&elmapa::document::Document::blank()),
-    });
-    let mut app = ui_app(Studio {
-        dark: true,
-        settings: true,
-        library: Some(library),
-        ..default()
-    });
-    app.update();
+fn settings_and_map_menu_offer_both_appearances() {
+    for (home, selected) in [(true, Appearance::Holo), (false, Appearance::Paper)] {
+        let mut app = ui_app(Studio {
+            home,
+            settings: home,
+            menu: !home,
+            appearance: selected,
+            ..default()
+        });
+        app.update();
 
-    let neutral = |c: Color| {
-        let c = c.to_linear();
-        (c.red - c.green).abs() < 0.001 && (c.green - c.blue).abs() < 0.001
-    };
-    let world = app.world_mut();
-    for (entity, background, text, image, hover, frame, follow) in world
-        .query::<(
-            Entity,
-            Option<&BackgroundColor>,
-            Option<&TextColor>,
-            Option<&ImageNode>,
-            Option<&Hover>,
-            Option<&HoverFrame>,
-            Option<&HoverFollow>,
-        )>()
-        .iter(world)
-    {
-        // Atlas artwork keeps its parchment colors in either appearance.
-        if world.get::<PreviewSlot>(entity).is_some() {
-            continue;
-        }
-        for c in background
-            .map(|c| c.0)
-            .into_iter()
-            .chain(text.map(|c| c.0))
-            .chain(image.map(|c| c.color))
-            .chain(hover.into_iter().flat_map(|h| [h.base, h.target]))
-            .chain(frame.into_iter().flat_map(|h| [h.from, h.to]))
-            .chain(follow.into_iter().flat_map(|h| [h.from, h.to]))
-        {
-            assert!(neutral(c), "Dark shelf chrome has a color cast: {c:?}");
-        }
-    }
-    for gradient in world.query::<&BackgroundGradient>().iter(world) {
-        for gradient in &gradient.0 {
-            if let Gradient::Linear(gradient) = gradient {
-                for stop in &gradient.stops {
-                    assert!(
-                        neutral(stop.color),
-                        "Dark shelf background has a color cast"
-                    );
-                    assert!(
-                        stop.color.to_linear().red <= 0.22,
-                        "Dark shelf background must stay as dark as the canvas chrome"
-                    );
-                }
-            }
-        }
-    }
-    for border in world.query::<&BorderColor>().iter(world) {
-        assert!(
-            [border.top, border.right, border.bottom, border.left]
-                .into_iter()
-                .all(neutral)
-        );
-    }
-    for shadow in world.query::<&BoxShadow>().iter(world) {
-        assert!(shadow.0.iter().all(|s| neutral(s.color)));
-    }
-    assert!(
-        world
-            .query::<&BackgroundColor>()
+        let world = app.world_mut();
+        let choices: Vec<_> = world
+            .query::<(&Hit, &Children, &BackgroundColor)>()
             .iter(world)
-            .any(|c| { c.0 == color(Palette::new(true).surface, 0.98) }),
-        "Settings should use the canvas panel surface"
-    );
+            .filter_map(|(hit, children, background)| {
+                let Action::SetAppearance(appearance) = hit.action? else {
+                    return None;
+                };
+                let text = children.iter().find_map(|id| world.get::<Text>(id))?;
+                Some((appearance, text.0.as_str(), background.0.alpha()))
+            })
+            .collect();
+        assert_eq!(choices.len(), 2);
+        for (appearance, label) in [(Appearance::Holo, "Holo"), (Appearance::Paper, "Paper")] {
+            let alpha = if appearance == selected { 1. } else { 0.1 };
+            assert!(choices.contains(&(appearance, label, alpha)));
+        }
+    }
 }
 
 #[test]

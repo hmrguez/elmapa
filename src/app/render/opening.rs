@@ -39,7 +39,7 @@ pub fn opening(
         clear.0 = color(studio.editor.document().style.paper(), 1.);
         return;
     };
-    clear.0 = color(if studio.dark { 0x171717 } else { 0xeceee7 }, 1.);
+    clear.0 = color(0xeceee7, 1.);
     if !studio.opening_ready {
         if !studio.scene.is_pending() && canvas.ready() {
             studio.opening_ready = true;
