@@ -2,8 +2,8 @@
 use super::orbit::{Orbit, OrbitResize, RadialElement, action_orbit};
 use crate::app::{
     lettering::{Edit, Field, LabelStyle, selection_size},
-    state::{Action, Studio, Tool},
-    ui::components::{Builder, color, column, row, shadow},
+    state::{Action, Appearance, Studio, Tool},
+    ui::components::{Builder, color, column, pigment, row, shadow},
 };
 use bevy::prelude::*;
 use elmapa::{
@@ -31,7 +31,7 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
     if let Some(draft) = s.text.draft {
         let identity = format!("text draft/{}/{:?}", draft.layer, draft.point);
         let orbit = text_orbit(b, root, s, &identity);
-        build_draft(b, root, s, orbit);
+        b.with_paper(|b| build_draft(b, root, s, orbit));
         if let Some(label) = s.draft_preview_label() {
             inline_name_edit(b, root, s, &label);
         }
@@ -127,19 +127,21 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio) {
         "text"
     };
     let orbit = text_orbit(b, root, s, &format!("{identity}/{}", label.id));
-    if let Some(field) = s.text.control {
-        let panel = edit_card(b, root, orbit);
-        let (title, value, step) = style_setting(field, LabelStyle::from(&s.current_label()));
-        b.text(panel, title, 17., b.p.text, true);
-        let controls = b.node(panel, row(5.));
-        text_stepper(b, controls, s, field, value, step);
-        if let Some(error) = &s.text.error {
-            b.text(panel, error, 10., b.p.muted, false);
+    b.with_paper(|b| {
+        if let Some(field) = s.text.control {
+            let panel = edit_card(b, root, orbit);
+            let (title, value, step) = style_setting(field, LabelStyle::from(&label));
+            b.text(panel, title, 17., b.p.text, true);
+            let controls = b.node(panel, row(5.));
+            text_stepper(b, controls, s, field, value, step);
+            if let Some(error) = &s.text.error {
+                b.text(panel, error, 10., b.p.muted, false);
+            }
+        } else if let Some(error) = &s.text.error {
+            let panel = edit_card(b, root, orbit);
+            b.text(panel, error, 11., b.p.text, false);
         }
-    } else if let Some(error) = &s.text.error {
-        let panel = edit_card(b, root, orbit);
-        b.text(panel, error, 11., b.p.text, false);
-    }
+    });
     inline_name_edit(b, root, s, &label);
 }
 
@@ -197,15 +199,17 @@ fn edit_card(b: &mut Builder, root: Entity, orbit: Entity) -> Entity {
 }
 
 fn text_orbit(b: &mut Builder, root: Entity, s: &Studio, identity: &str) -> Entity {
-    let orbit = action_orbit(
-        b,
-        root,
-        &s.text_actions(),
-        &s.text.radial,
-        identity,
-        Action::RadialEnter,
-        Action::RadialBack,
-    );
+    let orbit = b.with_paper(|b| {
+        action_orbit(
+            b,
+            root,
+            &s.text_actions(),
+            &s.text.radial,
+            identity,
+            Action::RadialEnter,
+            Action::RadialBack,
+        )
+    });
     b.commands.entity(orbit).insert(TextOrbit);
     orbit
 }
@@ -275,12 +279,13 @@ pub(super) fn placement_style(b: &mut Builder, root: Entity, s: &Studio) {
         },
     );
     for font in LabelFont::ALL {
-        b.button(
+        b.button_with_pigment(
             fonts,
             "",
             font.family(),
             Action::TextFont(font),
             style.font == font,
+            pigment::OCHRE,
         );
     }
     let inks = b.node(
@@ -291,18 +296,38 @@ pub(super) fn placement_style(b: &mut Builder, root: Entity, s: &Studio) {
         },
     );
     for ink in LabelInk::ALL {
-        let button = b.button(inks, "", ink.name(), Action::TextInk(ink), style.ink == ink);
+        let tint = match ink {
+            LabelInk::Sepia => pigment::SAND,
+            LabelInk::Charcoal => pigment::CLAY,
+            LabelInk::Blue => pigment::BLUE,
+            LabelInk::Parchment => pigment::LINEN,
+        };
+        let button = b.button_with_pigment(
+            inks,
+            "",
+            ink.name(),
+            Action::TextInk(ink),
+            style.ink == ink,
+            tint,
+        );
         let swatch = b.swatch(button, ink.color_in(b.atlas_style), 10., None);
-        b.commands.entity(button).insert_children(0, &[swatch]);
+        let mut entity = b.commands.entity(button);
+        entity.insert_children(0, &[swatch]);
+        if s.appearance == Appearance::Paper {
+            entity
+                .entry::<Node>()
+                .and_modify(|mut node| node.padding = UiRect::horizontal(px(8.)));
+        }
     }
     let (name, value, step) = style_setting(Field::Size, style);
     style_stepper(b, panel, Field::Size, name, value, step);
-    b.button(
+    b.button_with_pigment(
         panel,
         "chevron-down",
         "Advanced typography",
         Action::TextStyleDetails,
         s.text.style_details,
+        pigment::SEA_GLASS,
     );
     if s.text.style_details {
         for field in [Field::Spacing, Field::Opacity, Field::Curvature] {
@@ -340,17 +365,16 @@ fn style_stepper(
     );
     b.text(line, title, 12., b.p.text, false);
     let steps = b.node(line, row(3.));
-    b.button(steps, "minus", "", Action::TextStep(field, -delta), false);
-    let number = b.node(
+    b.stepper(
         steps,
-        Node {
-            width: px(43.),
-            justify_content: JustifyContent::Center,
-            ..row(0.)
-        },
+        value,
+        (
+            Action::TextStep(field, -delta),
+            Action::TextStep(field, delta),
+        ),
+        px(43.),
+        11.,
     );
-    b.text(number, value, 11., b.p.text, false);
-    b.button(steps, "plus", "", Action::TextStep(field, delta), false);
 }
 
 type SelectionNodes<'w, 's> = Query<

@@ -34,7 +34,7 @@ components:
 
 Elmapa offers two appearances. **Holo** is the default, with translucent floating panels, rounded controls, and tinted line icons. **Paper** takes its cues from small printed swatches laid out on a cartographer’s worktable. Muted pigment and fine paper grain give the controls a hand-printed feel. Crisp illustrations make them easy to scan while drawing. The artwork on the atlas carries the strongest detail.
 
-Choose **Holo** or **Paper** under **Appearance** in shelf Settings or the editor’s map menu. Paper has its own treatment for the illustrated toolbar, editor header, and map menu. The remaining surfaces share the existing styling.
+Choose **Holo** or **Paper** under **Appearance** in shelf Settings or the editor’s map menu. Paper styles the illustrated toolbar, editor header, map menu, and the brush and placement controls. The remaining surfaces share the existing styling.
 
 ## Paper colors
 
@@ -50,7 +50,7 @@ Use Avenir Next for concise control labels, values, and instructions. Let the il
 
 The toolbar is a row of individual square controls. The atlas shows in the spaces between them. Keep the row steady when the active tool changes. Put controls for the current tool in a compact strip above the row, where the relationship is easy to see.
 
-For upcoming menus, carry over the spacing, icon treatment, and contained grain from the toolbar. Give related options a shared, quiet surface when that makes the group easier to scan.
+Carry the toolbar’s spacing, icon treatment, and contained grain into adjacent controls. Give related options a shared, quiet surface when that makes the group easier to scan.
 
 ## Paper elevation & depth
 
@@ -78,10 +78,18 @@ The [shared UI components](src/app/ui/components.rs) define the vocabulary for b
 
 The [editor toolbar](src/app/ui/editor/toolbar.rs) defines tool order, labels, actions, and contextual controls. The [toolbar components](src/app/ui/components/toolbar.rs) render Holo's shared tray and moving highlight or Paper's tinted tiles and moving ink outline. Paper tiles use the [illustrated tool symbols](assets/tool-icons/symbols.svg) and a fine grain. Both appearances use the same selection behavior and respect Reduced motion.
 
-Use the toolbar as the reference when adding Paper treatments to brush and placement pickers, Layers, dialogs, and the atlas shelf. Check both appearances over real atlas artwork as each surface gains a Paper treatment.
+Use the toolbar as the reference when adding Paper treatments to Layers, dialogs, and the atlas shelf. Check both appearances over real atlas artwork as each surface gains a Paper treatment.
 
 ### Map menu and header
 
 The editor header, Atlases button, and map menu use warm paper surfaces with fine grain and a soft offset shadow. The atlas title uses Baskerville. Menu actions use Avenir Next labels and ink-tinted symbols. A sand-colored face and a two-pixel ink outline mark the open menu button and selected appearance.
 
 The [Paper component styling](src/app/ui/components/paper.rs) supplies the panel and button treatments. The editor owns the [header layout](src/app/ui/editor/mod.rs) and [menu actions and animation](src/app/ui/editor/menu.rs). Reduced Motion opens and closes the menu immediately.
+
+### Brush and placement controls
+
+The contextual strip sits eight pixels above the illustrated tiles and groups the current tool’s controls on a single paper surface. Advanced brush settings and the New label style card use the same warm grain and offset shadow, with Baskerville headings and Avenir Next control labels. On Paper the two cards share a width at the editor’s supported window sizes. The Advanced and Material buttons echo the active brush tile, and ochre connects the Text tile, style button, and typeface choices. Ink choices use distinct faces alongside their printed ink swatches. Sea glass identifies Advanced typography, and numeric steppers stay on the quiet panel surface.
+
+Brush Orbit, landmark choices, and lettering choices use small paper buttons that follow the existing rings around the pointer or selection. Sage, ochre, and blue distinguish Core, Desert, and Alpine. Landmark packs use straw, terracotta, and sage. Ochre, blue, and sea glass identify Typeface, Ink, and Advanced typography in the lettering orbit. A light border defines each quiet face. Hover lifts the pigment or adds a sand wash, and a two-pixel selection ink border marks an open branch or the chosen option. Material artwork, landmark illustrations, and ink swatches retain their own colors. Reduced motion reveals each ring immediately.
+
+The [shared orbit button](src/app/ui/components/orbit.rs) supplies the face and hover treatment. The [editor toolbar](src/app/ui/editor/toolbar.rs) owns the strip and Advanced settings layout. The [overlay renderer](src/app/ui/overlays/orbit.rs) owns ring positions and reveal timing, and the [lettering overlay](src/app/ui/overlays/text.rs) lays out the style cards.

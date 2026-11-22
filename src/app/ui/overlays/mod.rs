@@ -27,6 +27,8 @@ pub(super) fn build_selection(b: &mut Builder, root: Entity, studio: &Studio) {
     text::build(b, root, studio);
     landmark::build(b, root, studio);
     regions::build(b, root, studio);
-    pointer::brush_orbit(b, root, studio);
-    text::placement_style(b, root, studio);
+    b.with_paper(|b| {
+        pointer::brush_orbit(b, root, studio);
+        text::placement_style(b, root, studio);
+    });
 }

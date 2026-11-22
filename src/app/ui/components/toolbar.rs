@@ -1,5 +1,5 @@
 //! Toolbar components with Holo and Paper faces.
-use super::{Appearance, BUTTON_HEIGHT, Builder, Hover, color, paper, row};
+use super::{Appearance, BUTTON_HEIGHT, Builder, Hover, color, paper, pigment, row};
 use crate::app::{
     brush_motion::{BrushBubble, SelectedTool},
     state::Action,
@@ -24,20 +24,24 @@ impl ToolIcon {
         self.artwork().0
     }
 
+    pub(in crate::app::ui) fn pigment(self) -> u32 {
+        self.artwork().2
+    }
+
     // The cell selects an illustration from assets/tool-icons/symbols.svg.
     fn artwork(self) -> (&'static str, usize, u32) {
         match self {
-            Self::Select => ("select", 0, 0xd8caae),
+            Self::Select => ("select", 0, pigment::LINEN),
             Self::Brush(Brush::Land) => ("land", 1, 0xc9c99e),
-            Self::Brush(Brush::Water) => ("water", 2, 0xb2c8c3),
-            Self::Brush(Brush::Forest) => ("forest", 3, 0xb7c3a7),
-            Self::Brush(Brush::Mountain) => ("mountain", 4, 0xccbcab),
-            Self::Brush(Brush::River) => ("river", 5, 0xb2c2ca),
-            Self::Brush(Brush::Path) => ("trail", 6, 0xe0c9a2),
-            Self::Text => ("text", 7, 0xdcbe96),
-            Self::Landmarks => ("landmark", 8, 0xd4b19c),
+            Self::Brush(Brush::Water) => ("water", 2, pigment::SEA_GLASS),
+            Self::Brush(Brush::Forest) => ("forest", 3, pigment::SAGE),
+            Self::Brush(Brush::Mountain) => ("mountain", 4, pigment::CLAY),
+            Self::Brush(Brush::River) => ("river", 5, pigment::BLUE),
+            Self::Brush(Brush::Path) => ("trail", 6, pigment::SAND),
+            Self::Text => ("text", 7, pigment::OCHRE),
+            Self::Landmarks => ("landmark", 8, pigment::TERRACOTTA),
             Self::Brush(Brush::Erase) => ("eraser", 9, 0xd9b8ae),
-            Self::Regions => ("regions", 10, 0xddcfa2),
+            Self::Regions => ("regions", 10, pigment::STRAW),
         }
     }
 }
