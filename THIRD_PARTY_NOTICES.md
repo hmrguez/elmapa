@@ -12,4 +12,6 @@ Elmapa loads installed system fonts and embeds Bevy’s Fira Mono subset as a fa
 
 The España example uses public-domain [Natural Earth](https://www.naturalearthdata.com/about/terms-of-use/) coastline and country data.
 
+The soundtrack includes “Secret of the Forest,” “Field of Fireflies,” and “Calm Waters” by [Purrple Cat](https://purrplecat.com/) from [Mellow Skies](https://purrplecat.itch.io/mellow-skies), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Elmapa adjusted the loudness and re-encoded the tracks as Ogg Vorbis.
+
 The native binaries incorporate Rust dependencies with their own licenses. Cargo.lock identifies the versions used in the build.

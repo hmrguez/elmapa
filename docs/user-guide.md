@@ -44,7 +44,9 @@ Open the map menu and choose **Export SVG** for a scalable image or **Export PNG
 
 ## Brush materials
 
-Each brush finish has a different sound. Tap to hear a brief contact sound or drag to hear the material as you paint. Open **Settings → Audio** to set master, brush, and tool volume. Turn **Sound effects** off to mute everything while keeping those levels. Preview each group from the same panel. Select a slider or press Tab to focus it, then use the arrow keys to adjust it.
+Each brush finish has a different sound. Tap to hear a brief contact sound or drag to hear the material as you paint. Elmapa plays a three-track soundtrack on the atlas shelf and in the editor.
+
+Open **Settings → Audio** to adjust **Master volume**, **Music**, **Brush sounds**, and **Tool sounds**. Set **Music** to 0% to pause the soundtrack. Turn **Sound effects** off to mute brush and tool sounds while keeping their levels. The same panel lets you preview a brush or tool sound. Select a slider or press Tab to focus it, then use the arrow keys to adjust it.
 
 New atlases use the woodland palette. It pairs olive trees and warm rock with ivory parchment and blue-green water. Older atlases open in their classic palette. Choose **Use woodland palette** in the map actions menu to restyle the current atlas, or **Use classic palette** to return to its previous artwork. The palette switch is undoable and saves with the atlas. It keeps brush paths, materials, and layer order in place.
 

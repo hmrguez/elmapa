@@ -78,7 +78,9 @@ pub(super) fn keyboard(key: KeyCode, shift: bool, studio: &mut Studio, jobs: &mu
         KeyCode::ArrowRight | KeyCode::ArrowUp => (level + 5).min(100),
         KeyCode::Home => 0,
         KeyCode::End => 100,
-        KeyCode::Enter | KeyCode::Space if channel != VolumeChannel::Master => {
+        KeyCode::Enter | KeyCode::Space
+            if matches!(channel, VolumeChannel::Brush | VolumeChannel::Tools) =>
+        {
             studio.act(Action::PreviewAudio(channel), jobs);
             return true;
         }

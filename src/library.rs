@@ -52,18 +52,20 @@ pub struct AtlasRecord {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VolumeChannel {
     Master,
+    Music,
     Brush,
     Tools,
 }
 
 impl VolumeChannel {
-    pub const ALL: [Self; 3] = [Self::Master, Self::Brush, Self::Tools];
+    pub const ALL: [Self; 4] = [Self::Master, Self::Music, Self::Brush, Self::Tools];
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AudioLevels {
     master: u8,
+    music: u8,
     brush: u8,
     tools: u8,
 }
@@ -72,16 +74,20 @@ impl Default for AudioLevels {
     fn default() -> Self {
         Self {
             master: 100,
-            brush: 100,
+            music: 25,
+            brush: Self::DEFAULT_BRUSH_VOLUME,
             tools: 100,
         }
     }
 }
 
 impl AudioLevels {
+    pub const DEFAULT_BRUSH_VOLUME: u8 = 65;
+
     pub fn level(self, channel: VolumeChannel) -> u8 {
         match channel {
             VolumeChannel::Master => self.master,
+            VolumeChannel::Music => self.music,
             VolumeChannel::Brush => self.brush,
             VolumeChannel::Tools => self.tools,
         }
@@ -91,6 +97,7 @@ impl AudioLevels {
     pub fn set(&mut self, channel: VolumeChannel, level: u8) -> bool {
         let slot = match channel {
             VolumeChannel::Master => &mut self.master,
+            VolumeChannel::Music => &mut self.music,
             VolumeChannel::Brush => &mut self.brush,
             VolumeChannel::Tools => &mut self.tools,
         };
@@ -371,6 +378,7 @@ mod tests {
         library.shelf.shader_effects_disabled = true;
         library.shelf.sound_effects_disabled = true;
         library.shelf.audio_levels.set(VolumeChannel::Master, 77);
+        library.shelf.audio_levels.set(VolumeChannel::Music, 0);
         library.shelf.audio_levels.set(VolumeChannel::Brush, 0);
         library.shelf.audio_levels.set(VolumeChannel::Tools, 41);
         library
@@ -413,8 +421,19 @@ mod tests {
         assert!(!shelf.shader_effects_disabled);
         assert!(!shelf.sound_effects_disabled);
         assert_eq!(shelf.audio_levels, AudioLevels::default());
+        assert_eq!(shelf.audio_levels.level(VolumeChannel::Brush), 65);
         assert!(!shelf.paper_ui);
         assert!(serde_json::to_value(shelf).unwrap().get("dark").is_none());
+    }
+
+    #[test]
+    fn older_audio_profiles_keep_their_mix_and_get_default_music_volume() {
+        let levels: AudioLevels =
+            serde_json::from_str(r#"{"master":70,"brush":40,"tools":65}"#).unwrap();
+        assert_eq!(levels.level(VolumeChannel::Master), 70);
+        assert_eq!(levels.level(VolumeChannel::Music), 25);
+        assert_eq!(levels.level(VolumeChannel::Brush), 40);
+        assert_eq!(levels.level(VolumeChannel::Tools), 65);
     }
 
     #[test]
