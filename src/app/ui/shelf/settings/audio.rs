@@ -33,6 +33,7 @@ pub(super) fn build(b: &mut Builder, parent: Entity, studio: &Studio, p: Palette
     let levels = b.node(parent, column(10.));
     for (channel, label) in [
         (VolumeChannel::Master, "Master volume"),
+        (VolumeChannel::Music, "Music"),
         (VolumeChannel::Brush, "Brush sounds"),
         (VolumeChannel::Tools, "Tool sounds"),
     ] {

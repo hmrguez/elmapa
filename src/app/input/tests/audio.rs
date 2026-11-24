@@ -82,9 +82,10 @@ fn keyboard_adjusts_focused_volumes_and_mute_keeps_the_mix() {
     app.update();
     {
         let studio = app.world().resource::<Studio>();
-        assert_eq!(studio.audio_focus, Some(VolumeChannel::Brush));
+        assert_eq!(studio.audio_focus, Some(VolumeChannel::Music));
         assert_eq!(studio.audio_levels.level(VolumeChannel::Master), 95);
-        assert_eq!(studio.audio_levels.level(VolumeChannel::Brush), 0);
+        assert_eq!(studio.audio_levels.level(VolumeChannel::Music), 0);
+        assert_eq!(studio.audio_levels.level(VolumeChannel::Brush), 100);
     }
     let before = app.world().resource::<Studio>().audio_levels;
     app.world_mut()

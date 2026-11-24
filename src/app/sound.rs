@@ -1,5 +1,6 @@
-//! Local editor playback. Only accepted canvas gestures request sounds.
+//! Background music and local editor sounds.
 mod foley;
+mod music;
 
 use super::state::Studio;
 use bevy::prelude::*;
@@ -103,6 +104,7 @@ fn gain(levels: AudioLevels, channel: VolumeChannel) -> f32 {
 
 struct Output {
     _stream: OutputStream,
+    music: music::Playlist,
     brush_bus: SoundBus,
     tool_bus: SoundBus,
     levels: Option<AudioLevels>,
@@ -147,6 +149,7 @@ impl Output {
         let mut stream = OutputStreamBuilder::open_default_stream()?;
         stream.log_on_drop(false);
         Ok(Self {
+            music: music::Playlist::new(stream.mixer()),
             brush_bus: SoundBus::new(&stream),
             tool_bus: SoundBus::new(&stream),
             _stream: stream,
@@ -160,6 +163,7 @@ impl Output {
 
     fn set_levels(&mut self, levels: AudioLevels) {
         if self.levels != Some(levels) {
+            self.music.set_volume(gain(levels, VolumeChannel::Music));
             self.brush_bus
                 .sink
                 .set_volume(gain(levels, VolumeChannel::Brush));
@@ -249,42 +253,54 @@ pub(super) fn play(
         preview,
     } = std::mem::take(&mut studio.sound);
     let previewing = studio.audio_settings_open();
-    if studio.sound_effects_disabled
-        || (studio.home && !previewing)
-        || studio.installing
-        || studio.replay_view.is_some()
-        || studio.quit_requested
-    {
+    let Some(library) = studio
+        .library
+        .as_ref()
+        .filter(|_| !studio.installing && !studio.quit_requested)
+    else {
         if let Some(output) = playback.output.as_mut() {
+            output.music.pause();
             output.brush = None;
             output.cue = None;
         }
         return;
-    }
-    let brush = if previewing { None } else { brush };
-    let cue = if previewing { preview } else { cue };
+    };
+    let effects = !studio.sound_effects_disabled
+        && (!studio.home || previewing)
+        && studio.replay_view.is_none();
+    let brush = brush.filter(|_| effects && !previewing);
+    let cue = if previewing { preview } else { cue }.filter(|_| effects);
+    let music = gain(studio.audio_levels, VolumeChannel::Music) > 0.;
     let now = time.elapsed();
     if playback.output.is_none()
-        && (brush.is_some() || cue.is_some())
+        && (music || brush.is_some() || cue.is_some())
         && now >= playback.retry_after
     {
         match Output::open() {
             Ok(output) => playback.output = Some(output),
             Err(error) => {
                 playback.retry_after = now + Duration::from_secs(10);
-                debug!("Editor sound output unavailable: {error}");
+                debug!("Audio output unavailable: {error}");
             }
         }
     }
-    let (Some(output), Some(library)) = (playback.output.as_mut(), studio.library.as_ref()) else {
+    let Some(output) = playback.output.as_mut() else {
         return;
     };
-    if output.previewing != previewing {
+    output.set_levels(studio.audio_levels);
+    if music {
+        output.music.play();
+    } else {
+        output.music.pause();
+    }
+    if !effects || output.previewing != previewing {
         output.brush = None;
         output.cue = None;
         output.previewing = previewing;
     }
-    output.set_levels(studio.audio_levels);
+    if !effects {
+        return;
+    }
     let root = library.root_path();
     if let Some(effect) = brush {
         output.start_brush(effect, root, now);

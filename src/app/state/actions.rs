@@ -186,7 +186,7 @@ impl Studio {
                         self.brush_orbit.current_index(self.brush),
                     )),
                     VolumeChannel::Tools => Some(Effect::Landmark),
-                    VolumeChannel::Master => None,
+                    VolumeChannel::Master | VolumeChannel::Music => None,
                 };
             }
             Action::AudioSettings(_) | Action::AudioSlider(_) | Action::PreviewAudio(_) => {}
