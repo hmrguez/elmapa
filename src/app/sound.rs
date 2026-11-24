@@ -126,13 +126,13 @@ impl BrushVoice {
             self.moving_until = now + Duration::from_millis(110);
         }
         let audible = now < self.contact_until || held && now < self.moving_until;
-        let gain_change = time.delta_secs() / if audible { 0.045 } else { 0.075 };
+        let gain_change = time.delta_secs() / if audible { 0.065 } else { 0.102 };
         self.gain = if audible {
             (self.gain + gain_change).min(1.)
         } else {
             (self.gain - gain_change).max(0.)
         };
-        self.sink.set_volume(0.42 * self.gain);
+        self.sink.set_volume(0.36 * self.gain);
         if self.gain > 0. || audible {
             self.sink.play();
         } else {
@@ -208,7 +208,7 @@ impl Output {
             &self.tool_bus
         };
         let sink = Sink::connect_new(&bus.mixer);
-        sink.set_volume(0.38);
+        sink.set_volume(0.33);
         sink.append(clip);
         self.cue = Some(sink);
     }
