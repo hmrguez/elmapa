@@ -111,7 +111,7 @@ struct Output {
     previewing: bool,
     clips: HashMap<Effect, SamplesBuffer>,
     brush: Option<BrushVoice>,
-    cue: Option<Sink>,
+    cue: Option<(Effect, Sink)>,
 }
 
 struct BrushVoice {
@@ -161,9 +161,8 @@ impl Output {
         })
     }
 
-    fn set_levels(&mut self, levels: AudioLevels) {
+    fn set_effect_levels(&mut self, levels: AudioLevels) {
         if self.levels != Some(levels) {
-            self.music.set_volume(gain(levels, VolumeChannel::Music));
             self.brush_bus
                 .sink
                 .set_volume(gain(levels, VolumeChannel::Brush));
@@ -214,7 +213,15 @@ impl Output {
         let sink = Sink::connect_new(&bus.mixer);
         sink.set_volume(0.33);
         sink.append(clip);
-        self.cue = Some(sink);
+        self.cue = Some((effect, sink));
+    }
+
+    fn brush_is_audible(&self) -> bool {
+        self.brush.as_ref().is_some_and(|voice| voice.gain > 0.)
+            || self
+                .cue
+                .as_ref()
+                .is_some_and(|(effect, _)| effect.is_brush())
     }
 }
 
@@ -270,10 +277,10 @@ pub(super) fn play(
         && studio.replay_view.is_none();
     let brush = brush.filter(|_| effects && !previewing);
     let cue = if previewing { preview } else { cue }.filter(|_| effects);
-    let music = gain(studio.audio_levels, VolumeChannel::Music) > 0.;
+    let music_gain = gain(studio.audio_levels, VolumeChannel::Music);
     let now = time.elapsed();
     if playback.output.is_none()
-        && (music || brush.is_some() || cue.is_some())
+        && (music_gain > 0. || brush.is_some() || cue.is_some())
         && now >= playback.retry_after
     {
         match Output::open() {
@@ -287,35 +294,42 @@ pub(super) fn play(
     let Some(output) = playback.output.as_mut() else {
         return;
     };
-    output.set_levels(studio.audio_levels);
-    if music {
-        output.music.play();
-    } else {
-        output.music.pause();
-    }
+    output.set_effect_levels(studio.audio_levels);
     if !effects || output.previewing != previewing {
         output.brush = None;
         output.cue = None;
         output.previewing = previewing;
     }
-    if !effects {
-        return;
+    if effects {
+        let root = library.root_path();
+        if let Some(effect) = brush {
+            output.start_brush(effect, root, now);
+        }
+        output.cue.take_if(|(_, cue)| cue.empty());
+        if let Some(effect) = cue {
+            output.play_cue(effect, root);
+        }
+        output.brush.take_if(|voice| {
+            !voice.update(
+                &time,
+                studio.stroke.is_some(),
+                studio.pointer.is_some() && moved,
+            )
+        });
     }
-    let root = library.root_path();
-    if let Some(effect) = brush {
-        output.start_brush(effect, root, now);
+    let brush_level = if output.brush_is_audible() {
+        f32::from(studio.audio_levels.level(VolumeChannel::Brush)) / 100.
+    } else {
+        0.
+    };
+    output
+        .music
+        .set_mix(music_gain, brush_level, time.delta_secs());
+    if music_gain > 0. {
+        output.music.play();
+    } else {
+        output.music.pause();
     }
-    output.cue.take_if(|cue| cue.empty());
-    if let Some(effect) = cue {
-        output.play_cue(effect, root);
-    }
-    output.brush.take_if(|voice| {
-        !voice.update(
-            &time,
-            studio.stroke.is_some(),
-            studio.pointer.is_some() && moved,
-        )
-    });
 }
 
 #[cfg(test)]

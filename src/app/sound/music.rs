@@ -12,6 +12,7 @@ const TRACKS: &[&[u8]] = &[
 pub(super) struct Playlist {
     sink: Sink,
     next: Option<usize>,
+    attenuation: f32,
 }
 
 impl Playlist {
@@ -21,11 +22,22 @@ impl Playlist {
         Self {
             sink,
             next: Some(0),
+            attenuation: 0.,
         }
     }
 
-    pub(super) fn set_volume(&self, volume: f32) {
-        self.sink.set_volume(volume);
+    pub(super) fn set_mix(&mut self, volume: f32, brush_level: f32, seconds: f32) {
+        const MAX_ATTENUATION: f32 = 0.65;
+        const ATTACK: f32 = 0.060;
+        const RELEASE: f32 = 0.420;
+
+        let target = MAX_ATTENUATION * brush_level;
+        let change = (target - self.attenuation).clamp(
+            -MAX_ATTENUATION * seconds / RELEASE,
+            MAX_ATTENUATION * seconds / ATTACK,
+        );
+        self.attenuation += change;
+        self.sink.set_volume(volume * (1. - self.attenuation));
     }
 
     pub(super) fn pause(&self) {
@@ -85,5 +97,22 @@ mod tests {
             }
             assert_eq!(playlist.sink.len(), 1);
         }
+    }
+
+    #[test]
+    fn music_dips_for_audible_brushes_and_recovers_afterward() {
+        let (mixer, _output) = mixer(2, 44_100);
+        let mut playlist = Playlist::new(&mixer);
+        playlist.set_mix(0.25, 1., 0.060);
+        assert!((playlist.sink.volume() - 0.0875).abs() < 0.0001);
+
+        playlist.set_mix(0.25, 0., 0.060);
+        assert!(playlist.sink.volume() > 0.0875);
+        assert!(playlist.sink.volume() < 0.25);
+
+        playlist.set_mix(0.25, 0., 0.420);
+        assert_eq!(playlist.sink.volume(), 0.25);
+        playlist.set_mix(0., 1., 0.060);
+        assert_eq!(playlist.sink.volume(), 0.);
     }
 }
