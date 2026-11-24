@@ -20,6 +20,7 @@ mod replay;
 mod river_material;
 mod scene_work;
 mod selection;
+mod sound;
 mod state;
 mod ui;
 mod viewport;
@@ -98,6 +99,7 @@ pub fn run() {
         .insert_resource(WinitSettings::game())
         .insert_resource(ClearColor(ui::color(0xe6e5d3, 1.)))
         .init_resource::<state::Studio>()
+        .init_non_send::<sound::Playback>()
         .init_resource::<render::Canvas>()
         .init_resource::<files::Jobs>()
         .init_resource::<replay::Replay>()
@@ -170,6 +172,7 @@ pub fn run() {
                 .chain(),
         )
         .add_systems(Last, benchmark::frame_end)
+        .add_systems(PostUpdate, sound::play)
         .add_systems(
             PostUpdate,
             ui::snap_text_glyphs.after(bevy::ui::UiSystems::PostLayout),

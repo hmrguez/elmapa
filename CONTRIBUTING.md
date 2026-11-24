@@ -11,7 +11,7 @@ Install Rust 1.95 or newer. The development checks also use Python 3 and the Rus
 - **Linux** uses X11 and a graphics driver supported by wgpu. When building on Ubuntu 24.04, install the packages below. Run the editor in a desktop session with an X11 display or XWayland. Native file dialogs use the desktop portal.
 
 ```sh
-sudo apt-get install build-essential pkg-config libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 libx11-dev libxi-dev libxrandr-dev libxcursor-dev fonts-dejavu-core
+sudo apt-get install build-essential pkg-config libasound2-dev libwayland-dev libxkbcommon-dev libxkbcommon-x11-0 libx11-dev libxi-dev libxrandr-dev libxcursor-dev fonts-dejavu-core
 ```
 
 ## Run the core tests

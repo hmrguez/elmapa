@@ -89,6 +89,22 @@ pub(super) fn build(b: &mut Builder, root: Entity, s: &Studio, p: Palette, pack_
         if enabled { "On" } else { "Off" },
         Action::ShaderEffects,
     );
+    let sound_effects = b.node(
+        settings,
+        Node {
+            width: percent(100.),
+            justify_content: JustifyContent::SpaceBetween,
+            ..row(0.)
+        },
+    );
+    let enabled = !s.sound_effects_disabled;
+    b.text(sound_effects, "Sound effects", 12., ink, false);
+    b.shelf_button(
+        sound_effects,
+        if enabled { "check" } else { "minus" },
+        if enabled { "On" } else { "Off" },
+        Action::SoundEffects,
+    );
     let catalog = elmapa::scene::landmark_catalog();
     let title = b.node(settings, column(3.));
     b.text(title, "Landmark packs", 19., ink, true);

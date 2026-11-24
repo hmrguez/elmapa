@@ -170,6 +170,10 @@ impl Studio {
                 self.wet_release = None;
                 jobs.preferences = true;
             }
+            Action::SoundEffects => {
+                self.sound_effects_disabled = !self.sound_effects_disabled;
+                jobs.preferences = true;
+            }
             Action::Settings => {
                 if self.home {
                     self.settings = !self.settings;

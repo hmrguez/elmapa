@@ -149,11 +149,13 @@ pub fn poll(
                             Appearance::Holo
                         };
                         let shader_effects_disabled = library.shelf.shader_effects_disabled;
+                        let sound_effects_disabled = library.shelf.sound_effects_disabled;
                         studio.disabled_landmark_packs =
                             library.shelf.disabled_landmark_packs.clone();
                         studio.reduced = reduced;
                         studio.appearance = appearance;
                         studio.shader_effects_disabled = shader_effects_disabled;
+                        studio.sound_effects_disabled = sound_effects_disabled;
                     }
                     studio.status = "Choose a world to explore.".into();
                 }
@@ -224,6 +226,7 @@ pub fn poll(
             library.shelf.reduced_motion = studio.reduced;
             library.shelf.paper_ui = studio.appearance == Appearance::Paper;
             library.shelf.shader_effects_disabled = studio.shader_effects_disabled;
+            library.shelf.sound_effects_disabled = studio.sound_effects_disabled;
             library.shelf.disabled_landmark_packs = studio.disabled_landmark_packs.clone();
             let external = matches!(request, Request::Save(_) | Request::Export(..));
             if !external {

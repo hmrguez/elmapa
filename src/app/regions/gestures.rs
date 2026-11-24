@@ -66,6 +66,11 @@ impl Studio {
                 }
             }
         }
+        if self.regions.gesture.is_some()
+            || (self.regions.mode == Mode::Select && self.regions.selection.is_some())
+        {
+            self.sound.cue = Some(crate::app::sound::Effect::Regions);
+        }
         self.regions.refresh_overlay();
         self.ui_dirty = true;
     }

@@ -10,7 +10,7 @@ A successful promotion to `main` publishes a stable release titled with the vers
 | macOS `.zip` | macOS 15, Apple Silicon | `Elmapa/Elmapa.app` |
 | Windows `.zip` | Windows, x86-64 MSVC | `Elmapa/elmapa.exe` |
 
-Extract the archive before launching Elmapa. On Ubuntu the editor needs an X11 or XWayland desktop, a Vulkan driver and the X11 keyboard library (`sudo apt install libxkbcommon-x11-0`). The macOS build uses ad hoc signing without Apple notarization. The Windows executable is unsigned. Each archive includes the project license, asset notices and Rust dependency licenses for its target. On macOS these notices travel with the application inside `Elmapa.app/Contents/Resources`.
+Extract the archive before launching Elmapa. On Ubuntu the editor needs an X11 or XWayland desktop, a Vulkan driver and the ALSA and X11 keyboard libraries. On Ubuntu 24.04, install them with `sudo apt install libasound2t64 libxkbcommon-x11-0`. The macOS build uses ad hoc signing without Apple notarization. The Windows executable is unsigned. Each archive includes the project license, asset notices and Rust dependency licenses for its target. On macOS these notices travel with the application inside `Elmapa.app/Contents/Resources`.
 
 ## Package locally
 

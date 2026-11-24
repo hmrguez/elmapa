@@ -83,6 +83,7 @@ impl Studio {
                     self.commit_text_field();
                     self.dismiss_text_control();
                     self.select_press(point, shift);
+                    self.sound.cue = Some(super::sound::Effect::Select);
                 }
             }
         }
