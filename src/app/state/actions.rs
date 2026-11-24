@@ -1,6 +1,7 @@
 //! Toolbar and menu actions dispatched by the studio.
 use super::{Action, Studio, Tool, ViewReplay};
-use crate::app::files;
+use crate::app::{files, sound::Effect};
+use elmapa::library::VolumeChannel;
 
 impl Studio {
     fn set_tool(&mut self, tool: Tool) {
@@ -174,7 +175,24 @@ impl Studio {
                 self.sound_effects_disabled = !self.sound_effects_disabled;
                 jobs.preferences = true;
             }
+            Action::AudioSettings(open) if self.home && self.settings => {
+                self.audio_settings = open;
+                self.audio_focus = None;
+            }
+            Action::PreviewAudio(channel) if self.audio_settings_open() => {
+                self.sound.preview = match channel {
+                    VolumeChannel::Brush => Some(Effect::Brush(
+                        self.brush,
+                        self.brush_orbit.current_index(self.brush),
+                    )),
+                    VolumeChannel::Tools => Some(Effect::Landmark),
+                    VolumeChannel::Master => None,
+                };
+            }
+            Action::AudioSettings(_) | Action::AudioSlider(_) | Action::PreviewAudio(_) => {}
             Action::Settings => {
+                self.audio_settings = false;
+                self.audio_focus = None;
                 if self.home {
                     self.settings = !self.settings;
                 } else {

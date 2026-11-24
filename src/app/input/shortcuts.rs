@@ -42,6 +42,9 @@ pub(super) fn key_down(
         return;
     }
     if studio.home {
+        if !command && super::audio::keyboard(key, shift, studio, jobs) {
+            return;
+        }
         match key {
             KeyCode::Escape => {
                 studio.settings = false;

@@ -3,8 +3,17 @@ mod foley;
 
 use super::state::Studio;
 use bevy::prelude::*;
-use elmapa::{brush_materials, document::Brush};
-use rodio::{OutputStream, OutputStreamBuilder, Sink, Source, buffer::SamplesBuffer};
+use elmapa::{
+    brush_materials,
+    document::Brush,
+    library::{AudioLevels, VolumeChannel},
+};
+use rodio::{
+    OutputStream, OutputStreamBuilder, Sink, Source,
+    buffer::SamplesBuffer,
+    mixer::{Mixer, mixer},
+    source::Zero,
+};
 use std::{borrow::Cow, collections::HashMap, fs::File, io::BufReader, path::Path, time::Duration};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -60,6 +69,7 @@ pub(super) struct Gestures {
     pub brush: Option<Effect>,
     pub moved: bool,
     pub cue: Option<Effect>,
+    pub preview: Option<Effect>,
 }
 
 #[derive(Default)]
@@ -68,8 +78,35 @@ pub(super) struct Playback {
     retry_after: Duration,
 }
 
+struct SoundBus {
+    mixer: Mixer,
+    sink: Sink,
+}
+
+impl SoundBus {
+    fn new(stream: &OutputStream) -> Self {
+        let channels = stream.config().channel_count();
+        let sample_rate = stream.config().sample_rate();
+        let (mixer, source) = mixer(channels, sample_rate);
+        // Keep the bus connected during silence between gestures.
+        mixer.add(Zero::new(channels, sample_rate));
+        let sink = Sink::connect_new(stream.mixer());
+        sink.append(source);
+        Self { mixer, sink }
+    }
+}
+
+fn gain(levels: AudioLevels, channel: VolumeChannel) -> f32 {
+    (f32::from(levels.level(VolumeChannel::Master)) / 100.)
+        * (f32::from(levels.level(channel)) / 100.)
+}
+
 struct Output {
-    stream: OutputStream,
+    _stream: OutputStream,
+    brush_bus: SoundBus,
+    tool_bus: SoundBus,
+    levels: Option<AudioLevels>,
+    previewing: bool,
     clips: HashMap<Effect, SamplesBuffer>,
     brush: Option<BrushVoice>,
     cue: Option<Sink>,
@@ -110,11 +147,27 @@ impl Output {
         let mut stream = OutputStreamBuilder::open_default_stream()?;
         stream.log_on_drop(false);
         Ok(Self {
-            stream,
+            brush_bus: SoundBus::new(&stream),
+            tool_bus: SoundBus::new(&stream),
+            _stream: stream,
+            levels: None,
+            previewing: false,
             clips: HashMap::new(),
             brush: None,
             cue: None,
         })
+    }
+
+    fn set_levels(&mut self, levels: AudioLevels) {
+        if self.levels != Some(levels) {
+            self.brush_bus
+                .sink
+                .set_volume(gain(levels, VolumeChannel::Brush));
+            self.tool_bus
+                .sink
+                .set_volume(gain(levels, VolumeChannel::Tools));
+            self.levels = Some(levels);
+        }
     }
 
     fn clip(&mut self, effect: Effect, root: &Path) -> SamplesBuffer {
@@ -136,7 +189,7 @@ impl Output {
 
     fn start_brush(&mut self, effect: Effect, root: &Path, now: Duration) {
         let clip = self.clip(effect, root);
-        let sink = Sink::connect_new(self.stream.mixer());
+        let sink = Sink::connect_new(&self.brush_bus.mixer);
         sink.set_volume(0.);
         sink.append(clip.repeat_infinite());
         self.brush = Some(BrushVoice {
@@ -149,7 +202,12 @@ impl Output {
 
     fn play_cue(&mut self, effect: Effect, root: &Path) {
         let clip = self.clip(effect, root);
-        let sink = Sink::connect_new(self.stream.mixer());
+        let bus = if effect.is_brush() {
+            &self.brush_bus
+        } else {
+            &self.tool_bus
+        };
+        let sink = Sink::connect_new(&bus.mixer);
         sink.set_volume(0.33);
         sink.append(clip);
         self.cue = Some(sink);
@@ -184,9 +242,15 @@ pub(super) fn play(
     mut playback: NonSendMut<Playback>,
     time: Res<Time<Real>>,
 ) {
-    let Gestures { brush, moved, cue } = std::mem::take(&mut studio.sound);
+    let Gestures {
+        brush,
+        moved,
+        cue,
+        preview,
+    } = std::mem::take(&mut studio.sound);
+    let previewing = studio.audio_settings_open();
     if studio.sound_effects_disabled
-        || studio.home
+        || (studio.home && !previewing)
         || studio.installing
         || studio.replay_view.is_some()
         || studio.quit_requested
@@ -197,6 +261,8 @@ pub(super) fn play(
         }
         return;
     }
+    let brush = if previewing { None } else { brush };
+    let cue = if previewing { preview } else { cue };
     let now = time.elapsed();
     if playback.output.is_none()
         && (brush.is_some() || cue.is_some())
@@ -213,6 +279,12 @@ pub(super) fn play(
     let (Some(output), Some(library)) = (playback.output.as_mut(), studio.library.as_ref()) else {
         return;
     };
+    if output.previewing != previewing {
+        output.brush = None;
+        output.cue = None;
+        output.previewing = previewing;
+    }
+    output.set_levels(studio.audio_levels);
     let root = library.root_path();
     if let Some(effect) = brush {
         output.start_brush(effect, root, now);
@@ -234,6 +306,17 @@ pub(super) fn play(
 mod tests {
     use super::*;
     use std::collections::HashSet;
+
+    #[test]
+    fn master_and_channel_levels_combine_without_affecting_the_other_channel() {
+        let mut levels = AudioLevels::default();
+        levels.set(VolumeChannel::Master, 50);
+        levels.set(VolumeChannel::Brush, 20);
+        assert_eq!(gain(levels, VolumeChannel::Brush), 0.1);
+        assert_eq!(gain(levels, VolumeChannel::Tools), 0.5);
+        levels.set(VolumeChannel::Tools, 0);
+        assert_eq!(gain(levels, VolumeChannel::Tools), 0.);
+    }
 
     #[test]
     fn every_finish_and_tool_has_its_own_sound() {

@@ -49,6 +49,58 @@ pub struct AtlasRecord {
     pub camera: Camera,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VolumeChannel {
+    Master,
+    Brush,
+    Tools,
+}
+
+impl VolumeChannel {
+    pub const ALL: [Self; 3] = [Self::Master, Self::Brush, Self::Tools];
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AudioLevels {
+    master: u8,
+    brush: u8,
+    tools: u8,
+}
+
+impl Default for AudioLevels {
+    fn default() -> Self {
+        Self {
+            master: 100,
+            brush: 100,
+            tools: 100,
+        }
+    }
+}
+
+impl AudioLevels {
+    pub fn level(self, channel: VolumeChannel) -> u8 {
+        match channel {
+            VolumeChannel::Master => self.master,
+            VolumeChannel::Brush => self.brush,
+            VolumeChannel::Tools => self.tools,
+        }
+        .min(100)
+    }
+
+    pub fn set(&mut self, channel: VolumeChannel, level: u8) -> bool {
+        let slot = match channel {
+            VolumeChannel::Master => &mut self.master,
+            VolumeChannel::Brush => &mut self.brush,
+            VolumeChannel::Tools => &mut self.tools,
+        };
+        let level = level.min(100);
+        let changed = *slot != level;
+        *slot = level;
+        changed
+    }
+}
+
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct Shelf {
     pub atlases: Vec<AtlasRecord>,
@@ -60,6 +112,8 @@ pub struct Shelf {
     pub shader_effects_disabled: bool,
     #[serde(default)]
     pub sound_effects_disabled: bool,
+    #[serde(default)]
+    pub audio_levels: AudioLevels,
     #[serde(default)]
     pub disabled_landmark_packs: std::collections::HashSet<String>,
 }
@@ -316,6 +370,9 @@ mod tests {
         library.shelf.paper_ui = true;
         library.shelf.shader_effects_disabled = true;
         library.shelf.sound_effects_disabled = true;
+        library.shelf.audio_levels.set(VolumeChannel::Master, 77);
+        library.shelf.audio_levels.set(VolumeChannel::Brush, 0);
+        library.shelf.audio_levels.set(VolumeChannel::Tools, 41);
         library
             .shelf
             .disabled_landmark_packs
@@ -338,6 +395,7 @@ mod tests {
         assert!(restored.shelf.reduced_motion);
         assert!(restored.shelf.shader_effects_disabled);
         assert!(restored.shelf.sound_effects_disabled);
+        assert_eq!(restored.shelf.audio_levels, library.shelf.audio_levels);
         assert!(restored.shelf.paper_ui);
         assert!(
             restored
@@ -354,6 +412,7 @@ mod tests {
             serde_json::from_str(r#"{"atlases":[],"dark":true,"reduced_motion":false}"#).unwrap();
         assert!(!shelf.shader_effects_disabled);
         assert!(!shelf.sound_effects_disabled);
+        assert_eq!(shelf.audio_levels, AudioLevels::default());
         assert!(!shelf.paper_ui);
         assert!(serde_json::to_value(shelf).unwrap().get("dark").is_none());
     }

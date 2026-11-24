@@ -16,6 +16,7 @@ use bevy::{
 
 use std::time::Duration;
 
+mod audio;
 mod shortcuts;
 
 #[cfg(target_os = "macos")]
@@ -42,6 +43,7 @@ pub struct Gesture {
     pressed: Option<Action>,
     select_clicks: SelectClicks,
     brush_press: Option<BrushPress>,
+    volume_drag: Option<audio::VolumeDrag>,
     native_modifiers: winit::keyboard::ModifiersState,
     keys: ButtonInput<KeyCode>,
 }
@@ -208,6 +210,12 @@ pub fn dispatch(
                     .keys
                     .any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
                 gesture.position = Some(point);
+                if let Some(drag) = gesture.volume_drag {
+                    if studio.audio_settings_open() {
+                        drag.moved(&mut studio, point.x);
+                    }
+                    continue;
+                }
                 if studio.replay_view.is_some() {
                     continue;
                 }
@@ -257,6 +265,17 @@ pub fn dispatch(
                 let modifiers = (event.state == ButtonState::Pressed)
                     .then(|| click_modifiers.next())
                     .flatten();
+                if event.state == ButtonState::Released
+                    && let Some(drag) = gesture.volume_drag.take()
+                {
+                    if studio.audio_settings_open()
+                        && let Some(point) = gesture.position.or_else(|| window.cursor_position())
+                    {
+                        drag.moved(&mut studio, point.x);
+                    }
+                    drag.finish(&studio, &mut jobs);
+                    continue;
+                }
                 if studio.drag.is_some() {
                     continue;
                 }
@@ -265,6 +284,25 @@ pub fn dispatch(
                 };
                 let target = at(point);
                 let action = target.as_ref().and_then(|region| region.hit.action);
+                if event.state == ButtonState::Pressed
+                    && studio.audio_settings_open()
+                    && !jobs.switching()
+                    && let Some(Action::AudioSlider(channel)) = action
+                    && let Some(region) = &target
+                {
+                    let scale = region.node.inverse_scale_factor();
+                    let track = Rect::from_center_size(
+                        region.transform.translation * scale,
+                        region.node.size() * scale,
+                    );
+                    gesture.volume_drag = Some(audio::VolumeDrag::begin(
+                        &mut studio,
+                        channel,
+                        track,
+                        point.x,
+                    ));
+                    continue;
+                }
                 if studio.replay_view.is_some() {
                     if event.state == ButtonState::Pressed {
                         gesture.brush_press = None;
@@ -433,6 +471,9 @@ pub fn dispatch(
                     .zoom_at(point, (delta.y * 0.005).exp(), bounds);
             }
             WindowEvent::CursorLeft(event) if event.window == window_entity => {
+                if let Some(drag) = gesture.volume_drag.take() {
+                    drag.finish(&studio, &mut jobs);
+                }
                 gesture.position = None;
                 gesture.select_clicks = SelectClicks::default();
                 gesture.brush_press = None;
@@ -441,6 +482,9 @@ pub fn dispatch(
             WindowEvent::WindowFocused(event)
                 if event.window == window_entity && !event.focused =>
             {
+                if let Some(drag) = gesture.volume_drag.take() {
+                    drag.finish(&studio, &mut jobs);
+                }
                 studio.cancel_selection_gesture();
                 studio.finish();
                 studio.regions.cancel_gesture();
@@ -457,6 +501,11 @@ pub fn dispatch(
             }
             _ => {}
         }
+    }
+    if !studio.audio_settings_open()
+        && let Some(drag) = gesture.volume_drag.take()
+    {
+        drag.finish(&studio, &mut jobs);
     }
     gesture
         .brush_press

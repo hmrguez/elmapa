@@ -1,5 +1,6 @@
 //! Atlas shelf, preview cards and shelf controls.
 mod settings;
+pub(in crate::app) use settings::update_levels;
 
 use super::{
     ScrollArea,
