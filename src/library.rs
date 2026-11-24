@@ -75,13 +75,15 @@ impl Default for AudioLevels {
         Self {
             master: 100,
             music: 25,
-            brush: 100,
+            brush: Self::DEFAULT_BRUSH_VOLUME,
             tools: 100,
         }
     }
 }
 
 impl AudioLevels {
+    pub const DEFAULT_BRUSH_VOLUME: u8 = 65;
+
     pub fn level(self, channel: VolumeChannel) -> u8 {
         match channel {
             VolumeChannel::Master => self.master,
@@ -419,6 +421,7 @@ mod tests {
         assert!(!shelf.shader_effects_disabled);
         assert!(!shelf.sound_effects_disabled);
         assert_eq!(shelf.audio_levels, AudioLevels::default());
+        assert_eq!(shelf.audio_levels.level(VolumeChannel::Brush), 65);
         assert!(!shelf.paper_ui);
         assert!(serde_json::to_value(shelf).unwrap().get("dark").is_none());
     }

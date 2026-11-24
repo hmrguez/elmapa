@@ -318,7 +318,9 @@ pub(super) fn play(
         });
     }
     let brush_level = if output.brush_is_audible() {
-        f32::from(studio.audio_levels.level(VolumeChannel::Brush)) / 100.
+        let level = studio.audio_levels.level(VolumeChannel::Brush);
+        let default = AudioLevels::DEFAULT_BRUSH_VOLUME;
+        f32::from(level.min(default)) / f32::from(default)
     } else {
         0.
     };
