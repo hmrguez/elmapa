@@ -22,6 +22,7 @@ pub use overlays::{
     TextCard, landmark_cursor, landmark_selection_follow, path_selection_follow, radial_follow,
     region_selection_follow, selection_follow, text_ime, text_selection_follow, tooltips,
 };
+pub(super) use shelf::update_levels as update_audio_levels;
 pub use shelf::{PreviewSlot, cover_rect};
 
 #[cfg(test)]

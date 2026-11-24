@@ -12,7 +12,7 @@ use bevy::prelude::*;
 use elmapa::{
     document::{Brush, Document, Point, RegionParent, Stroke},
     editor::Editor,
-    library::Library,
+    library::{AudioLevels, Library, VolumeChannel},
     scene::{ForestAnimation, MountainAnimation, PathAnimation, RiverAnimation},
 };
 use std::{
@@ -103,6 +103,9 @@ pub enum Action {
     Motion,
     ShaderEffects,
     SoundEffects,
+    AudioSettings(bool),
+    AudioSlider(VolumeChannel),
+    PreviewAudio(VolumeChannel),
     Quit,
     CloseSettings,
 }
@@ -142,6 +145,9 @@ pub struct Studio {
     pub appearance: Appearance,
     pub shader_effects_disabled: bool,
     pub sound_effects_disabled: bool,
+    pub audio_levels: AudioLevels,
+    pub audio_settings: bool,
+    pub audio_focus: Option<VolumeChannel>,
     pub(super) sound: super::sound::Gestures,
     pub disabled_landmark_packs: HashSet<String>,
     pub home: bool,
@@ -199,6 +205,9 @@ impl Default for Studio {
             appearance: Appearance::default(),
             shader_effects_disabled: false,
             sound_effects_disabled: false,
+            audio_levels: default(),
+            audio_settings: false,
+            audio_focus: None,
             sound: default(),
             disabled_landmark_packs: HashSet::new(),
             home: true,
@@ -238,6 +247,10 @@ impl Default for Studio {
     }
 }
 impl Studio {
+    pub fn audio_settings_open(&self) -> bool {
+        self.home && self.settings && self.audio_settings
+    }
+
     pub fn shader_mode(&self) -> ShaderMode {
         if self.shader_effects_disabled {
             ShaderMode::Off

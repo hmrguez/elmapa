@@ -149,7 +149,7 @@ pub fn run() {
                 render::opening,
                 ui::advance_motion,
                 ui::sync_scale,
-                ui::rebuild,
+                (ui::rebuild, ui::update_audio_levels).chain(),
                 ui::alpha,
                 ui::hover,
                 ui::hover_follow,

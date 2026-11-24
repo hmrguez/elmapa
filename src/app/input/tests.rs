@@ -1,4 +1,5 @@
 //! A native input dispatch fixture shared by the gesture and shortcut suites.
+mod audio;
 mod canvas;
 mod lettering;
 mod painting;
