@@ -426,6 +426,7 @@ impl Studio {
         if !self.finish_label_draft() {
             return;
         }
+        self.sound.cue = Some(super::sound::Effect::Text);
         self.text.draft = Some(PlacementDraft {
             point,
             layer: self.editor.active_layer(),

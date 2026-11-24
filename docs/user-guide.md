@@ -1,6 +1,6 @@
 # Using Elmapa
 
-Elmapa opens on the atlas shelf. On a new shelf, use **New atlas** for a blank one or **Open atlas…** to add an existing `.elmapa` file. Choose a map card to edit that world. Cards wrap as the window changes size and the shelf scrolls for larger collections. Settings let you choose the Holo or Paper appearance, enable reduced motion, and manage landmark packs. Card, button, and layer hovers ease in and out; reduced motion makes feedback immediate. **Atlases** in the editor returns to the shelf. Each atlas keeps its own editable local snapshot and the center of your last view when you return to the shelf or close normally; its terrain preview updates from that snapshot. Reduced motion skips the book transition.
+Elmapa opens on the atlas shelf. On a new shelf, use **New atlas** for a blank one or **Open atlas…** to add an existing `.elmapa` file. Choose a map card to edit that world. Cards wrap as the window changes size and the shelf scrolls for larger collections. Settings let you choose the Holo or Paper appearance, enable reduced motion, turn editor sound effects on or off, and manage landmark packs. Card, button, and layer hovers ease in and out; reduced motion makes feedback immediate. **Atlases** in the editor returns to the shelf. Each atlas keeps its own editable local snapshot and the center of your last view when you return to the shelf or close normally; its terrain preview updates from that snapshot. Reduced motion skips the book transition.
 
 The canvas is an open, pannable workspace: paint in any direction, including beyond the original map area. Choose a brush in the bottom toolbar and drag on the canvas. A highlight follows the active tool when you click or use a shortcut. Reduced motion makes selection immediate. Brush size and brush settings are available from the toolbar. Choose **Paper** under **Appearance** to use illustrated tool buttons with controls for the active tool just above them. **Holo** is the default appearance. [Paper UI design reference](../DESIGN.md) The canvas fills the workspace. A single-row floating panel at the upper right holds the map name and undo/redo; hover the name to check whether changes are saved. Its animated menu toggle rotates upward while expanded and reveals save/open, new world, SVG and PNG export, the example world, and the Holo / Paper selector. The narrower layer stack floats independently below it. Fixed-width layer rows show colored brush icons and a visibility toggle; hover a row for its name and opacity. Select a row to paint on it, use + to add a layer, and open the layer settings for ordering, opacity, and deletion. Long layer stacks scroll without covering the brush bar. Escape closes the extra controls.
 
@@ -43,6 +43,8 @@ The floating zoom **− / +** buttons zoom around the canvas center; **Fit** doe
 Open the map menu and choose **Export SVG** for a scalable image or **Export PNG** for an image you can drop into a document or share. Both formats frame the visible artwork. PNG scales the longest edge to 4,096 pixels and preserves the map’s proportions.
 
 ## Brush materials
+
+Each brush finish has a different sound. Tap to hear a brief contact sound or drag to hear the material as you paint. Use **Settings → Sound effects** to mute editor sounds.
 
 New atlases use the woodland palette. It pairs olive trees and warm rock with ivory parchment and blue-green water. Older atlases open in their classic palette. Choose **Use woodland palette** in the map actions menu to restyle the current atlas, or **Use classic palette** to return to its previous artwork. The palette switch is undoable and saves with the atlas. It keeps brush paths, materials, and layer order in place.
 
@@ -96,7 +98,7 @@ Choose **Replay this view** from the map actions menu to animate the finished ar
 
 Choose **Save video** at the bottom of the replay during or after playback. Once you choose a destination, Elmapa renders the full view from the beginning and saves a silent `.mp4` with just the map artwork. Watching a replay creates no video files. Press Escape during export to cancel and return to editing.
 
-Maps save locally as versioned `.elmapa` JSON documents containing editable brush paths, landmarks and labels, layer settings, and stable variation seeds. Saving replaces the destination atomically. Switching atlases starts a separate editing session; Undo stays within the current atlas. Undo history is not stored in the file. Shelf snapshots, camera settings and appearance preferences share a local library directory:
+Maps save locally as versioned `.elmapa` JSON documents containing editable brush paths, landmarks and labels, layer settings, and stable variation seeds. Saving replaces the destination atomically. Switching atlases starts a separate editing session; Undo stays within the current atlas. Undo history is not stored in the file. The local library stores shelf snapshots, camera settings and editor preferences.
 
 | Platform | Default library directory |
 | --- | --- |

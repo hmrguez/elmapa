@@ -13,7 +13,7 @@ app = [
     "dep:bevy", "dep:winit", "dep:rfd", "dep:arboard",
     "dep:objc2", "dep:objc2-app-kit", "dep:objc2-foundation", "dep:objc2-metal", "dep:block2",
     "dep:rmcp", "dep:tokio", "dep:blake3",
-    "dep:crossbeam-channel", "dep:mp4", "dep:openh264", "dep:tempfile",
+    "dep:crossbeam-channel", "dep:mp4", "dep:openh264", "dep:tempfile", "dep:rodio", "dep:hound",
 ]
 
 [[bin]]
@@ -41,6 +41,8 @@ bevy = { optional = true, version = "=0.19.1", default-features = false, feature
 lyon = "1"
 winit = { optional = true, version = "0.30", default-features = false }
 rfd = { optional = true, version = "0.15" }
+rodio = { optional = true, version = "0.21.1", default-features = false, features = ["playback"] }
+hound = { optional = true, version = "3.5.1" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 rand = "0.9"

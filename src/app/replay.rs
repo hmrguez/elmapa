@@ -1,13 +1,18 @@
 //! Identical deterministic native workload inputs for GPUI/Bevy comparisons.
 use super::{
     files::{ExportFormat, Jobs, Request},
-    render::Canvas,
+    render::{Canvas, WorldCamera},
     state::{Action, Appearance, Studio},
 };
 use bevy::{
+    camera::RenderTarget,
     ecs::system::SystemParam,
     input::{ButtonState, mouse::MouseButtonInput},
     prelude::*,
+    render::{
+        render_resource::TextureFormat,
+        view::screenshot::{Screenshot, ScreenshotCaptured},
+    },
     window::{CursorMoved, WindowEvent},
 };
 use serde::Deserialize;
@@ -131,6 +136,7 @@ impl Replay {
 pub struct ReplayInput<'w, 's> {
     commands: Commands<'w, 's>,
     window: Single<'w, 's, (Entity, &'static mut Window)>,
+    camera_target: Query<'w, 's, &'static RenderTarget, With<WorldCamera>>,
     events: MessageWriter<'w, WindowEvent>,
 }
 pub fn advance(
@@ -144,6 +150,7 @@ pub fn advance(
     let ReplayInput {
         mut commands,
         mut window,
+        camera_target,
         mut events,
     } = input;
     if !replay.loaded
@@ -231,9 +238,24 @@ pub fn advance(
             Some(Action::Quit)
         }
         Step::Screenshot { path } => {
-            commands
-                .spawn(bevy::render::view::screenshot::Screenshot::primary_window())
-                .observe(bevy::render::view::screenshot::save_to_disk(path));
+            // Capture the composed editor image even when its window is in the background.
+            if let Ok(RenderTarget::Image(target)) = camera_target.single() {
+                commands
+                    .spawn(Screenshot::image(target.handle.clone()))
+                    .observe(move |capture: On<ScreenshotCaptured>| {
+                        let mut frame = capture.image.clone();
+                        // The editor image already contains sRGB values for display.
+                        frame.texture_descriptor.format = TextureFormat::Rgba8UnormSrgb;
+                        match frame.try_into_dynamic() {
+                            Ok(image) => {
+                                if let Err(error) = image.into_rgb8().save(&path) {
+                                    warn!("Could not save editor screenshot: {error}");
+                                }
+                            }
+                            Err(error) => warn!("Could not read editor screenshot: {error}"),
+                        }
+                    });
+            }
             None
         }
         event => {

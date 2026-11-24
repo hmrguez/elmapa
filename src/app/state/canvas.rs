@@ -1,5 +1,6 @@
 //! Convert canvas gestures into viewport movement and document edits.
 use super::{Studio, Tool};
+use crate::app::sound::Effect;
 use bevy::prelude::Vec2;
 use elmapa::document::{
     Brush, Point, Stroke,
@@ -38,6 +39,7 @@ impl Studio {
                 .is_none_or(|p| (p.x - point.x).hypot(p.y - point.y) > spacing)
         {
             stroke.points.push_point(point);
+            self.sound.moved = true;
             self.invalidate();
         }
     }
@@ -100,6 +102,10 @@ impl Studio {
                 .wrapping_mul(93241)
                 .wrapping_add((self.editor.stroke_count() as u64).wrapping_mul(7817)),
         });
+        self.sound.brush = Some(Effect::Brush(
+            self.brush,
+            self.brush_orbit.current_index(self.brush),
+        ));
         self.animate_new = matches!(
             self.brush,
             Brush::Forest | Brush::Mountain | Brush::Path | Brush::River
@@ -133,6 +139,7 @@ impl Studio {
         self.cancel_selection_gesture();
         self.viewport.resolve(self.bounds);
         self.drag = Some(point);
+        self.sound.cue = Some(Effect::Pan);
     }
     pub fn moved(&mut self, point: Vec2, blocked: bool) {
         self.pointer = (!blocked).then_some(point);

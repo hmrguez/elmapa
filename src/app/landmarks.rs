@@ -170,6 +170,7 @@ impl Studio {
                     landmark.position.x += 24.;
                     landmark.position.y += 24.;
                     if let Some(id) = self.editor.add_landmark(landmark) {
+                        self.sound.cue = Some(super::sound::Effect::Landmark);
                         self.landmarks.selected = Some(id);
                         self.landmarks.radial.reset();
                         self.landmarks.arrivals.insert(id, None);

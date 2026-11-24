@@ -59,6 +59,8 @@ pub struct Shelf {
     #[serde(default)]
     pub shader_effects_disabled: bool,
     #[serde(default)]
+    pub sound_effects_disabled: bool,
+    #[serde(default)]
     pub disabled_landmark_packs: std::collections::HashSet<String>,
 }
 
@@ -313,6 +315,7 @@ mod tests {
         library.shelf.reduced_motion = true;
         library.shelf.paper_ui = true;
         library.shelf.shader_effects_disabled = true;
+        library.shelf.sound_effects_disabled = true;
         library
             .shelf
             .disabled_landmark_packs
@@ -334,6 +337,7 @@ mod tests {
         assert_eq!(restored.shelf.atlases[0].source, record.source);
         assert!(restored.shelf.reduced_motion);
         assert!(restored.shelf.shader_effects_disabled);
+        assert!(restored.shelf.sound_effects_disabled);
         assert!(restored.shelf.paper_ui);
         assert!(
             restored
@@ -345,10 +349,11 @@ mod tests {
     }
 
     #[test]
-    fn older_shelves_use_the_default_appearance_and_shader_preferences() {
+    fn older_shelves_use_default_appearance_and_effects_preferences() {
         let shelf: Shelf =
             serde_json::from_str(r#"{"atlases":[],"dark":true,"reduced_motion":false}"#).unwrap();
         assert!(!shelf.shader_effects_disabled);
+        assert!(!shelf.sound_effects_disabled);
         assert!(!shelf.paper_ui);
         assert!(serde_json::to_value(shelf).unwrap().get("dark").is_none());
     }
